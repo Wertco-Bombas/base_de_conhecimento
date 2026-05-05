@@ -1,0 +1,188 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Don — Sistema Completo</title>
+<style>
+body{margin:0;font-family:Arial, sans-serif;background:#0b0b0b;color:#f7f7f7}
+h1{color:#ffd400}
+.btn{padding:8px 12px;border:none;border-radius:8px;font-weight:700;cursor:pointer}
+.btn.visit{background:#ffd400;color:#0b0b0b}
+.btn.warn{background:#ff5c33;color:#fff}
+.page{display:none}
+.page.active{display:block}
+.topic{background:#111;padding:12px;border-radius:8px;margin-bottom:10px}
+.status-pill{padding:4px 8px;border-radius:999px;font-size:0.8rem;font-weight:700}
+.status-pending{background:#ffb84d;color:#111}
+.status-approved{background:#34d399;color:#042014}
+.status-rejected{background:#ff6b6b;color:#2b0500}
+/* Popup centralizado */
+.popup-overlay{
+  position:fixed;top:0;left:0;width:100%;height:100%;
+  background:rgba(0,0,0,0.6);display:flex;align-items:center;justify-content:center;
+  z-index:200;
+}
+.popup-box{
+  background:#1a1a1a;padding:20px;border-radius:12px;max-width:400px;width:90%;
+  box-shadow:0 8px 30px rgba(0,0,0,0.8);
+}
+</style>
+</head>
+<body>
+<div id="loginScreen">
+  <h1>Don — Login</h1>
+  <input id="loginUser" placeholder="Usuário"><br>
+  <input id="loginPass" type="password" placeholder="Senha"><br>
+  <button class="btn visit" onclick="login()">Entrar</button>
+</div>
+
+<div id="dashboard" style="display:none">
+  <header><h1>Don — Sistema Completo</h1><div id="headerUser"></div></header>
+  <nav>
+    <button class="btn" onclick="showSection('page-kb')">Base</button>
+    <button class="btn" onclick="showSection('page-training')">Treinamento</button>
+    <button class="btn" onclick="showSection('page-audit')">Auditoria</button>
+    <button class="btn" onclick="showSection('page-user')">Usuários</button>
+  </nav>
+
+  <!-- KB -->
+  <section id="page-kb" class="page active">
+    <h2>Base de Conhecimento</h2>
+    <button class="btn" onclick="newTopic()">Novo Tópico</button>
+    <div id="topicsList"></div>
+  </section>
+
+  <!-- Treinamento -->
+  <section id="page-training" class="page">
+    <h2>Treinamento</h2>
+    <div id="trainingUpload"></div>
+    <div id="trainingFiles"></div>
+  </section>
+
+  <!-- Auditoria -->
+  <section id="page-audit" class="page">
+    <h2>Auditoria</h2>
+    <div id="auditLog"></div>
+  </section>
+
+  <!-- Usuários -->
+  <section id="page-user" class="page">
+    <h2>Usuários</h2>
+    <div id="usersList"></div>
+  </section>
+</div>
+
+<div id="popupContainer"></div>
+
+<script>
+let users=[
+  {username:"admin",password:"admin",role:"Admin"},
+  {username:"supervisor",password:"supervisor",role:"Supervisor"},
+  {username:"user",password:"user",role:"User"}
+];
+let session=null;
+let topics=[];
+let audit=[];
+let trainingFiles=[];
+
+/* Login */
+function login(){
+  let u=document.getElementById("loginUser").value;
+  let p=document.getElementById("loginPass").value;
+  let found=users.find(x=>x.username===u && x.password===p);
+  if(!found){alert("Usuário ou senha inválidos");return;}
+  session=found;
+  document.getElementById("loginScreen").style.display="none";
+  document.getElementById("dashboard").style.display="block";
+  document.getElementById("headerUser").innerText=`${found.username} (${found.role})`;
+  renderTopics();renderUsers();renderTraining();renderAudit();
+}
+
+/* Navegação */
+function showSection(id){
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+  if(id==="page-kb") renderTopics();
+  if(id==="page-training") renderTraining();
+  if(id==="page-audit") renderAudit();
+  if(id==="page-user") renderUsers();
+}
+
+/* Tópicos */
+function renderTopics(){
+  let container=document.getElementById("topicsList");
+  container.innerHTML="";
+  topics.forEach(t=>{
+    let div=document.createElement("div");
+    div.className="topic";
+    div.innerHTML=`<h3>${t.title}</h3><p>${t.content}</p>`;
+    if(t.status==="pending") div.innerHTML+=`<div class="status-pill status-pending">Pendente</div>`;
+    if(t.status==="approved") div.innerHTML+=`<div class="status-pill status-approved">Aprovado</div>`;
+    if(t.status==="rejected") div.innerHTML+=`<div class="status-pill status-rejected">Rejeitado</div>`;
+    container.appendChild(div);
+  });
+}
+function newTopic(){
+  let title=prompt("Título do tópico:");
+  if(!title) return;
+  let t={id:Date.now()+"",title,content:"Conteúdo...",status:"pending"};
+  topics.push(t);
+  audit.unshift(`Tópico "${title}" criado por ${session.username} (pendente)`);
+  if(session.role!=="User") showApprovalPopup("Tópico pendente de aprovação",t.id,"topic");
+  renderTopics();
+}
+
+/* Popup central */
+function showApprovalPopup(msg,id,type){
+  let overlay=document.createElement("div");
+  overlay.className="popup-overlay";
+  overlay.innerHTML=`<div class="popup-box"><h3>${msg}</h3>
+    <button class="btn visit" onclick="approve('${id}','${type}')">Aprovar</button>
+    <button class="btn warn" onclick="reject('${id}','${type}')">Rejeitar</button>
+    <button class="btn" onclick="closePopup()">Fechar</button></div>`;
+  document.getElementById("popupContainer").appendChild(overlay);
+}
+function closePopup(){document.getElementById("popupContainer").innerHTML="";}
+function approve(id,type){
+  if(type==="topic"){let t=topics.find(x=>x.id===id);if(t) t.status="approved";}
+  audit.unshift(`${type} ${id} aprovado`);
+  closePopup();renderTopics();renderAudit();
+}
+function reject(id,type){
+  if(type==="topic"){let t=topics.find(x=>x.id===id);if(t) t.status="rejected";}
+  audit.unshift(`${type} ${id} rejeitado`);
+  closePopup();renderTopics();renderAudit();
+}
+
+/* Auditoria */
+function renderAudit(){
+  let log=document.getElementById("auditLog");
+  log.innerHTML=audit.map(a=>`<div>${a}</div>`).join("");
+}
+
+/* Treinamento */
+function renderTraining(){
+  let up=document.getElementById("trainingUpload");
+  if(session.role==="Admin"||session.role==="Supervisor"){
+    up.innerHTML=`<input type="file" id="trainFile" multiple accept=".pdf,.doc,.docx,video/*">
+      <button class="btn" onclick="saveTraining()">Enviar</button>`;
+  } else {
+    up.innerHTML=`<p>Somente Supervisor/Admin podem enviar arquivos.</p>`;
+  }
+}
+function saveTraining(){
+  let input=document.getElementById("trainFile");
+  let files=Array.from(input.files);
+  files.forEach(f=>trainingFiles.push(f.name));
+  document.getElementById("trainingFiles").innerHTML=trainingFiles.map(f=>`<div>${f}</div>`).join("");
+}
+
+/* Usuários */
+function renderUsers(){
+  let container=document.getElementById("usersList");
+  container.innerHTML=users.map(u=>`<div>${u.username} (${u.role})</div>`).join("");
+}
+</script>
+</body>
+</html>
