@@ -1,0 +1,1010 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Don — Base de Conhecimento</title>
+  <style>
+    :root{
+      --bg:#070707;
+      --card:#0f0f0f;
+      --text:#f7f7f7;
+      --muted:#cfcfcf;
+      --accent:#ffd400;
+      --accent-contrast:#0b0b0b;
+      --danger:#ff5c33;
+      --pending:#ffb84d;
+      --approved:#34d399;
+      --rejected:#ff6b6b;
+      --shadow: 0 8px 30px rgba(0,0,0,0.6);
+      --radius:12px;
+    }
+    *{box-sizing:border-box}
+    html,body{height:100%;margin:0;font-family:Inter,system-ui,Arial,sans-serif;background:linear-gradient(180deg,#050505,#0b0b0b);color:var(--text);-webkit-font-smoothing:antialiased}
+    .wrap{max-width:1200px;margin:18px auto;padding:18px}
+    header{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:12px}
+    .brand{display:flex;align-items:center;gap:12px}
+    .logo{width:44px;height:44px;display:inline-block}
+    h1{margin:0;font-size:1.15rem;color:var(--accent);letter-spacing:0.6px}
+    .card{background:var(--card);border-radius:var(--radius);box-shadow:var(--shadow);padding:16px;border:1px solid rgba(255,212,0,0.06)}
+    .login-card{max-width:420px;margin:0 auto}
+    label.small{display:block;font-size:0.85rem;color:var(--muted);margin-bottom:6px}
+    input[type="text"], input[type="password"], input[type="search"], select, textarea{
+      width:100%;padding:12px;border-radius:12px;border:1px solid rgba(255,255,255,0.06);font-size:1rem;background:transparent;color:var(--text)
+    }
+    textarea{min-height:100px;resize:vertical}
+    .btn{display:inline-flex;align-items:center;gap:8px;padding:10px 14px;border-radius:10px;border:none;cursor:pointer;font-weight:700;background:var(--accent);color:var(--accent-contrast)}
+    .btn.ghost{background:transparent;border:1px solid rgba(255,212,0,0.12);color:var(--text)}
+    .btn.warn{background:var(--danger);color:#fff}
+    .top-menu{display:flex;gap:10px;flex-wrap:wrap;align-items:center;justify-content:flex-start;margin-bottom:8px}
+    .menu-item{position:relative;background:transparent;padding:8px 12px;border-radius:999px;border:1px solid rgba(255,212,0,0.12);cursor:pointer;font-weight:700;color:var(--accent)}
+    .menu-item.disabled{opacity:0.35;cursor:not-allowed}
+    .menu-item.disabled[data-tooltip]:hover::after{
+      content:attr(data-tooltip);position:absolute;bottom:-36px;left:50%;transform:translateX(-50%);background:#222;color:var(--text);padding:6px 10px;border-radius:8px;font-size:0.85rem;white-space:nowrap;z-index:30
+    }
+
+    /* Sticky search bar */
+    .search-sticky {
+      position: sticky;
+      top: 12px;
+      z-index: 60;
+      background: linear-gradient(180deg, rgba(15,15,15,0.95), rgba(15,15,15,0.95));
+      padding: 10px;
+      border-radius: 12px;
+      border: 1px solid rgba(255,212,0,0.04);
+      display:flex;
+      align-items:center;
+      gap:12px;
+      box-shadow: 0 6px 18px rgba(0,0,0,0.6);
+      margin-bottom:12px;
+    }
+    .search-inner{position:relative;flex:1;min-width:0;display:flex;gap:12px;align-items:center}
+    .search-input {
+      flex: 1 1 640px;
+      min-width: 220px;
+      max-width: 900px;
+      font-size: 1.02rem;
+      padding: 12px 44px 12px 44px;
+      border-radius: 12px;
+      border: 1px solid rgba(255,212,0,0.12);
+      background: rgba(255,212,0,0.03);
+      color: var(--text);
+      outline: none;
+    }
+    .search-input::placeholder { color: rgba(255,255,255,0.55); font-size: 0.98rem; }
+    .search-icon { position:absolute; left:18px; width:20px;height:20px; display:inline-block; pointer-events:none; }
+    .search-controls{display:flex;gap:8px;align-items:center}
+    .filter-select{width:220px;min-width:140px;padding:12px;border-radius:12px;border:1px solid rgba(255,212,0,0.08);background:transparent;color:var(--text)}
+    .layout{display:grid;grid-template-columns:1fr;gap:12px}
+    .page{display:none}
+    .page.active{display:block}
+    .topic{padding:14px;border-radius:10px;background:linear-gradient(180deg,#121212,#0f0f0f);border:1px solid rgba(255,212,0,0.04);margin-bottom:10px}
+    .badge{display:inline-block;padding:6px 10px;border-radius:999px;background:var(--accent);color:var(--accent-contrast);font-weight:700;font-size:0.85rem}
+    .small{font-size:0.85rem;color:var(--muted)}
+    .media-row{display:flex;gap:8px;flex-wrap:wrap;margin-top:8px}
+    .media-thumb{width:120px;height:80px;border-radius:8px;overflow:hidden;border:1px solid rgba(255,255,255,0.04);background:#000;display:flex;align-items:center;justify-content:center}
+    .preview-item{position:relative;width:90px;height:70px;border-radius:8px;overflow:hidden;border:1px solid rgba(255,255,255,0.04);background:#111}
+    .preview-remove{position:absolute;top:6px;right:6px;background:rgba(0,0,0,0.6);color:var(--accent);border-radius:50%;width:22px;height:22px;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:12px}
+    .comment-block{margin-top:10px;padding:10px;border-radius:8px;background:#0b0b0b;border:1px solid rgba(255,255,255,0.03)}
+    .comment-meta{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+    .status-pill{padding:4px 8px;border-radius:999px;font-weight:700;font-size:0.8rem}
+    .status-pending{background:var(--pending);color:#111}
+    .status-approved{background:var(--approved);color:#042014}
+    .status-rejected{background:var(--rejected);color:#2b0500}
+    .user-item{display:flex;justify-content:space-between;align-items:center;padding:10px;border-radius:8px;background:linear-gradient(180deg,#0f0f0f,#0b0b0b);border:1px solid rgba(255,212,0,0.04);margin-bottom:8px}
+    .controls{display:flex;gap:8px;align-items:center}
+    footer{margin-top:18px;text-align:center;color:var(--muted);font-size:0.85rem}
+
+    /* popup bottom-right (pending list) */
+    .pending-panel{
+      position:fixed;right:18px;bottom:18px;background:linear-gradient(180deg,#111,#0f0f0f);border:1px solid rgba(255,212,0,0.06);padding:12px;border-radius:10px;box-shadow:0 10px 30px rgba(0,0,0,0.6);z-index:120;min-width:260px;
+    }
+    .pending-item{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:6px;border-radius:8px;background:rgba(255,255,255,0.02);margin-bottom:8px}
+    .pending-item .goto{margin-left:12px}
+    .audit-list .audit-item{display:flex;align-items:center;gap:12px;padding:8px;border-radius:8px;background:rgba(255,255,255,0.02);border:1px solid rgba(255,255,255,0.03);margin-bottom:8px}
+    .audit-list .info{flex:1;min-width:0}
+    .audit-list .goto{flex:0 0 auto;margin-left:12px;display:flex;align-items:center}
+    .audit-list .goto .btn.visit{background:var(--accent);color:var(--accent-contrast);border:1px solid rgba(0,0,0,0.12);box-shadow:0 6px 18px rgba(0,0,0,0.45);padding:8px 14px;border-radius:8px;font-weight:800}
+    .audit-list .goto .btn.visit:hover{transform:translateY(-2px);box-shadow:0 10px 26px rgba(0,0,0,0.55);outline:3px solid rgba(255,212,0,0.12)}
+
+    /* central approval popup */
+    .popup-overlay{position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.6);display:flex;align-items:center;justify-content:center;z-index:300}
+    .popup-box{background:var(--card);padding:18px;border-radius:12px;max-width:520px;width:92%;box-shadow:var(--shadow);border:1px solid rgba(255,212,0,0.06)}
+    .popup-box h3{margin:0 0 8px;color:var(--accent)}
+
+    /* select readability */
+    select, .filter-select { color: var(--text) !important; background: transparent !important; -webkit-appearance: none; -moz-appearance: none; appearance: none; }
+    select option, .filter-select option { color: var(--text) !important; background: var(--card) !important; }
+
+    @media (max-width:920px){
+      .search-input{min-width:220px;flex:1 1 60%}
+      .filter-select{width:140px}
+      .search-sticky{flex-direction:column;align-items:stretch}
+      .search-controls{justify-content:flex-end}
+    }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <header>
+      <div class="brand">
+        <!-- Inline SVG logo for Don -->
+        <svg class="logo" viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" role="img">
+          <rect width="64" height="64" rx="12" fill="#0b0b0b"/>
+          <g transform="translate(8,8)">
+            <circle cx="24" cy="12" r="10" fill="#ffd400"/>
+            <rect x="6" y="28" width="36" height="8" rx="4" fill="#ffd400"/>
+          </g>
+        </svg>
+        <h1>Don</h1>
+      </div>
+
+      <div id="headerUser" style="display:none;align-items:center;gap:10px">
+        <div class="small" id="headerName"></div>
+        <div class="small" id="headerRole" style="font-weight:700;color:var(--accent)"></div>
+        <button class="btn ghost" id="btnLogout">Sair</button>
+      </div>
+    </header>
+
+    <!-- LOGIN -->
+    <div id="loginScreen" class="login-card">
+      <div class="card login-card">
+        <h2 style="margin:0 0 8px;color:var(--accent)">Entrar</h2>
+        <div class="field"><label class="small">Usuário</label><input id="loginUser" type="text" autocomplete="username" /></div>
+        <div class="field"><label class="small">Senha</label><input id="loginPass" type="password" autocomplete="current-password" /></div>
+        <div style="display:flex;gap:8px;margin-top:12px">
+          <button class="btn" id="btnLogin">Entrar</button>
+          <button class="btn ghost" id="btnDemo">Entrar como demo</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- DASHBOARD -->
+    <div id="dashboard" style="display:none">
+      <nav class="top-menu" role="navigation" aria-label="Menu principal">
+        <div id="menuKb" class="menu-item" data-target="page-kb">Base de conhecimento</div>
+        <div id="menuUser" class="menu-item" data-target="page-user">Usuário</div>
+        <div id="menuTraining" class="menu-item" data-target="page-training">Treinamento</div>
+        <div id="menuAudit" class="menu-item" data-target="page-audit">Auditoria</div>
+      </nav>
+
+      <!-- Barra de pesquisa sticky: visível apenas quando estiver na página KB -->
+      <div id="kbSearchBar" class="search-sticky" style="display:none">
+        <div class="search-inner">
+          <svg class="search-icon" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+            <circle cx="11" cy="11" r="6" stroke="#ffd400" stroke-width="2"></circle>
+            <path d="M20 20 L16.65 16.65" stroke="#ffd400" stroke-width="2" stroke-linecap="round"></path>
+          </svg>
+          <input id="searchAll" class="search-input" type="search" placeholder="Pesquisar títulos, descrições, categorias, comentários e nomes de arquivos..." aria-label="Pesquisar">
+          <select id="filterCategory" class="filter-select" aria-label="Filtrar por categoria">
+            <option value="">Todas as categorias</option>
+          </select>
+        </div>
+
+        <div class="search-controls">
+          <div class="top-actions" id="kbActions">
+            <button class="btn" id="btnNewTopic">➕ Novo Tópico</button>
+            <button class="btn" id="btnNewCategory">➕ Nova Categoria</button>
+            <button class="btn warn" id="btnDeleteCategoryTop">🗑️ Excluir Categoria</button>
+          </div>
+        </div>
+      </div>
+
+      <main class="layout">
+        <!-- KB -->
+        <section id="page-kb" class="page active">
+          <div id="topicsList"></div>
+        </section>
+
+        <!-- USER MANAGEMENT -->
+        <section id="page-user" class="page" aria-hidden="true">
+          <div class="card">
+            <h2 style="margin:0 0 8px;color:var(--accent)">Gerenciar Usuários</h2>
+            <div id="userControls" style="margin-bottom:12px">
+              <div style="display:flex;gap:8px;flex-wrap:wrap">
+                <input id="newName" type="text" placeholder="Nome completo" style="flex:1;background:transparent;color:var(--text)">
+                <input id="newLogin" type="text" placeholder="Usuário (login)" style="width:200px;background:transparent;color:var(--text)">
+                <select id="newRole" style="width:160px;background:transparent;color:var(--text)"></select>
+                <input id="newPass" type="password" placeholder="Senha" style="width:160px;background:transparent;color:var(--text)">
+                <button class="btn" id="btnCreateUser">Criar usuário</button>
+              </div>
+              <div class="small" style="margin-top:8px;color:var(--muted)">Apenas Admin pode atribuir papéis; Supervisor cria usuários com papel User.</div>
+            </div>
+            <div id="usersList"></div>
+          </div>
+        </section>
+
+        <!-- TRAINING -->
+        <section id="page-training" class="page" aria-hidden="true">
+          <div class="card">
+            <h2 style="margin:0 0 8px;color:var(--accent)">Treinamento</h2>
+            <div id="trainingUpload"></div>
+            <div id="trainingFiles" style="margin-top:12px"></div>
+          </div>
+        </section>
+
+        <!-- AUDIT -->
+        <section id="page-audit" class="page" aria-hidden="true">
+          <div class="card">
+            <h2 style="margin:0 0 8px;color:var(--accent)">Auditoria</h2>
+            <div id="auditLog" class="small audit-list"></div>
+          </div>
+        </section>
+
+        <!-- SUBPAGES: Novo tópico / Nova categoria / Excluir categoria -->
+        <section id="sub-new-topic" class="page" aria-hidden="true">
+          <div class="card">
+            <h2 style="margin:0 0 8px;color:var(--accent)">➕ Novo Tópico</h2>
+            <div class="field"><label class="small">Título</label><input id="topicTitle" type="text" style="background:transparent;color:var(--text)"></div>
+            <div class="field"><label class="small">Descrição</label><textarea id="topicContent" style="background:transparent;color:var(--text)"></textarea></div>
+            <div class="field"><label class="small">Categoria</label><select id="topicCategory" style="background:transparent;color:var(--text)"></select></div>
+            <div class="field"><label class="small">Anexar imagens ou vídeos (máx 5, 5MB cada)</label><input id="topicFiles" type="file" accept="image/*,video/*" multiple></div>
+            <div id="topicPreview" class="file-preview" aria-hidden="true"></div>
+            <div style="display:flex;gap:8px;margin-top:12px">
+              <button class="btn" id="saveTopic">Cadastrar</button>
+              <button class="btn ghost" id="cancelTopic">Cancelar</button>
+            </div>
+          </div>
+        </section>
+
+        <section id="sub-new-category" class="page" aria-hidden="true">
+          <div class="card">
+            <h2 style="margin:0 0 8px;color:var(--accent)">➕ Nova Categoria</h2>
+            <div class="field"><label class="small">Nome</label><input id="categoryName" type="text" style="background:transparent;color:var(--text)"></div>
+            <div class="field"><label class="small">Imagem (opcional, 2MB)</label><input id="categoryImage" type="file" accept="image/*"></div>
+            <div id="categoryPreview" class="file-preview" aria-hidden="true"></div>
+            <div style="display:flex;gap:8px;margin-top:12px">
+              <button class="btn" id="saveCategory">Cadastrar</button>
+              <button class="btn ghost" id="cancelCategory">Cancelar</button>
+            </div>
+          </div>
+        </section>
+
+        <section id="sub-delete-category" class="page" aria-hidden="true">
+          <div class="card">
+            <h2 style="margin:0 0 8px;color:var(--accent)">🗑️ Excluir Categoria</h2>
+            <div class="field"><label class="small">Selecione a categoria</label><select id="deleteCategorySelect" style="background:transparent;color:var(--text)"></select></div>
+            <div id="deleteCategoryInfo" class="small" style="margin-top:8px;color:var(--muted)"></div>
+            <div style="display:flex;gap:8px;margin-top:12px">
+              <button class="btn warn" id="confirmDeleteCategory">Excluir</button>
+              <button class="btn ghost" id="cancelDeleteCategory">Cancelar</button>
+            </div>
+          </div>
+        </section>
+      </main>
+
+      <footer class="small">Protótipo local — dados salvos no navegador (localStorage).</footer>
+    </div>
+  </div>
+
+  <!-- Pending popup bottom-right -->
+  <div id="pendingPanel" class="pending-panel" style="display:none">
+    <div style="display:flex;justify-content:space-between;align-items:center">
+      <strong>Comentários pendentes</strong>
+      <button class="btn ghost" id="btnClosePending">Fechar</button>
+    </div>
+    <div id="pendingList" style="margin-top:8px"></div>
+  </div>
+
+  <!-- Central approval popup container -->
+  <div id="popupContainer"></div>
+
+  <script>
+    /* Storage keys */
+    const KEY_TOPICS = "don_topics_full";
+    const KEY_CATS = "don_categories_full";
+    const KEY_USERS = "don_users_full";
+    const KEY_SESSION = "don_session_full";
+    const KEY_AUDIT = "don_audit_full";
+    const KEY_TRAIN = "don_training_files";
+
+    /* Helpers & seed */
+    function idGen(){ return 'id_' + Math.random().toString(36).slice(2,9); }
+    const defaultTopics = [
+      { id: idGen(), title: "HTML Básico", content: "Estrutura de páginas web.", category: "HTML", media: [], comments: [
+        { id: idGen(), author: "user", authorName: "Usuário Comum", text: "Comentário pendente", media: [], ts: new Date("2026-05-04T17:54:51").getTime(), status: "pending" }
+      ] },
+      { id: idGen(), title: "CSS Avançado", content: "Estilização e responsividade.", category: "CSS", media: [], comments: [] }
+    ];
+    const defaultCategories = ["HTML","CSS","JavaScript"];
+    const defaultUsers = [
+      { username: "admin", password: "admin", name: "Administrador", role: "Admin" },
+      { username: "supervisor", password: "supervisor", name: "Supervisor Exemplo", role: "Supervisor" },
+      { username: "user", password: "user", name: "Usuário Comum", role: "User" }
+    ];
+
+    let topics = JSON.parse(localStorage.getItem(KEY_TOPICS) || "null") || defaultTopics;
+    let categories = JSON.parse(localStorage.getItem(KEY_CATS) || "null") || defaultCategories;
+    let users = JSON.parse(localStorage.getItem(KEY_USERS) || "null") || defaultUsers;
+    if(!users.some(u=>u.username==="admin")) users.unshift({ username:"admin", password:"admin", name:"Administrador", role:"Admin" });
+    localStorage.setItem(KEY_USERS, JSON.stringify(users));
+    localStorage.setItem(KEY_TOPICS, JSON.stringify(topics));
+    localStorage.setItem(KEY_CATS, JSON.stringify(categories));
+    if(!localStorage.getItem(KEY_AUDIT)) localStorage.setItem(KEY_AUDIT, JSON.stringify([]));
+    if(!localStorage.getItem(KEY_TRAIN)) localStorage.setItem(KEY_TRAIN, JSON.stringify([]));
+
+    const $ = id => document.getElementById(id);
+    function getSession(){ return JSON.parse(localStorage.getItem(KEY_SESSION) || "null"); }
+    function setSession(s){ localStorage.setItem(KEY_SESSION, JSON.stringify(s)); }
+    function clearSession(){ localStorage.removeItem(KEY_SESSION); }
+    function persistTopics(){ localStorage.setItem(KEY_TOPICS, JSON.stringify(topics)); }
+    function persistCats(){ localStorage.setItem(KEY_CATS, JSON.stringify(categories)); }
+    function persistUsers(){ localStorage.setItem(KEY_USERS, JSON.stringify(users)); }
+    function persistAudit(msg){ const arr = JSON.parse(localStorage.getItem(KEY_AUDIT) || "[]"); arr.unshift(`${new Date().toLocaleString()} — ${msg}`); localStorage.setItem(KEY_AUDIT, JSON.stringify(arr.slice(0,500))); }
+    function persistTrainingFiles(arr){ localStorage.setItem(KEY_TRAIN, JSON.stringify(arr)); }
+    function escapeHtml(s){ return String(s||"").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;").replace(/'/g,"&#039;"); }
+    function normRole(r){ return (r||"").toString().trim().toLowerCase(); }
+
+    /* UI helpers */
+    function showLogin(){ $("loginScreen").style.display = "block"; $("dashboard").style.display = "none"; }
+    function showDashboard(){ $("loginScreen").style.display = "none"; $("dashboard").style.display = "block"; updateHeader(); configureAccess(); showSection('page-kb'); renderAll(); checkPendingForSupervisor(); }
+    function updateHeader(){ const s = getSession(); if(!s){ $("headerUser").style.display = "none"; return; } $("headerUser").style.display = "flex"; $("headerName").textContent = s.name || s.username; $("headerRole").textContent = `(${s.role})`; }
+
+    function showSection(id){
+      document.querySelectorAll('.page').forEach(p=>{
+        if(p.id === id){ p.classList.add('active'); p.style.display = 'block'; p.setAttribute('aria-hidden','false'); }
+        else { p.classList.remove('active'); p.style.display = 'none'; p.setAttribute('aria-hidden','true'); }
+      });
+      const kbBar = $("kbSearchBar");
+      if(id === 'page-kb'){ kbBar.style.display = 'flex'; updateCategorySelects(); renderTopics(); }
+      else { kbBar.style.display = 'none'; }
+      if(id === 'page-audit') renderAudit();
+      if(id === 'page-training') renderTraining();
+      if(id === 'page-user') renderUsers();
+    }
+
+    /* Access control */
+    function configureAccess(){
+      const s = getSession(); const role = s ? normRole(s.role) : "";
+      const menuUser = $("menuUser"), menuAudit = $("menuAudit");
+      if(role === "admin" || role === "supervisor"){ menuUser.classList.remove('disabled'); menuUser.removeAttribute('data-tooltip'); menuAudit.classList.remove('disabled'); menuAudit.removeAttribute('data-tooltip'); }
+      else { menuUser.classList.add('disabled'); menuUser.setAttribute('data-tooltip','Acesso restrito'); menuAudit.classList.add('disabled'); menuAudit.setAttribute('data-tooltip','Acesso restrito'); }
+      const canManage = (role === "admin" || role === "supervisor");
+      $("btnNewTopic").style.display = canManage ? 'inline-flex' : 'none';
+      $("btnNewCategory").style.display = canManage ? 'inline-flex' : 'none';
+      $("btnDeleteCategoryTop").style.display = canManage ? 'inline-flex' : 'none';
+      populateNewUserRoleOptions(role === "admin");
+    }
+
+    function populateNewUserRoleOptions(isAdmin){
+      const sel = $("newRole"); sel.innerHTML = "";
+      if(isAdmin){ ["Admin","Supervisor","User"].forEach(r=> sel.insertAdjacentHTML('beforeend', `<option value="${r}">${r}</option>`)); }
+      else { sel.insertAdjacentHTML('beforeend', `<option value="User">User</option>`); sel.value = "User"; }
+    }
+
+    /* Rendering */
+    function updateCategorySelects(){
+      categories = Array.from(new Set(categories.filter(Boolean)));
+      persistCats();
+      const filter = $("filterCategory"), topicCat = $("topicCategory"), deleteSel = $("deleteCategorySelect");
+      [filter, topicCat, deleteSel].forEach(s=>{ if(!s) return; s.innerHTML = `<option value="">Todas as categorias</option>`; categories.forEach(c=> s.insertAdjacentHTML('beforeend', `<option value="${escapeHtml(c)}">${escapeHtml(c)}</option>`)); });
+    }
+
+    function renderTopics(){
+      const q = $("searchAll").value.trim().toLowerCase();
+      const cat = $("filterCategory").value;
+      const container = $("topicsList"); container.innerHTML = "";
+      const filtered = topics.filter(t=>{
+        const matchCat = !cat || t.category === cat;
+        if(!q) return matchCat;
+        const inTitle = (t.title||"").toLowerCase().includes(q);
+        const inContent = (t.content||"").toLowerCase().includes(q);
+        const inCategory = (t.category||"").toLowerCase().includes(q);
+        const mediaNames = (t.media||[]).map(m=>m.name||"").join(" ").toLowerCase();
+        const commentsText = (t.comments||[]).map(c => (c.text||"") + " " + ((c.media||[]).map(m=>m.name||"").join(" "))).join(" ").toLowerCase();
+        return matchCat && (inTitle || inContent || inCategory || mediaNames.includes(q) || commentsText.includes(q));
+      });
+
+      if(filtered.length === 0){ container.innerHTML = `<div class="topic"><div class="small">Nenhum tópico encontrado.</div></div>`; return; }
+
+      filtered.forEach(t=>{
+        const mediaHtml = (t.media||[]).map(m=>{
+          if(m.type && m.type.startsWith("image/")) return `<div class="media-thumb" title="${escapeHtml(m.name)}"><img src="${m.data}" alt="${escapeHtml(m.name)}" style="width:100%;height:100%;object-fit:cover"></div>`;
+          if(m.type && m.type.startsWith("video/")) return `<div class="media-thumb" title="${escapeHtml(m.name)}"><video src="${m.data}" muted playsinline style="width:100%;height:100%;object-fit:cover"></video></div>`;
+          return `<div class="media-thumb">${escapeHtml(m.name)}</div>`;
+        }).join("");
+
+        const commentsHtml = (t.comments||[]).map(c=>{
+          const cm = (c.media||[]).map(m=>{
+            if(m.type && m.type.startsWith("image/")) return `<div class="media-thumb" title="${escapeHtml(m.name)}"><img src="${m.data}" alt="${escapeHtml(m.name)}" style="width:100%;height:100%;object-fit:cover"></div>`;
+            if(m.type && m.type.startsWith("video/")) return `<div class="media-thumb" title="${escapeHtml(m.name)}"><video src="${m.data}" muted playsinline style="width:100%;height:100%;object-fit:cover"></video></div>`;
+            return `<div class="media-thumb">${escapeHtml(m.name)}</div>`;
+          }).join("");
+          const statusClass = c.status === "pending" ? "status-pending" : (c.status === "approved" ? "status-approved" : "status-rejected");
+          const statusLabel = c.status === "pending" ? "Pendente" : (c.status === "approved" ? "Aprovado" : "Rejeitado");
+          const author = escapeHtml(c.authorName || c.author);
+          const commentId = c.id;
+          const sess = getSession(); const role = sess ? normRole(sess.role) : "";
+          let actions = "";
+          if(sess && sess.username === c.author){
+            actions += `<button class="btn ghost" data-action="edit-comment" data-topic="${t.id}" data-cid="${commentId}">Editar</button>`;
+            actions += `<button class="btn ghost" data-action="delete-comment" data-topic="${t.id}" data-cid="${commentId}">Excluir</button>`;
+          }
+          if(sess && (role === "admin" || role === "supervisor") && c.status === "pending"){
+            actions += `<button class="btn" data-action="approve-comment" data-topic="${t.id}" data-cid="${commentId}">Aprovar</button>`;
+            actions += `<button class="btn warn" data-action="reject-comment" data-topic="${t.id}" data-cid="${commentId}">Rejeitar</button>`;
+          }
+          const textHtml = `<div style="margin-top:6px">${escapeHtml(c.text)}</div>`;
+          return `<div id="comment-${commentId}" class="comment-block"><div class="comment-meta"><strong class="small">${author}</strong><div class="small">${new Date(c.ts).toLocaleString()}</div><div class="status-pill ${statusClass}">${statusLabel}</div></div>${textHtml}${cm ? `<div class="media-row">${cm}</div>` : ""}<div style="margin-top:8px">${actions}</div></div>`;
+        }).join("");
+
+        const catHtml = t.category ? `<div class="badge">${escapeHtml(t.category)}</div>` : `<div class="small">Sem categoria</div>`;
+
+        const html = document.createElement('article');
+        html.className = 'topic';
+        html.id = `topic-${t.id}`;
+        html.innerHTML = `
+          <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:12px">
+            <div style="flex:1">
+              <h3 style="margin:0;color:var(--accent)">${escapeHtml(t.title)}</h3>
+              <div class="small" style="margin-top:6px">${escapeHtml(t.content)}</div>
+            </div>
+            <div>${catHtml}</div>
+          </div>
+          ${mediaHtml ? `<div class="media-row" style="margin-top:10px">${mediaHtml}</div>` : ""}
+          <div style="margin-top:10px"><strong class="small">Comentários</strong>${commentsHtml || `<div class="small" style="margin-top:6px">Sem comentários</div>`}</div>
+
+          <div style="display:flex;gap:8px;margin-top:10px;align-items:center">
+            <input type="text" placeholder="Adicionar comentário" id="comment-text-${t.id}" style="flex:1;padding:8px;border-radius:8px;border:1px solid rgba(255,255,255,0.04);background:transparent;color:var(--text)">
+            <input type="file" accept="image/*,video/*" id="comment-files-${t.id}" multiple style="display:none">
+            <button class="btn ghost" data-action="open-file" data-id="${t.id}">📎</button>
+            <button class="btn" data-action="send-comment" data-id="${t.id}">Enviar</button>
+          </div>
+          <div id="preview-area-${t.id}" class="file-preview" aria-hidden="true"></div>
+        `;
+        container.appendChild(html);
+      });
+
+      attachCommentHandlers();
+      attachCommentActionHandlers();
+      document.querySelectorAll('.media-thumb video').forEach(v=>v.play().catch(()=>{}));
+      updatePendingPanel();
+    }
+
+    /* Comment handlers: add, attach files, edit, delete, approve/reject */
+    function attachCommentHandlers(){
+      document.querySelectorAll('button[data-action="open-file"]').forEach(btn=>{
+        btn.onclick = ()=>{
+          const id = btn.getAttribute('data-id');
+          const input = $(`comment-files-${id}`);
+          const preview = $(`preview-area-${id}`);
+          preview.innerHTML = ""; preview.setAttribute('data-temp','[]'); preview.setAttribute('aria-hidden','true');
+          input.value = ""; input.click();
+          input.onchange = async (ev)=>{
+            const files = Array.from(ev.target.files || []);
+            if(files.length === 0) return;
+            const MAX = 5; const MAX_SIZE = 5 * 1024 * 1024;
+            const accepted = files.slice(0,MAX);
+            const arr = [];
+            for(const f of accepted){
+              if(f.size > MAX_SIZE){ alert(`Arquivo "${f.name}" excede ${MAX_SIZE/1024/1024}MB e será ignorado.`); continue; }
+              const data = await fileToDataURL(f);
+              arr.push({ name: f.name, type: f.type, data });
+            }
+            preview.setAttribute('data-temp', JSON.stringify(arr));
+            preview.setAttribute('aria-hidden','false');
+            preview.innerHTML = arr.map((t,i)=> {
+              if(t.type.startsWith("image/")) return `<div class="preview-item"><img src="${t.data}" alt="${escapeHtml(t.name)}" style="width:100%;height:100%;object-fit:cover"><div class="preview-remove" data-id="${id}" data-i="${i}">✕</div></div>`;
+              if(t.type.startsWith("video/")) return `<div class="preview-item"><video src="${t.data}" muted style="width:100%;height:100%;object-fit:cover"></video><div class="preview-remove" data-id="${id}" data-i="${i}">✕</div></div>`;
+              return `<div class="preview-item"><div style="padding:6px">${escapeHtml(t.name)}</div><div class="preview-remove" data-id="${id}" data-i="${i}">✕</div></div>`;
+            }).join('');
+            preview.querySelectorAll('video').forEach(v=>v.play().catch(()=>{}));
+            preview.querySelectorAll('.preview-remove').forEach(r=> r.onclick = ()=> {
+              const i = Number(r.getAttribute('data-i'));
+              const arr = JSON.parse(preview.getAttribute('data-temp') || "[]");
+              arr.splice(i,1);
+              preview.setAttribute('data-temp', JSON.stringify(arr));
+              if(arr.length === 0){ preview.innerHTML = ""; preview.setAttribute('aria-hidden','true'); }
+              else {
+                preview.innerHTML = arr.map((t,ii)=> {
+                  if(t.type.startsWith("image/")) return `<div class="preview-item"><img src="${t.data}" alt="${escapeHtml(t.name)}" style="width:100%;height:100%;object-fit:cover"><div class="preview-remove" data-id="${id}" data-i="${ii}">✕</div></div>`;
+                  if(t.type.startsWith("video/")) return `<div class="preview-item"><video src="${t.data}" muted style="width:100%;height:100%;object-fit:cover"></video><div class="preview-remove" data-id="${id}" data-i="${ii}">✕</div></div>`;
+                  return `<div class="preview-item"><div style="padding:6px">${escapeHtml(t.name)}</div><div class="preview-remove" data-id="${id}" data-i="${ii}">✕</div></div>`;
+                }).join('');
+                preview.querySelectorAll('video').forEach(v=>v.play().catch(()=>{}));
+              }
+            });
+          };
+        };
+      });
+
+      document.querySelectorAll('button[data-action="send-comment"]').forEach(btn=>{
+        btn.onclick = ()=>{
+          const id = btn.getAttribute('data-id');
+          const textEl = $(`comment-text-${id}`);
+          const preview = $(`preview-area-${id}`);
+          const temp = JSON.parse(preview.getAttribute('data-temp') || "[]");
+          const text = textEl.value.trim();
+          if(!text && temp.length === 0){ alert("Digite um comentário ou anexe um arquivo."); return; }
+          const sess = getSession(); if(!sess) return alert("Faça login para comentar.");
+          // create comment as pending if user role is User, otherwise auto-approve
+          const role = normRole(sess.role);
+          const status = (role === "user") ? "pending" : "approved";
+          const comment = { id: idGen(), author: sess.username, authorName: sess.name, text: text || "", media: temp.map(m=> ({ name: m.name, type: m.type, data: m.data })), ts: Date.now(), status };
+          const topicIndex = topics.findIndex(t=> t.id === id);
+          if(topicIndex === -1) return alert("Tópico não encontrado.");
+          topics[topicIndex].comments = topics[topicIndex].comments || [];
+          topics[topicIndex].comments.push(comment);
+          persistTopics();
+          persistAudit(`Comentário "${comment.id}" no tópico "${topics[topicIndex].title}" por ${sess.username} (status: ${status})`);
+          if(status === "pending") notifySupervisorsPending();
+          textEl.value = ""; preview.innerHTML = ""; preview.setAttribute('data-temp','[]');
+          alert(status === "pending" ? "Comentário enviado e está pendente de aprovação." : "Comentário enviado e aprovado.");
+          renderTopics();
+        };
+      });
+    }
+
+    function attachCommentActionHandlers(){
+      // edit
+      document.querySelectorAll('button[data-action="edit-comment"]').forEach(btn=>{
+        btn.onclick = ()=>{
+          const topicId = btn.getAttribute('data-topic'); const cid = btn.getAttribute('data-cid');
+          const sess = getSession(); if(!sess) return alert("Faça login.");
+          const topic = topics.find(t=> t.id === topicId); if(!topic) return;
+          const comment = topic.comments.find(c=> c.id === cid); if(!comment) return;
+          if(comment.author !== sess.username) return alert("Somente o autor pode editar.");
+          const newText = prompt("Editar comentário:", comment.text); if(newText === null) return;
+          comment.text = newText;
+          comment.status = "pending";
+          comment.ts = Date.now();
+          persistTopics();
+          persistAudit(`Comentário "${cid}" editado por ${sess.username} e ficou pendente de aprovação`);
+          notifySupervisorsPending();
+          renderTopics();
+        };
+      });
+
+      // delete
+      document.querySelectorAll('button[data-action="delete-comment"]').forEach(btn=>{
+        btn.onclick = ()=>{
+          const topicId = btn.getAttribute('data-topic'); const cid = btn.getAttribute('data-cid');
+          const sess = getSession(); if(!sess) return alert("Faça login.");
+          const topic = topics.find(t=> t.id === topicId); if(!topic) return;
+          const comment = topic.comments.find(c=> c.id === cid); if(!comment) return;
+          if(comment.author !== sess.username) return alert("Somente o autor pode excluir.");
+          if(!confirm("Confirma exclusão do seu comentário?")) return;
+          topic.comments = topic.comments.filter(c=> c.id !== cid);
+          persistTopics();
+          persistAudit(`Comentário "${cid}" excluído por ${sess.username}`);
+          renderTopics();
+        };
+      });
+
+      // approve
+      document.querySelectorAll('button[data-action="approve-comment"]').forEach(btn=>{
+        btn.onclick = ()=>{
+          const topicId = btn.getAttribute('data-topic'); const cid = btn.getAttribute('data-cid');
+          const sess = getSession(); if(!sess) return alert("Faça login.");
+          const role = normRole(sess.role); if(role !== "admin" && role !== "supervisor") return alert("Acesso negado.");
+          const topic = topics.find(t=> t.id === topicId); if(!topic) return;
+          const comment = topic.comments.find(c=> c.id === cid); if(!comment) return;
+          comment.status = "approved"; comment.approvedBy = sess.username; comment.approvedAt = Date.now();
+          persistTopics();
+          persistAudit(`Comentário "${cid}" aprovado por ${sess.username}`);
+          renderTopics();
+        };
+      });
+
+      // reject
+      document.querySelectorAll('button[data-action="reject-comment"]').forEach(btn=>{
+        btn.onclick = ()=>{
+          const topicId = btn.getAttribute('data-topic'); const cid = btn.getAttribute('data-cid');
+          const sess = getSession(); if(!sess) return alert("Faça login.");
+          const role = normRole(sess.role); if(role !== "admin" && role !== "supervisor") return alert("Acesso negado.");
+          const topic = topics.find(t=> t.id === topicId); if(!topic) return;
+          const comment = topic.comments.find(c=> c.id === cid); if(!comment) return;
+          const reason = prompt("Motivo da rejeição (opcional):", "");
+          comment.status = "rejected"; comment.rejectedBy = sess.username; comment.rejectedAt = Date.now(); comment.rejectionReason = reason || "";
+          persistTopics();
+          persistAudit(`Comentário "${cid}" rejeitado por ${sess.username} (${reason || "sem motivo"})`);
+          renderTopics();
+        };
+      });
+    }
+
+    /* Notify supervisors: popup + audit link */
+    function getPendingComments(){
+      const arr = [];
+      topics.forEach(t=>{
+        (t.comments||[]).forEach(c=>{
+          if(c.status === "pending") arr.push({ topicId: t.id, topicTitle: t.title, commentId: c.id, author: c.author, ts: c.ts });
+        });
+      });
+      return arr;
+    }
+
+    function notifySupervisorsPending(){
+      const sess = getSession(); if(!sess) return;
+      const role = normRole(sess.role);
+      if(role === "admin" || role === "supervisor"){
+        showCentralPendingPopup();
+      } else {
+        // show bottom-right panel for supervisors when they log in
+        updatePendingPanel();
+      }
+    }
+
+    function showCentralPendingPopup(){
+      const pending = getPendingComments();
+      if(pending.length === 0) return;
+      const container = $("popupContainer"); container.innerHTML = "";
+      const overlay = document.createElement('div'); overlay.className = 'popup-overlay';
+      const box = document.createElement('div'); box.className = 'popup-box';
+      box.innerHTML = `<h3>Existem ${pending.length} comentários pendentes</h3><div id="centralPendingList" style="margin-top:10px"></div><div style="display:flex;gap:8px;margin-top:12px;justify-content:flex-end"><button class="btn ghost" id="centralClose">Fechar</button></div>`;
+      overlay.appendChild(box);
+      container.appendChild(overlay);
+      const list = $("centralPendingList");
+      pending.slice(0,8).forEach(p=>{
+        const item = document.createElement('div'); item.style.marginTop='8px';
+        item.innerHTML = `<div class="small"><strong>${escapeHtml(p.topicTitle)}</strong> — comentário ${escapeHtml(p.commentId)} por ${escapeHtml(p.author)}</div><div style="margin-top:6px;display:flex;gap:8px;justify-content:flex-end"><button class="btn visit" data-action="goto-pending" data-topic="${p.topicId}" data-cid="${p.commentId}">Ir</button></div>`;
+        box.querySelector('#centralPendingList').appendChild(item);
+      });
+      box.querySelectorAll('button[data-action="goto-pending"]').forEach(b=>{
+        b.onclick = ()=> {
+          const tid = b.getAttribute('data-topic'); const cid = b.getAttribute('data-cid');
+          closeCentralPopup();
+          showSection('page-kb'); renderTopics();
+          setTimeout(()=> {
+            const el = document.getElementById(`comment-${cid}`);
+            if(el){ el.classList.add('highlight'); el.scrollIntoView({behavior:'smooth',block:'center'}); setTimeout(()=> el.classList.remove('highlight'), 3000); }
+          }, 200);
+        };
+      });
+      $("centralClose").onclick = ()=> closeCentralPopup();
+    }
+    function closeCentralPopup(){ $("popupContainer").innerHTML = ""; }
+
+    function updatePendingPanel(){
+      const pending = getPendingComments();
+      const panel = $("pendingPanel");
+      const list = $("pendingList");
+      if(pending.length === 0){ panel.style.display = 'none'; list.innerHTML = ''; return; }
+      panel.style.display = 'block';
+      list.innerHTML = '';
+      pending.forEach(p=>{
+        const el = document.createElement('div'); el.className = 'pending-item';
+        el.innerHTML = `<div class="small"><strong>${escapeHtml(p.topicTitle)}</strong><div style="margin-top:4px">Comentário ${escapeHtml(p.commentId)} por ${escapeHtml(p.author)}</div></div><div class="goto"><button class="btn visit" data-topic="${p.topicId}" data-cid="${p.commentId}">Ir</button></div>`;
+        list.appendChild(el);
+      });
+      list.querySelectorAll('button[data-topic]').forEach(b=>{
+        b.onclick = ()=> {
+          const tid = b.getAttribute('data-topic'); const cid = b.getAttribute('data-cid');
+          showSection('page-kb'); renderTopics();
+          setTimeout(()=> {
+            const el = document.getElementById(`comment-${cid}`);
+            if(el){ el.classList.add('highlight'); el.scrollIntoView({behavior:'smooth',block:'center'}); setTimeout(()=> el.classList.remove('highlight'), 3000); }
+          }, 200);
+        };
+      });
+      $("btnClosePending").onclick = ()=> { panel.style.display = 'none'; };
+    }
+
+    function checkPendingForSupervisor(){
+      const sess = getSession(); if(!sess) return;
+      const role = normRole(sess.role);
+      if(role === "admin" || role === "supervisor"){
+        const pending = getPendingComments();
+        if(pending.length > 0) showCentralPendingPopup();
+      } else {
+        updatePendingPanel();
+      }
+    }
+
+    /* File helper */
+    function fileToDataURL(file){
+      return new Promise((resolve,reject)=>{
+        const r = new FileReader();
+        r.onload = ()=> resolve(r.result);
+        r.onerror = reject;
+        r.readAsDataURL(file);
+      });
+    }
+
+    /* Topic/category/user flows */
+    $("btnNewTopic").addEventListener("click", ()=>{
+      const s = getSession(); if(!s) return alert("Faça login.");
+      const r = normRole(s.role); if(r !== "admin" && r !== "supervisor") return alert("Acesso negado.");
+      showSection('sub-new-topic');
+      updateCategorySelects();
+      $("topicTitle").value = ""; $("topicContent").value = ""; $("topicFiles").value = ""; $("topicPreview").innerHTML = ""; $("topicPreview").setAttribute('data-temp','[]');
+      const catSel = $("topicCategory"); catSel.innerHTML = `<option value="">Selecione a categoria</option>`; categories.forEach(c=> catSel.insertAdjacentHTML('beforeend', `<option value="${escapeHtml(c)}">${escapeHtml(c)}</option>`));
+    });
+
+    $("topicFiles").addEventListener("change", async (ev)=>{
+      const files = Array.from(ev.target.files || []); const MAX = 5; const MAX_SIZE = 5 * 1024 * 1024;
+      const accepted = files.slice(0,MAX); const arr = [];
+      for(const f of accepted){ if(f.size > MAX_SIZE){ alert(`Arquivo "${f.name}" excede ${MAX_SIZE/1024/1024}MB e será ignorado.`); continue; } const data = await fileToDataURL(f); arr.push({ name: f.name, type: f.type, data }); }
+      $("topicPreview").setAttribute('data-temp', JSON.stringify(arr)); $("topicPreview").setAttribute('aria-hidden','false');
+      $("topicPreview").innerHTML = arr.map((t,i)=> {
+        if(t.type.startsWith("image/")) return `<div class="preview-item"><img src="${t.data}" alt="${escapeHtml(t.name)}" style="width:100%;height:100%;object-fit:cover"><div class="preview-remove" data-i="${i}" data-target="topic">✕</div></div>`;
+        if(t.type.startsWith("video/")) return `<div class="preview-item"><video src="${t.data}" muted style="width:100%;height:100%;object-fit:cover"></video><div class="preview-remove" data-i="${i}" data-target="topic">✕</div></div>`;
+        return `<div class="preview-item"><div style="padding:6px">${escapeHtml(t.name)}</div><div class="preview-remove" data-i="${i}" data-target="topic">✕</div></div>`;
+      }).join('');
+      $("topicPreview").querySelectorAll('video').forEach(v=>v.play().catch(()=>{}));
+      attachTopicPreviewRemovers();
+    });
+
+    function attachTopicPreviewRemovers(){
+      $("topicPreview").querySelectorAll('.preview-remove').forEach(btn=>{
+        btn.onclick = ()=>{
+          const i = Number(btn.getAttribute('data-i'));
+          const arr = JSON.parse($("topicPreview").getAttribute('data-temp') || "[]");
+          arr.splice(i,1);
+          $("topicPreview").setAttribute('data-temp', JSON.stringify(arr));
+          if(arr.length === 0){ $("topicPreview").innerHTML = ""; $("topicPreview").setAttribute('aria-hidden','true'); }
+          else {
+            $("topicPreview").innerHTML = arr.map((t,ii)=> {
+              if(t.type.startsWith("image/")) return `<div class="preview-item"><img src="${t.data}" alt="${escapeHtml(t.name)}" style="width:100%;height:100%;object-fit:cover"><div class="preview-remove" data-i="${ii}" data-target="topic">✕</div></div>`;
+              if(t.type.startsWith("video/")) return `<div class="preview-item"><video src="${t.data}" muted style="width:100%;height:100%;object-fit:cover"></video><div class="preview-remove" data-i="${ii}" data-target="topic">✕</div></div>`;
+              return `<div class="preview-item"><div style="padding:6px">${escapeHtml(t.name)}</div><div class="preview-remove" data-i="${ii}" data-target="topic">✕</div></div>`;
+            }).join('');
+            $("topicPreview").querySelectorAll('video').forEach(v=>v.play().catch(()=>{}));
+            attachTopicPreviewRemovers();
+          }
+        };
+      });
+    }
+
+    $("saveTopic").addEventListener("click", ()=>{
+      const s = getSession(); if(!s) return alert("Faça login.");
+      const r = normRole(s.role);
+      const title = $("topicTitle").value.trim(); const content = $("topicContent").value.trim(); const category = $("topicCategory").value;
+      if(!title || !content || !category) return alert("Preencha título, descrição e selecione categoria.");
+      const temp = JSON.parse($("topicPreview").getAttribute('data-temp') || "[]");
+      const media = temp.map(m=> ({ name: m.name, type: m.type, data: m.data }));
+      // if creator is User, topic is pending; otherwise approved
+      const status = (r === "user") ? "pending" : "approved";
+      const t = { id: idGen(), title, content, category, media, comments: [], status };
+      topics.push(t);
+      persistTopics();
+      persistAudit(`Tópico "${title}" criado por ${s.username} (status: ${status})`);
+      if(status === "pending") notifySupervisorsPending();
+      showSection('page-kb'); renderTopics();
+    });
+
+    $("cancelTopic").addEventListener("click", ()=> showSection('page-kb'));
+
+    /* Category flows */
+    $("btnNewCategory").addEventListener("click", ()=>{
+      const s = getSession(); if(!s) return alert("Faça login.");
+      const r = normRole(s.role); if(r !== "admin" && r !== "supervisor") return alert("Acesso negado.");
+      showSection('sub-new-category'); $("categoryName").value = ""; $("categoryImage").value = ""; $("categoryPreview").innerHTML = ""; $("categoryPreview").setAttribute('data-temp','null');
+    });
+
+    $("categoryImage").addEventListener("change", async (ev)=>{
+      const f = ev.target.files[0]; if(!f) return; const MAX = 2 * 1024 * 1024; if(f.size > MAX){ alert("Imagem excede 2MB."); $("categoryImage").value = ""; return; }
+      const data = await fileToDataURL(f); $("categoryPreview").setAttribute('data-temp', JSON.stringify({ name: f.name, type: f.type, data })); $("categoryPreview").setAttribute('aria-hidden','false');
+      $("categoryPreview").innerHTML = `<div class="preview-item"><img src="${data}" alt="${escapeHtml(f.name)}" style="width:100%;height:100%;object-fit:cover"><div class="preview-remove" data-target="category">✕</div></div>`;
+      $("categoryPreview").querySelector('.preview-remove').onclick = ()=> { $("categoryPreview").innerHTML = ""; $("categoryPreview").setAttribute('data-temp','null'); $("categoryImage").value = ""; };
+    });
+
+    $("saveCategory").addEventListener("click", ()=>{
+      const s = getSession(); if(!s) return alert("Faça login.");
+      const r = normRole(s.role); if(r !== "admin" && r !== "supervisor") return alert("Acesso negado.");
+      const name = $("categoryName").value.trim(); if(!name) return alert("Digite o nome da categoria."); if(categories.includes(name)) return alert("Categoria já existe.");
+      const img = JSON.parse($("categoryPreview").getAttribute('data-temp') || "null");
+      categories.push(name); persistCats();
+      const meta = JSON.parse(localStorage.getItem(KEY_CATS_META) || "{}"); if(img) meta[name] = img; localStorage.setItem(KEY_CATS_META, JSON.stringify(meta));
+      persistAudit(`Categoria "${name}" criada por ${s.username}`); showSection('page-kb'); updateCategorySelects(); renderTopics();
+    });
+
+    $("cancelCategory").addEventListener("click", ()=> showSection('page-kb'));
+
+    $("btnDeleteCategoryTop").addEventListener("click", ()=>{
+      const s = getSession(); if(!s) return alert("Faça login.");
+      const r = normRole(s.role); if(r !== "admin" && r !== "supervisor") return alert("Acesso negado.");
+      showSection('sub-delete-category'); prepareDeleteCategoryPage();
+    });
+
+    function prepareDeleteCategoryPage(){
+      const sel = $("deleteCategorySelect"); sel.innerHTML = `<option value="">Selecione a categoria</option>`;
+      categories.forEach(c=> sel.insertAdjacentHTML('beforeend', `<option value="${escapeHtml(c)}">${escapeHtml(c)}</option>`));
+      $("deleteCategoryInfo").innerHTML = "";
+      sel.onchange = ()=> {
+        const v = sel.value; if(!v){ $("deleteCategoryInfo").innerHTML = ""; return; }
+        const used = topics.filter(t=> t.category === v);
+        if(used.length === 0) $("deleteCategoryInfo").innerHTML = `<div class="small">Nenhum tópico usa essa categoria.</div>`;
+        else $("deleteCategoryInfo").innerHTML = `<div class="small">${used.length} tópico(s) usam essa categoria.</div>`;
+      };
+    }
+
+    $("confirmDeleteCategory").addEventListener("click", ()=>{
+      const s = getSession(); if(!s) return alert("Faça login.");
+      const r = normRole(s.role); if(r !== "admin" && r !== "supervisor") return alert("Acesso negado.");
+      const sel = $("deleteCategorySelect"); const selected = sel.value; if(!selected) return alert("Selecione uma categoria.");
+      const usedBy = topics.filter(t=> t.category === selected).length;
+      let msg = `Deseja excluir a categoria "${selected}" do sistema?`; if(usedBy > 0) msg += `\n\n${usedBy} tópico(s) usam essa categoria. Eles ficarão sem categoria.`; if(!confirm(msg)) return;
+      categories = categories.filter(c=> c !== selected);
+      const meta = JSON.parse(localStorage.getItem(KEY_CATS_META) || "{}"); if(meta[selected]){ delete meta[selected]; localStorage.setItem(KEY_CATS_META, JSON.stringify(meta)); }
+      topics = topics.map(t => t.category === selected ? ({ ...t, category: "" }) : t);
+      persistCats(); persistTopics(); persistAudit(`Categoria "${selected}" excluída por ${s.username}`); updateCategorySelects(); showSection('page-kb'); renderTopics(); alert(`Categoria "${selected}" removida do sistema.`);
+    });
+
+    $("cancelDeleteCategory").addEventListener("click", ()=> showSection('page-kb'));
+
+    /* User management */
+    $("btnCreateUser").addEventListener("click", ()=>{
+      const s = getSession(); if(!s) return alert("Faça login.");
+      const roleCurrent = normRole(s.role); if(roleCurrent !== "admin" && roleCurrent !== "supervisor") return alert("Acesso negado.");
+      let name = $("newName").value.trim(); let username = $("newLogin").value.trim(); let pass = $("newPass").value; let role = $("newRole").value || "User";
+      if(!name || !username || !pass) return alert("Preencha nome, usuário e senha.");
+      users = JSON.parse(localStorage.getItem(KEY_USERS) || "[]");
+      if(users.some(u=> u.username === username)) return alert("Usuário já existe.");
+      if(roleCurrent === "supervisor") role = "User";
+      users.push({ username, password: pass, name, role }); persistUsers(); persistAudit(`Usuário "${username}" criado por ${s.username} com papel ${role}`);
+      $("newName").value = ""; $("newLogin").value = ""; $("newPass").value = ""; renderUsers(); alert(`Usuário "${username}" criado.`);
+    });
+
+    function renderUsers(){
+      const container = $("usersList"); container.innerHTML = "";
+      users = JSON.parse(localStorage.getItem(KEY_USERS) || "[]");
+      users.forEach(u=>{
+        const el = document.createElement('div'); el.className = 'user-item';
+        el.innerHTML = `<div><strong style="color:var(--accent)">${escapeHtml(u.name)}</strong><div class="small">${escapeHtml(u.username)} — ${escapeHtml(u.role)}</div></div><div class="controls"><button class="btn ghost" data-action="edit-name" data-user="${escapeHtml(u.username)}">Editar</button><button class="btn ghost" data-action="change-pass" data-user="${escapeHtml(u.username)}">Alterar senha</button><button class="btn warn" data-action="delete-user" data-user="${escapeHtml(u.username)}">Excluir</button></div>`;
+        container.appendChild(el);
+      });
+      container.querySelectorAll('button[data-action="edit-name"]').forEach(b=> b.onclick = ()=> editUserName(b.getAttribute('data-user')));
+      container.querySelectorAll('button[data-action="change-pass"]').forEach(b=> b.onclick = ()=> changeUserPassword(b.getAttribute('data-user')));
+      container.querySelectorAll('button[data-action="delete-user"]').forEach(b=> b.onclick = ()=> deleteUser(b.getAttribute('data-user')));
+    }
+
+    function editUserName(username){
+      const s = getSession(); if(!s) return alert("Faça login.");
+      const roleCurrent = normRole(s.role); if(roleCurrent !== "admin" && roleCurrent !== "supervisor") return alert("Acesso negado.");
+      users = JSON.parse(localStorage.getItem(KEY_USERS) || "[]");
+      const u = users.find(x=> x.username === username); if(!u) return alert("Usuário não encontrado.");
+      const newName = prompt("Novo nome:", u.name); if(!newName) return;
+      u.name = newName; persistUsers(); persistAudit(`Nome do usuário ${username} alterado para "${newName}" por ${s.username}`); renderUsers(); alert("Nome atualizado.");
+    }
+
+    function changeUserPassword(username){
+      const s = getSession(); if(!s) return alert("Faça login.");
+      const roleCurrent = normRole(s.role); if(roleCurrent !== "admin" && roleCurrent !== "supervisor") return alert("Acesso negado.");
+      users = JSON.parse(localStorage.getItem(KEY_USERS) || "[]");
+      const u = users.find(x=> x.username === username); if(!u) return alert("Usuário não encontrado.");
+      if(roleCurrent === "supervisor" && normRole(u.role) === "admin") return alert("Supervisor não pode alterar senha do Admin.");
+      const newPass = prompt(`Digite a nova senha para "${username}":`); if(!newPass) return alert("Operação cancelada.");
+      u.password = newPass; persistUsers(); persistAudit(`Senha de ${username} alterada por ${s.username}`); alert("Senha alterada.");
+    }
+
+    function deleteUser(username){
+      const s = getSession(); if(!s) return alert("Faça login.");
+      const roleCurrent = normRole(s.role); if(roleCurrent !== "admin" && roleCurrent !== "supervisor") return alert("Acesso negado.");
+      users = JSON.parse(localStorage.getItem(KEY_USERS) || "[]");
+      const target = users.find(u=> u.username === username); if(!target) return alert("Usuário não encontrado.");
+      if(normRole(target.role) === "admin"){
+        if(roleCurrent === "supervisor") return alert("Supervisor não pode excluir usuário Admin.");
+        const otherAdmins = users.filter(u=> u.username !== username && normRole(u.role) === "admin").length;
+        if(otherAdmins === 0){
+          const confirmText = prompt("Você está prestes a excluir o último Admin. Para confirmar, digite CONFIRMAR (maiúsculo).");
+          if(confirmText !== "CONFIRMAR"){ alert("Operação cancelada."); return; }
+        } else {
+          if(!confirm(`Excluir o usuário Admin "${username}"? Esta ação é irreversível.`)) return;
+        }
+      } else {
+        if(!confirm(`Deseja excluir o usuário "${username}"?`)) return;
+      }
+      users = users.filter(u=> u.username !== username); persistUsers(); persistAudit(`Usuário "${username}" excluído por ${s.username}`); renderUsers(); alert(`Usuário "${username}" excluído.`);
+    }
+
+    /* Login / logout */
+    $("btnLogin").addEventListener("click", ()=>{
+      const u = $("loginUser").value.trim(); const p = $("loginPass").value;
+      if(!u || !p) return alert("Preencha usuário e senha.");
+      users = JSON.parse(localStorage.getItem(KEY_USERS) || "[]");
+      const found = users.find(x=> x.username === u && x.password === p);
+      if(!found) return alert("Usuário ou senha inválidos.");
+      setSession({ username: found.username, name: found.name, role: found.role, ts: Date.now() }); showDashboard();
+    });
+
+    $("btnDemo").addEventListener("click", ()=>{
+      users = JSON.parse(localStorage.getItem(KEY_USERS) || "[]");
+      const demo = users.find(u=> u.username === "admin") || users[0];
+      setSession({ username: demo.username, name: demo.name, role: demo.role, ts: Date.now() }); showDashboard();
+    });
+
+    $("btnLogout").addEventListener("click", ()=>{ clearSession(); location.reload(); });
+
+    /* Menu navigation */
+    document.querySelectorAll('.top-menu .menu-item').forEach(item=>{
+      item.addEventListener('click', ()=>{
+        if(item.classList.contains('disabled')) return;
+        const target = item.getAttribute('data-target');
+        if(target === 'page-user'){ showSection('page-user'); renderUsers(); return; }
+        showSection(target);
+        if(target === 'page-kb') renderTopics();
+        if(target === 'page-audit') renderAudit();
+      });
+    });
+
+    /* Search & filters */
+    $("searchAll").addEventListener("input", ()=> renderTopics());
+    $("filterCategory").addEventListener("change", ()=> renderTopics());
+
+    /* Audit rendering: supervisors see only pending items; admin sees pending + full log */
+    function renderAudit(){
+      const panel = $("auditLog");
+      const sess = getSession();
+      const role = sess ? normRole(sess.role) : "";
+      const logs = JSON.parse(localStorage.getItem(KEY_AUDIT) || "[]");
+      const pending = getPendingComments();
+      let html = "";
+
+      if(role === "supervisor"){
+        html += `<div style="margin-bottom:8px"><strong class="small">Pendências de aprovação</strong></div>`;
+        if(pending.length === 0) html += `<div class="small">Sem pendências.</div>`;
+        else {
+          pending.forEach(p=>{
+            html += `<div class="audit-item"><div class="info small"><strong>${escapeHtml(p.topicTitle)}</strong><div style="margin-top:4px">Comentário ${escapeHtml(p.commentId)} por ${escapeHtml(p.author)}</div></div><div class="goto"><button class="btn visit" data-action="audit-goto" data-topic="${p.topicId}" data-cid="${p.commentId}">Ir</button></div></div>`;
+          });
+        }
+        panel.innerHTML = html;
+      } else {
+        if(pending.length > 0){
+          html += `<div style="margin-bottom:8px"><strong class="small">Pendências de aprovação</strong></div>`;
+          pending.forEach(p=>{
+            html += `<div class="audit-item"><div class="info small"><strong>${escapeHtml(p.topicTitle)}</strong><div style="margin-top:4px">Comentário ${escapeHtml(p.commentId)} por ${escapeHtml(p.author)}</div></div><div class="goto"><button class="btn visit" data-action="audit-goto" data-topic="${p.topicId}" data-cid="${p.commentId}">Ir</button></div></div>`;
+          });
+          html += `<hr style="border-color:rgba(255,255,255,0.04);margin:8px 0">`;
+        }
+        if(!logs || logs.length === 0) html += `<div class="small">Sem registros.</div>`; else html += logs.map(l=> `<div class="small" style="margin-bottom:6px">${escapeHtml(l)}</div>`).join('');
+        panel.innerHTML = html;
+      }
+
+      // attach goto handlers
+      panel.querySelectorAll('button[data-action="audit-goto"]').forEach(b=>{
+        b.onclick = ()=> {
+          const tid = b.getAttribute('data-topic'); const cid = b.getAttribute('data-cid');
+          showSection('page-kb'); renderTopics();
+          setTimeout(()=> {
+            const el = document.getElementById(`comment-${cid}`);
+            if(el){ el.classList.add('highlight'); el.scrollIntoView({behavior:'smooth',block:'center'}); setTimeout(()=> el.classList.remove('highlight'), 3000); }
+          }, 200);
+        };
+      });
+    }
+
+    /* Training page */
+    function renderTraining(){
+      const sess = getSession();
+      const up = $("trainingUpload");
+      const filesList = $("trainingFiles");
+      const stored = JSON.parse(localStorage.getItem(KEY_TRAIN) || "[]");
+      filesList.innerHTML = stored.map(f=> `<div class="small">${escapeHtml(f)}</div>`).join("");
+      if(!sess) { up.innerHTML = `<div class="small">Faça login para acessar o treinamento.</div>`; return; }
+      const role = normRole(sess.role);
+      if(role === "admin" || role === "supervisor"){
+        up.innerHTML = `<input type="file" id="trainFile" multiple accept=".pdf,.doc,.docx,video/*"><div style="margin-top:8px"><button class="btn" id="btnUploadTrain">Enviar</button></div>`;
+        $("btnUploadTrain").onclick = ()=> {
+          const input = $("trainFile");
+          const files = Array.from(input.files || []);
+          const allowed = ['application/pdf','application/msword','application/vnd.openxmlformats-officedocument.wordprocessingml.document'];
+          const storedFiles = JSON.parse(localStorage.getItem(KEY_TRAIN) || "[]");
+          files.forEach(f=>{
+            if(f.type.startsWith('video/') || allowed.includes(f.type) || f.name.match(/\.(pdf|doc|docx)$/i)){
+              storedFiles.push(f.name);
+            } else {
+              alert(`Arquivo "${f.name}" não é permitido e foi ignorado.`);
+            }
+          });
+          localStorage.setItem(KEY_TRAIN, JSON.stringify(storedFiles));
+          renderTraining();
+          persistAudit(`Arquivos de treinamento enviados por ${sess.username}`);
+        };
+      } else {
+        up.innerHTML = `<div class="small">Somente Supervisor/Admin podem enviar arquivos.</div>`;
+      }
+    }
+
+    /* Init */
+    persistUsers(); persistTopics(); persistCats();
+    updateCategorySelects();
+    if(getSession()) showDashboard(); else showLogin();
+    renderAll();
+
+    /* small helpers used above */
+    function renderAll(){ updateCategorySelects(); renderTopics(); renderUsers(); renderAudit(); renderTraining(); updatePendingPanel(); }
+  </script>
+</body>
+</html>
