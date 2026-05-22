@@ -1,15 +1,16 @@
 import { useEffect } from 'react';
-import { useRouter } from 'next/router';
-import { supabase } from '../lib/supabaseClient';
+import useUser from '../lib/useUser';
 
 export default function ProtectedRoute({ children }) {
-  const router = useRouter();
+  const user = useUser();
 
   useEffect(() => {
-    supabase.auth.getUser().then(({ data }) => {
-      if (!data.user) router.push('/');
-    });
-  }, []);
+    if (user === null) {
+      // ainda carregando
+    }
+  }, [user]);
+
+  if (!user) return <p style={{ color: '#fff' }}>Carregando...</p>;
 
   return children;
 }
