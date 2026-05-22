@@ -3,141 +3,170 @@ import Layout from '../components/Layout';
 import ProtectedRoute from '../components/ProtectedRoute';
 import { supabase } from '../lib/supabaseClient';
 
-import useUser from '../lib/useUser';
-import { canCreateTopics } from '../lib/permissions';
-
-export default function BaseConhecimento() {
-  const user = useUser();
+export default function Base() {
+  const [user, setUser] = useState(null);
 
   const [categories, setCategories] = useState([]);
   const [topics, setTopics] = useState([]);
   const [comments, setComments] = useState([]);
 
+  const [selectedCategory, setSelectedCategory] = useState('');
   const [selectedTopic, setSelectedTopic] = useState(null);
 
-  const [search, setSearch] = useState('');
-
-  const [newTopicTitle, setNewTopicTitle] = useState('');
-  const [newTopicCategory, setNewTopicCategory] = useState('');
+  const [newCategory, setNewCategory] = useState('');
+  const [newTopic, setNewTopic] = useState('');
   const [newComment, setNewComment] = useState('');
 
   useEffect(() => {
-    loadData();
+    init();
   }, []);
 
-  async function loadData() {
+  async function init() {
+    const u = await supabase.auth.getUser();
+    setUser(u.data?.user);
+
+    loadAll();
+  }
+
+  async function loadAll() {
     const c = await supabase.from('categorias').select('*');
     const t = await supabase.from('topicos').select('*');
-    const co = await supabase.from('comentarios').select('*');
+    const cm = await supabase.from('comentarios').select('*');
 
     setCategories(c.data || []);
     setTopics(t.data || []);
-    setComments(co.data || []);
+    setComments(cm.data || []);
   }
 
-  async function createTopic() {
-    if (!user || !canCreateTopics(user)) return;
+  /* ================= CATEGORIA ================= */
 
+  async function createCategory() {
+    await supabase.from('categorias').insert([{ nome: newCategory }]);
+    setNewCategory('');
+    loadAll();
+  }
+
+  async function deleteCategory(id) {
+    await supabase.from('categorias').delete().eq('id', id);
+    loadAll();
+  }
+
+  /* ================= TOPICO ================= */
+
+  async function createTopic() {
     await supabase.from('topicos').insert([
       {
-        titulo: newTopicTitle,
-        categoria_id: newTopicCategory,
-        user_id: user.id
+        titulo: newTopic,
+        categoria_id: selectedCategory
       }
     ]);
 
-    setNewTopicTitle('');
-    setNewTopicCategory('');
-    loadData();
+    setNewTopic('');
+    loadAll();
   }
 
-  async function createComment() {
-    const { data } = await supabase.auth.getUser();
-    const u = data?.user;
+  async function deleteTopic(id) {
+    await supabase.from('topicos').delete().eq('id', id);
+    loadAll();
+  }
 
-    if (!u) return;
+  /* ================= COMMENT ================= */
+
+  async function createComment(topicId) {
+    const { data } = await supabase.auth.getUser();
 
     await supabase.from('comentarios').insert([
       {
-        topico_id: selectedTopic,
+        topico_id: topicId,
         texto: newComment,
-        user_id: u.id
+        user_id: data.user.id
       }
     ]);
 
     setNewComment('');
-    loadData();
+    loadAll();
   }
 
-  const filtered = topics.filter(t =>
-    t.titulo?.toLowerCase().includes(search.toLowerCase())
-  );
+  const filteredTopics = selectedCategory
+    ? topics.filter(t => t.categoria_id === selectedCategory)
+    : topics;
 
   return (
-    <ProtectedRoute>
-      <Layout>
+    <Layout>
+      <ProtectedRoute>
+
         <div style={styles.container}>
 
           <h1 style={styles.title}>Base de Conhecimento</h1>
 
-          {user && (
-            <p style={styles.user}>
-              Logado: {user.email}
-            </p>
-          )}
-
-          <input
-            placeholder="Buscar tópicos..."
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            style={styles.input}
-          />
-
+          {/* CATEGORY CONTROLS */}
           <div style={styles.box}>
-            <h3>Novo Tópico</h3>
+
+            <h3>Categorias</h3>
 
             <input
-              placeholder="Título"
-              value={newTopicTitle}
-              onChange={(e) => setNewTopicTitle(e.target.value)}
+              value={newCategory}
+              onChange={(e) => setNewCategory(e.target.value)}
               style={styles.input}
+              placeholder="Nova categoria"
             />
 
-            <select
-              value={newTopicCategory}
-              onChange={(e) => setNewTopicCategory(e.target.value)}
-              style={styles.input}
-            >
-              <option value="">Categoria</option>
-              {categories.map(c => (
-                <option key={c.id} value={c.id}>{c.nome}</option>
-              ))}
-            </select>
+            <button onClick={createCategory} style={styles.btn}>
+              Nova Categoria
+            </button>
 
-            {user && canCreateTopics(user) && (
-              <button onClick={createTopic} style={styles.btn}>
-                Criar Tópico
-              </button>
-            )}
+            <div style={styles.row}>
+              {categories.map(c => (
+                <button
+                  key={c.id}
+                  onClick={() => setSelectedCategory(c.id)}
+                  style={styles.catBtn}
+                >
+                  {c.nome}
+
+                  <span onClick={() => deleteCategory(c.id)}> ❌</span>
+                </button>
+              ))}
+            </div>
+
           </div>
 
-          <div style={styles.grid}>
-            {filtered.map(t => (
+          {/* TOPICS */}
+          <div style={styles.box}>
+
+            <h3>Tópicos</h3>
+
+            <input
+              value={newTopic}
+              onChange={(e) => setNewTopic(e.target.value)}
+              style={styles.input}
+              placeholder="Novo tópico"
+            />
+
+            <button onClick={createTopic} style={styles.btn}>
+              Novo Tópico
+            </button>
+
+            {filteredTopics.map(t => (
               <div key={t.id} style={styles.card}>
 
-                <h3 style={styles.topicTitle}>{t.titulo}</h3>
+                <h4>{t.titulo}</h4>
+
+                <button onClick={() => deleteTopic(t.id)} style={styles.delete}>
+                  Excluir
+                </button>
 
                 <button
-                  style={styles.secondaryBtn}
                   onClick={() =>
                     setSelectedTopic(selectedTopic === t.id ? null : t.id)
                   }
+                  style={styles.secondary}
                 >
                   Comentários
                 </button>
 
                 {selectedTopic === t.id && (
-                  <div style={styles.commentBox}>
+                  <div>
 
                     <textarea
                       value={newComment}
@@ -145,8 +174,8 @@ export default function BaseConhecimento() {
                       style={styles.textarea}
                     />
 
-                    <button onClick={createComment} style={styles.btn}>
-                      Enviar
+                    <button onClick={() => createComment(t.id)} style={styles.btn}>
+                      Enviar comentário
                     </button>
 
                     {comments
@@ -161,105 +190,89 @@ export default function BaseConhecimento() {
 
               </div>
             ))}
+
           </div>
 
         </div>
-      </Layout>
-    </ProtectedRoute>
+
+      </ProtectedRoute>
+    </Layout>
   );
 }
 
 const styles = {
-  container: {
-    width: '100%',
-    minHeight: '100vh',
-    padding: 20,
-    background: '#0a0a0a',
-    color: '#fff'
-  },
+  container: { padding: 20, color: '#fff' },
 
-  title: {
-    color: '#f5c400'
-  },
+  title: { color: '#f5c400' },
 
-  user: {
-    color: '#aaa'
+  box: {
+    background: '#111',
+    padding: 15,
+    marginTop: 20,
+    borderRadius: 10
   },
 
   input: {
     width: '100%',
     padding: 10,
     marginTop: 10,
-    background: '#111',
-    border: '1px solid #333',
+    background: '#000',
     color: '#fff',
-    borderRadius: 8
-  },
-
-  box: {
-    marginTop: 20,
-    padding: 15,
-    background: '#111',
-    borderRadius: 10
-  },
-
-  grid: {
-    marginTop: 20,
-    display: 'grid',
-    gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))',
-    gap: 10
-  },
-
-  card: {
-    background: '#1a1a1a',
-    padding: 15,
-    borderRadius: 10
-  },
-
-  topicTitle: {
-    color: '#f5c400'
+    border: '1px solid #333'
   },
 
   btn: {
     marginTop: 10,
     background: '#f5c400',
-    color: '#000',
     padding: 10,
     border: 0,
-    borderRadius: 8,
-    cursor: 'pointer',
-    fontWeight: 'bold'
+    cursor: 'pointer'
   },
 
-  secondaryBtn: {
-    marginTop: 10,
-    background: '#222',
-    color: '#f5c400',
-    border: '1px solid #333',
+  catBtn: {
+    margin: 5,
     padding: 8,
-    borderRadius: 8,
-    cursor: 'pointer'
+    background: '#222',
+    color: '#fff',
+    border: '1px solid #333'
+  },
+
+  row: {
+    display: 'flex',
+    flexWrap: 'wrap',
+    marginTop: 10
+  },
+
+  card: {
+    marginTop: 10,
+    padding: 10,
+    background: '#000',
+    border: '1px solid #333'
+  },
+
+  delete: {
+    background: 'red',
+    color: '#fff',
+    border: 0,
+    marginLeft: 10
+  },
+
+  secondary: {
+    background: '#333',
+    color: '#f5c400',
+    border: 0,
+    marginLeft: 10
   },
 
   textarea: {
     width: '100%',
-    minHeight: 80,
-    marginTop: 10,
-    background: '#111',
-    border: '1px solid #333',
-    color: '#fff',
-    borderRadius: 8,
-    padding: 10
+    height: 80,
+    marginTop: 10
   },
 
   comment: {
-    marginTop: 10,
-    padding: 10,
-    background: '#222',
-    borderRadius: 8
-  },
-
-  commentBox: {
-    marginTop: 10
+    marginTop: 5,
+    padding: 5,
+    background: '#111'
   }
 };
