@@ -4,31 +4,21 @@ import ProtectedRoute from '../components/ProtectedRoute';
 import { supabase } from '../lib/supabaseClient';
 
 export default function Base() {
-  const [user, setUser] = useState(null);
-
   const [categories, setCategories] = useState([]);
   const [topics, setTopics] = useState([]);
   const [comments, setComments] = useState([]);
 
-  const [selectedCategory, setSelectedCategory] = useState('');
+  const [search, setSearch] = useState('');
   const [selectedTopic, setSelectedTopic] = useState(null);
 
   const [newCategory, setNewCategory] = useState('');
   const [newTopic, setNewTopic] = useState('');
-  const [newComment, setNewComment] = useState('');
 
   useEffect(() => {
-    init();
+    load();
   }, []);
 
-  async function init() {
-    const u = await supabase.auth.getUser();
-    setUser(u.data?.user);
-
-    loadAll();
-  }
-
-  async function loadAll() {
+  async function load() {
     const c = await supabase.from('categorias').select('*');
     const t = await supabase.from('topicos').select('*');
     const cm = await supabase.from('comentarios').select('*');
@@ -43,12 +33,12 @@ export default function Base() {
   async function createCategory() {
     await supabase.from('categorias').insert([{ nome: newCategory }]);
     setNewCategory('');
-    loadAll();
+    load();
   }
 
-  async function deleteCategory(id) {
-    await supabase.from('categorias').delete().eq('id', id);
-    loadAll();
+  async function deleteCategory() {
+    await supabase.from('categorias').delete().neq('id', null);
+    load();
   }
 
   /* ================= TOPICO ================= */
@@ -57,222 +47,116 @@ export default function Base() {
     await supabase.from('topicos').insert([
       {
         titulo: newTopic,
-        categoria_id: selectedCategory
+        categoria_id: categories[0]?.id
       }
     ]);
 
     setNewTopic('');
-    loadAll();
+    load();
   }
 
-  async function deleteTopic(id) {
-    await supabase.from('topicos').delete().eq('id', id);
-    loadAll();
-  }
+  /* ================= FILTER ================= */
 
-  /* ================= COMMENT ================= */
-
-  async function createComment(topicId) {
-    const { data } = await supabase.auth.getUser();
-
-    await supabase.from('comentarios').insert([
-      {
-        topico_id: topicId,
-        texto: newComment,
-        user_id: data.user.id
-      }
-    ]);
-
-    setNewComment('');
-    loadAll();
-  }
-
-  const filteredTopics = selectedCategory
-    ? topics.filter(t => t.categoria_id === selectedCategory)
-    : topics;
+  const filteredTopics = topics.filter(t =>
+    t.titulo?.toLowerCase().includes(search.toLowerCase())
+  );
 
   return (
-    <Layout>
-      <ProtectedRoute>
+    <ProtectedRoute>
+      <Layout>
 
         <div style={styles.container}>
 
           <h1 style={styles.title}>Base de Conhecimento</h1>
 
-          {/* CATEGORY CONTROLS */}
-          <div style={styles.box}>
+          {/* 🔎 SEARCH */}
+          <input
+            style={styles.search}
+            placeholder="Buscar tópicos..."
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+          />
 
-            <h3>Categorias</h3>
+          {/* 🔘 ACTIONS */}
+          <div style={styles.actions}>
 
             <input
+              placeholder="Nova categoria"
               value={newCategory}
               onChange={(e) => setNewCategory(e.target.value)}
               style={styles.input}
-              placeholder="Nova categoria"
             />
 
             <button onClick={createCategory} style={styles.btn}>
               Nova Categoria
             </button>
 
-            <div style={styles.row}>
-              {categories.map(c => (
-                <button
-                  key={c.id}
-                  onClick={() => setSelectedCategory(c.id)}
-                  style={styles.catBtn}
-                >
-                  {c.nome}
-
-                  <span onClick={() => deleteCategory(c.id)}> ❌</span>
-                </button>
-              ))}
-            </div>
-
-          </div>
-
-          {/* TOPICS */}
-          <div style={styles.box}>
-
-            <h3>Tópicos</h3>
-
             <input
+              placeholder="Novo tópico"
               value={newTopic}
               onChange={(e) => setNewTopic(e.target.value)}
               style={styles.input}
-              placeholder="Novo tópico"
             />
 
             <button onClick={createTopic} style={styles.btn}>
               Novo Tópico
             </button>
 
-            {filteredTopics.map(t => (
-              <div key={t.id} style={styles.card}>
+            <button onClick={deleteCategory} style={styles.danger}>
+              Excluir Categoria
+            </button>
 
-                <h4>{t.titulo}</h4>
+          </div>
 
-                <button onClick={() => deleteTopic(t.id)} style={styles.delete}>
-                  Excluir
-                </button>
+          {/* 📄 TOPICS */}
+          <div style={styles.list}>
 
-                <button
-                  onClick={() =>
-                    setSelectedTopic(selectedTopic === t.id ? null : t.id)
-                  }
-                  style={styles.secondary}
-                >
-                  Comentários
-                </button>
+            {filteredTopics.map(t => {
 
-                {selectedTopic === t.id && (
-                  <div>
+              const cat = categories.find(c => c.id === t.categoria_id);
 
-                    <textarea
-                      value={newComment}
-                      onChange={(e) => setNewComment(e.target.value)}
-                      style={styles.textarea}
-                    />
+              return (
+                <div key={t.id} style={styles.card}>
 
-                    <button onClick={() => createComment(t.id)} style={styles.btn}>
-                      Enviar comentário
-                    </button>
+                  <h3 style={{ color: '#f5c400' }}>{t.titulo}</h3>
 
-                    {comments
-                      .filter(c => c.topico_id === t.id)
-                      .map(c => (
-                        <div key={c.id} style={styles.comment}>
-                          {c.texto}
-                        </div>
-                      ))}
-                  </div>
-                )}
+                  <p style={{ color: '#aaa' }}>
+                    Categoria: {cat?.nome || 'Sem categoria'}
+                  </p>
 
-              </div>
-            ))}
+                  <button
+                    style={styles.commentBtn}
+                    onClick={() =>
+                      setSelectedTopic(selectedTopic === t.id ? null : t.id)
+                    }
+                  >
+                    Comentários
+                  </button>
+
+                  {/* 💬 COMMENTS */}
+                  {selectedTopic === t.id && (
+                    <div style={styles.comments}>
+
+                      {comments
+                        .filter(c => c.topico_id === t.id)
+                        .map(c => (
+                          <div key={c.id} style={styles.comment}>
+                            {c.texto}
+                          </div>
+                        ))}
+
+                    </div>
+                  )}
+
+                </div>
+              );
+            })}
 
           </div>
 
         </div>
 
-      </ProtectedRoute>
-    </Layout>
+      </Layout>
+    </ProtectedRoute>
   );
 }
-
-const styles = {
-  container: { padding: 20, color: '#fff' },
-
-  title: { color: '#f5c400' },
-
-  box: {
-    background: '#111',
-    padding: 15,
-    marginTop: 20,
-    borderRadius: 10
-  },
-
-  input: {
-    width: '100%',
-    padding: 10,
-    marginTop: 10,
-    background: '#000',
-    color: '#fff',
-    border: '1px solid #333'
-  },
-
-  btn: {
-    marginTop: 10,
-    background: '#f5c400',
-    padding: 10,
-    border: 0,
-    cursor: 'pointer'
-  },
-
-  catBtn: {
-    margin: 5,
-    padding: 8,
-    background: '#222',
-    color: '#fff',
-    border: '1px solid #333'
-  },
-
-  row: {
-    display: 'flex',
-    flexWrap: 'wrap',
-    marginTop: 10
-  },
-
-  card: {
-    marginTop: 10,
-    padding: 10,
-    background: '#000',
-    border: '1px solid #333'
-  },
-
-  delete: {
-    background: 'red',
-    color: '#fff',
-    border: 0,
-    marginLeft: 10
-  },
-
-  secondary: {
-    background: '#333',
-    color: '#f5c400',
-    border: 0,
-    marginLeft: 10
-  },
-
-  textarea: {
-    width: '100%',
-    height: 80,
-    marginTop: 10
-  },
-
-  comment: {
-    marginTop: 5,
-    padding: 5,
-    background: '#111'
-  }
-};
