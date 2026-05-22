@@ -22,10 +22,10 @@ export default function BaseConhecimento() {
   const [newComment, setNewComment] = useState('');
 
   useEffect(() => {
-    fetchAll();
+    loadData();
   }, []);
 
-  async function fetchAll() {
+  async function loadData() {
     const c = await supabase.from('categorias').select('*');
     const t = await supabase.from('topicos').select('*');
     const co = await supabase.from('comentarios').select('*');
@@ -36,8 +36,7 @@ export default function BaseConhecimento() {
   }
 
   async function createTopic() {
-    if (!user) return;
-    if (!canCreateTopics(user)) return;
+    if (!user || !canCreateTopics(user)) return;
 
     await supabase.from('topicos').insert([
       {
@@ -49,7 +48,7 @@ export default function BaseConhecimento() {
 
     setNewTopicTitle('');
     setNewTopicCategory('');
-    fetchAll();
+    loadData();
   }
 
   async function createComment() {
@@ -67,7 +66,7 @@ export default function BaseConhecimento() {
     ]);
 
     setNewComment('');
-    fetchAll();
+    loadData();
   }
 
   const filtered = topics.filter(t =>
@@ -77,19 +76,18 @@ export default function BaseConhecimento() {
   return (
     <ProtectedRoute>
       <Layout>
+        <div style={styles.container}>
 
-        <div style={{ padding: 20, color: '#fff' }}>
-
-          <h1 style={{ color: '#f5c400' }}>Base de Conhecimento</h1>
+          <h1 style={styles.title}>Base de Conhecimento</h1>
 
           {user && (
-            <p style={{ color: '#aaa' }}>
+            <p style={styles.user}>
               Logado: {user.email}
             </p>
           )}
 
           <input
-            placeholder="Buscar..."
+            placeholder="Buscar tópicos..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             style={styles.input}
@@ -118,81 +116,150 @@ export default function BaseConhecimento() {
 
             {user && canCreateTopics(user) && (
               <button onClick={createTopic} style={styles.btn}>
-                Criar
+                Criar Tópico
               </button>
             )}
           </div>
 
-          {filtered.map(t => (
-            <div key={t.id} style={styles.card}>
+          <div style={styles.grid}>
+            {filtered.map(t => (
+              <div key={t.id} style={styles.card}>
 
-              <h3 style={{ color: '#f5c400' }}>{t.titulo}</h3>
+                <h3 style={styles.topicTitle}>{t.titulo}</h3>
 
-              <button onClick={() =>
-                setSelectedTopic(selectedTopic === t.id ? null : t.id)
-              }>
-                Comentários
-              </button>
+                <button
+                  style={styles.secondaryBtn}
+                  onClick={() =>
+                    setSelectedTopic(selectedTopic === t.id ? null : t.id)
+                  }
+                >
+                  Comentários
+                </button>
 
-              {selectedTopic === t.id && (
-                <div>
-                  <textarea
-                    value={newComment}
-                    onChange={(e) => setNewComment(e.target.value)}
-                    style={styles.textarea}
-                  />
+                {selectedTopic === t.id && (
+                  <div style={styles.commentBox}>
 
-                  <button onClick={createComment}>
-                    Enviar
-                  </button>
+                    <textarea
+                      value={newComment}
+                      onChange={(e) => setNewComment(e.target.value)}
+                      style={styles.textarea}
+                    />
 
-                  {comments
-                    .filter(c => c.topico_id === t.id)
-                    .map(c => (
-                      <div key={c.id}>
-                        <p>{c.texto}</p>
-                      </div>
-                    ))}
-                </div>
-              )}
+                    <button onClick={createComment} style={styles.btn}>
+                      Enviar
+                    </button>
 
-            </div>
-          ))}
+                    {comments
+                      .filter(c => c.topico_id === t.id)
+                      .map(c => (
+                        <div key={c.id} style={styles.comment}>
+                          {c.texto}
+                        </div>
+                      ))}
+                  </div>
+                )}
+
+              </div>
+            ))}
+          </div>
 
         </div>
-
       </Layout>
     </ProtectedRoute>
   );
 }
 
 const styles = {
+  container: {
+    width: '100%',
+    minHeight: '100vh',
+    padding: 20,
+    background: '#0a0a0a',
+    color: '#fff'
+  },
+
+  title: {
+    color: '#f5c400'
+  },
+
+  user: {
+    color: '#aaa'
+  },
+
   input: {
     width: '100%',
     padding: 10,
     marginTop: 10,
-    background: '#1a1a1a',
-    color: '#fff'
+    background: '#111',
+    border: '1px solid #333',
+    color: '#fff',
+    borderRadius: 8
   },
+
   box: {
     marginTop: 20,
     padding: 15,
-    background: '#111'
+    background: '#111',
+    borderRadius: 10
   },
+
+  grid: {
+    marginTop: 20,
+    display: 'grid',
+    gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))',
+    gap: 10
+  },
+
   card: {
-    marginTop: 10,
-    padding: 10,
-    background: '#1a1a1a'
+    background: '#1a1a1a',
+    padding: 15,
+    borderRadius: 10
   },
+
+  topicTitle: {
+    color: '#f5c400'
+  },
+
   btn: {
     marginTop: 10,
     background: '#f5c400',
+    color: '#000',
     padding: 10,
-    border: 0
+    border: 0,
+    borderRadius: 8,
+    cursor: 'pointer',
+    fontWeight: 'bold'
   },
+
+  secondaryBtn: {
+    marginTop: 10,
+    background: '#222',
+    color: '#f5c400',
+    border: '1px solid #333',
+    padding: 8,
+    borderRadius: 8,
+    cursor: 'pointer'
+  },
+
   textarea: {
     width: '100%',
     minHeight: 80,
+    marginTop: 10,
+    background: '#111',
+    border: '1px solid #333',
+    color: '#fff',
+    borderRadius: 8,
+    padding: 10
+  },
+
+  comment: {
+    marginTop: 10,
+    padding: 10,
+    background: '#222',
+    borderRadius: 8
+  },
+
+  commentBox: {
     marginTop: 10
   }
 };
