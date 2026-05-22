@@ -33,13 +33,7 @@ export default function Menu() {
 
           <h1 style={styles.title}>Menu</h1>
 
-          {user && (
-            <p style={styles.user}>
-              Logado: {user.email}
-            </p>
-          )}
-
-          <div style={styles.grid}>
+                   <div style={styles.grid}>
 
             <button onClick={() => go('/base')} style={styles.btn}>
               Base de Conhecimento
