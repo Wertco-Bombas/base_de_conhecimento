@@ -3,7 +3,13 @@ import Layout from '../components/Layout';
 import ProtectedRoute from '../components/ProtectedRoute';
 import { supabase } from '../lib/supabaseClient';
 
+import { getCurrentUser } from '../lib/auth';
+import { canCreateTopics } from '../lib/permissions';
+import { logAction } from '../lib/audit';
+
 export default function BaseConhecimento() {
+  const [user, setUser] = useState(null);
+
   const [categories, setCategories] = useState([]);
   const [topics, setTopics] = useState([]);
   const [comments, setComments] = useState([]);
@@ -19,10 +25,17 @@ export default function BaseConhecimento() {
   const [newComment, setNewComment] = useState('');
 
   useEffect(() => {
+    init();
+  }, []);
+
+  async function init() {
+    const u = await getCurrentUser();
+    setUser(u);
+
     fetchCategories();
     fetchTopics();
     fetchComments();
-  }, []);
+  }
 
   /* =========================
      FETCH
@@ -43,54 +56,95 @@ export default function BaseConhecimento() {
   }
 
   /* =========================
-     CREATE TOPIC
+     CREATE TOPIC (COM PERMISSÃO + AUDITORIA)
   ========================== */
   async function createTopic() {
     if (!newTopicTitle || !newTopicCategory) return;
 
-    await supabase.from('topicos').insert([
-      {
-        titulo: newTopicTitle,
-        categoria_id: newTopicCategory,
-      },
-    ]);
+    if (!canCreateTopics(user)) {
+      alert('Sem permissão para criar tópicos');
+      return;
+    }
+
+    const { data, error } = await supabase
+      .from('topicos')
+      .insert([
+        {
+          titulo: newTopicTitle,
+          categoria_id: newTopicCategory,
+          user_id: user.id
+        }
+      ])
+      .select()
+      .single();
+
+    if (error) {
+      alert('Erro ao criar tópico');
+      return;
+    }
+
+    await logAction({
+      user_id: user.id,
+      action: 'CREATE_TOPIC',
+      entity: 'topicos',
+      entity_id: data.id,
+      description: `Criou tópico: ${newTopicTitle}`
+    });
 
     setNewTopicTitle('');
     setNewTopicCategory('');
-
     fetchTopics();
   }
 
   /* =========================
-     CREATE COMMENT
+     CREATE COMMENT (COM AUDITORIA)
   ========================== */
   async function createComment() {
     if (!selectedTopic || !newComment) return;
 
-    const user = await supabase.auth.getUser();
+    const { data } = await supabase.auth.getUser();
+
+    const userId = data?.user?.id;
 
     await supabase.from('comentarios').insert([
       {
         topico_id: selectedTopic,
         texto: newComment,
-        user_id: user.data.user.id,
-      },
+        user_id: userId
+      }
     ]);
+
+    await logAction({
+      user_id: userId,
+      action: 'CREATE_COMMENT',
+      entity: 'comentarios',
+      entity_id: selectedTopic,
+      description: 'Criou comentário'
+    });
 
     setNewComment('');
     fetchComments();
   }
 
   /* =========================
-     DELETE COMMENT (owner)
+     DELETE COMMENT
   ========================== */
   async function deleteComment(id) {
     await supabase.from('comentarios').delete().eq('id', id);
+
+    await logAction({
+      user_id: user?.id,
+      action: 'DELETE_COMMENT',
+      entity: 'comentarios',
+      entity_id: id,
+      description: 'Removeu comentário'
+    });
+
     fetchComments();
   }
 
   /* =========================
-     FILTER TOPICS
+     FILTER
   ========================== */
   const filteredTopics = topics.filter((t) =>
     t.titulo?.toLowerCase().includes(search.toLowerCase())
@@ -102,6 +156,13 @@ export default function BaseConhecimento() {
         <div style={styles.container}>
 
           <h1 style={styles.title}>Base de Conhecimento</h1>
+
+          {/* USER INFO */}
+          {user && (
+            <p style={{ color: '#aaa' }}>
+              Logado como: {user.email} ({user.role})
+            </p>
+          )}
 
           {/* SEARCH */}
           <input
@@ -140,7 +201,7 @@ export default function BaseConhecimento() {
             </button>
           </div>
 
-          {/* TOPICS LIST */}
+          {/* TOPICS */}
           <div style={styles.grid}>
             {filteredTopics.map((t) => (
               <div key={t.id} style={styles.card}>
@@ -159,14 +220,13 @@ export default function BaseConhecimento() {
                     )
                   }
                 >
-                  Ver comentários
+                  Comentários
                 </button>
 
                 {/* COMMENTS */}
                 {selectedTopic === t.id && (
                   <div style={styles.commentBox}>
 
-                    {/* create comment */}
                     <textarea
                       placeholder="Escrever comentário..."
                       value={newComment}
@@ -178,12 +238,10 @@ export default function BaseConhecimento() {
                       Enviar comentário
                     </button>
 
-                    {/* list comments */}
                     {comments
                       .filter((c) => c.topico_id === t.id)
                       .map((c) => (
                         <div key={c.id} style={styles.comment}>
-
                           <p>{c.texto}</p>
 
                           <button
@@ -192,7 +250,6 @@ export default function BaseConhecimento() {
                           >
                             Remover
                           </button>
-
                         </div>
                       ))}
                   </div>
@@ -208,17 +265,11 @@ export default function BaseConhecimento() {
 }
 
 /* =========================
-   STYLES (PRETO + AMARELO)
+   STYLES
 ========================= */
 const styles = {
-  container: {
-    padding: '20px',
-    color: '#fff'
-  },
-
-  title: {
-    color: '#f5c400'
-  },
+  container: { padding: '20px', color: '#fff' },
+  title: { color: '#f5c400' },
 
   input: {
     width: '100%',
