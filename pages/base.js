@@ -3,10 +3,6 @@ import Layout from '../components/Layout';
 import ProtectedRoute from '../components/ProtectedRoute';
 import { supabase } from '../lib/supabaseClient';
 
-import { getCurrentUser } from '../lib/auth';
-import { canCreateTopics } from '../lib/permissions';
-import { logAction } from '../lib/audit';
-
 export default function BaseConhecimento() {
   const [user, setUser] = useState(null);
 
@@ -15,10 +11,12 @@ export default function BaseConhecimento() {
   const [comments, setComments] = useState([]);
 
   const [selectedTopic, setSelectedTopic] = useState(null);
+
   const [search, setSearch] = useState('');
 
   const [newTopicTitle, setNewTopicTitle] = useState('');
   const [newTopicCategory, setNewTopicCategory] = useState('');
+
   const [newComment, setNewComment] = useState('');
 
   useEffect(() => {
@@ -26,8 +24,8 @@ export default function BaseConhecimento() {
   }, []);
 
   async function init() {
-    const u = await getCurrentUser();
-    setUser(u);
+    const { data } = await supabase.auth.getUser();
+    setUser(data?.user || null);
 
     fetchCategories();
     fetchTopics();
@@ -50,45 +48,19 @@ export default function BaseConhecimento() {
   }
 
   /* =========================
-     CREATE TOPIC (FIXED)
+     CREATE TOPIC (SIMPLIFICADO)
   ========================== */
   async function createTopic() {
     if (!newTopicTitle || !newTopicCategory) return;
+    if (!user) return;
 
-    if (!user) {
-      alert('Usuário não autenticado');
-      return;
-    }
-
-    if (!canCreateTopics(user)) {
-      alert('Sem permissão para criar tópicos');
-      return;
-    }
-
-    const { data, error } = await supabase
-      .from('topicos')
-      .insert([
-        {
-          titulo: newTopicTitle,
-          categoria_id: newTopicCategory,
-          user_id: user.id
-        }
-      ])
-      .select()
-      .single();
-
-    if (error) {
-      alert('Erro ao criar tópico');
-      return;
-    }
-
-    await logAction({
-      user_id: user.id,
-      action: 'CREATE_TOPIC',
-      entity: 'topicos',
-      entity_id: data.id,
-      description: `Criou tópico: ${newTopicTitle}`
-    });
+    await supabase.from('topicos').insert([
+      {
+        titulo: newTopicTitle,
+        categoria_id: newTopicCategory,
+        user_id: user.id
+      }
+    ]);
 
     setNewTopicTitle('');
     setNewTopicCategory('');
@@ -96,7 +68,7 @@ export default function BaseConhecimento() {
   }
 
   /* =========================
-     CREATE COMMENT (FIXED)
+     CREATE COMMENT (SIMPLIFICADO)
   ========================== */
   async function createComment() {
     if (!selectedTopic || !newComment) return;
@@ -104,10 +76,7 @@ export default function BaseConhecimento() {
     const { data } = await supabase.auth.getUser();
     const userId = data?.user?.id;
 
-    if (!userId) {
-      alert('Usuário não autenticado');
-      return;
-    }
+    if (!userId) return;
 
     await supabase.from('comentarios').insert([
       {
@@ -117,32 +86,12 @@ export default function BaseConhecimento() {
       }
     ]);
 
-    await logAction({
-      user_id: userId,
-      action: 'CREATE_COMMENT',
-      entity: 'comentarios',
-      entity_id: selectedTopic,
-      description: 'Criou comentário'
-    });
-
     setNewComment('');
     fetchComments();
   }
 
   async function deleteComment(id) {
-    const { data } = await supabase.auth.getUser();
-    const userId = data?.user?.id;
-
     await supabase.from('comentarios').delete().eq('id', id);
-
-    await logAction({
-      user_id: userId,
-      action: 'DELETE_COMMENT',
-      entity: 'comentarios',
-      entity_id: id,
-      description: 'Removeu comentário'
-    });
-
     fetchComments();
   }
 
@@ -154,23 +103,24 @@ export default function BaseConhecimento() {
     <ProtectedRoute>
       <Layout>
 
-        <div style={styles.container}>
+        <div style={{ padding: 20, color: '#fff' }}>
 
-          <h1 style={styles.title}>Base de Conhecimento</h1>
+          <h1 style={{ color: '#f5c400' }}>Base de Conhecimento</h1>
 
           {user && (
             <p style={{ color: '#aaa' }}>
-              Logado como: {user.email}
+              Logado: {user.email}
             </p>
           )}
 
           <input
-            style={styles.input}
-            placeholder="Buscar tópicos..."
+            placeholder="Buscar..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
+            style={styles.input}
           />
 
+          {/* TOPIC FORM */}
           <div style={styles.box}>
             <h3>Novo Tópico</h3>
 
@@ -186,7 +136,7 @@ export default function BaseConhecimento() {
               onChange={(e) => setNewTopicCategory(e.target.value)}
               style={styles.input}
             >
-              <option value="">Selecione categoria</option>
+              <option value="">Categoria</option>
               {categories.map((c) => (
                 <option key={c.id} value={c.id}>
                   {c.nome}
@@ -195,42 +145,47 @@ export default function BaseConhecimento() {
             </select>
 
             <button onClick={createTopic} style={styles.btn}>
-              Criar Tópico
+              Criar
             </button>
           </div>
 
-          <div style={styles.grid}>
-            {filteredTopics.map((t) => (
-              <div key={t.id} style={styles.card}>
-                <h3 style={{ color: '#f5c400' }}>{t.titulo}</h3>
+          {/* TOPICS */}
+          {filteredTopics.map((t) => (
+            <div key={t.id} style={styles.card}>
+              <h3>{t.titulo}</h3>
 
-                <button
-                  style={styles.commentBtn}
-                  onClick={() =>
-                    setSelectedTopic(selectedTopic === t.id ? null : t.id)
-                  }
-                >
-                  Comentários
-                </button>
+              <button onClick={() =>
+                setSelectedTopic(selectedTopic === t.id ? null : t.id)
+              }>
+                Comentários
+              </button>
 
-                {selectedTopic === t.id && (
-                  <div style={styles.commentBox}>
+              {selectedTopic === t.id && (
+                <div>
+                  <textarea
+                    value={newComment}
+                    onChange={(e) => setNewComment(e.target.value)}
+                    style={styles.textarea}
+                  />
 
-                    <textarea
-                      value={newComment}
-                      onChange={(e) => setNewComment(e.target.value)}
-                      style={styles.textarea}
-                    />
+                  <button onClick={createComment}>
+                    Enviar
+                  </button>
 
-                    <button onClick={createComment} style={styles.btn}>
-                      Enviar
-                    </button>
-
-                  </div>
-                )}
-              </div>
-            ))}
-          </div>
+                  {comments
+                    .filter((c) => c.topico_id === t.id)
+                    .map((c) => (
+                      <div key={c.id}>
+                        <p>{c.texto}</p>
+                        <button onClick={() => deleteComment(c.id)}>
+                          Remover
+                        </button>
+                      </div>
+                    ))}
+                </div>
+              )}
+            </div>
+          ))}
 
         </div>
 
@@ -238,3 +193,39 @@ export default function BaseConhecimento() {
     </ProtectedRoute>
   );
 }
+
+const styles = {
+  input: {
+    width: '100%',
+    padding: 10,
+    marginTop: 10,
+    background: '#1a1a1a',
+    color: '#fff',
+    border: '1px solid #333'
+  },
+
+  box: {
+    marginTop: 20,
+    padding: 15,
+    background: '#111'
+  },
+
+  card: {
+    marginTop: 10,
+    padding: 10,
+    background: '#1a1a1a'
+  },
+
+  btn: {
+    marginTop: 10,
+    background: '#f5c400',
+    padding: 10,
+    border: 0
+  },
+
+  textarea: {
+    width: '100%',
+    minHeight: 60,
+    marginTop: 10
+  }
+};
