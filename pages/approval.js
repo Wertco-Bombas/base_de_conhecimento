@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import Layout from '../components/Layout';
 import { supabase } from '../lib/supabaseClient';
-import { log } from '../lib/audit';
+import { logAction } from '../lib/audit';
 
 export default function Approval() {
   const [items, setItems] = useState([]);
