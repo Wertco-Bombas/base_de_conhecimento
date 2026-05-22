@@ -1,59 +1,103 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
+import Layout from '../components/Layout';
+import ProtectedRoute from '../components/ProtectedRoute';
 import { supabase } from '../lib/supabaseClient';
-import { useRouter } from 'next/router';
 
-export default function Login() {
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const router = useRouter();
+export default function Dashboard() {
+  const [stats, setStats] = useState({
+    users: 0,
+    topics: 0,
+    comments: 0,
+    categories: 0
+  });
 
-  const login = async () => {
-    const { error } = await supabase.auth.signInWithPassword({
-      email,
-      password
+  useEffect(() => {
+    load();
+  }, []);
+
+  async function load() {
+    const users = await supabase.from('profiles').select('*', { count: 'exact' });
+    const topics = await supabase.from('topicos').select('*', { count: 'exact' });
+    const comments = await supabase.from('comentarios').select('*', { count: 'exact' });
+    const categories = await supabase.from('categorias').select('*', { count: 'exact' });
+
+    setStats({
+      users: users.count || 0,
+      topics: topics.count || 0,
+      comments: comments.count || 0,
+      categories: categories.count || 0
     });
-
-    if (!error) router.push('/menu');
-    else alert('Erro no login');
-  };
+  }
 
   return (
-    <div style={styles.container}>
-      <h1 style={{ color: '#f5c400' }}>Login</h1>
+    <ProtectedRoute>
+      <Layout>
 
-      <input placeholder="Email" onChange={(e) => setEmail(e.target.value)} style={styles.input} />
-      <input type="password" placeholder="Senha" onChange={(e) => setPassword(e.target.value)} style={styles.input} />
+        <div style={styles.container}>
 
-      <button onClick={login} style={styles.btn}>Entrar</button>
-    </div>
+          <h1 style={styles.title}>Dashboard</h1>
+
+          <div style={styles.grid}>
+
+            <div style={styles.card}>
+              <h2>Usuários</h2>
+              <p style={styles.number}>{stats.users}</p>
+            </div>
+
+            <div style={styles.card}>
+              <h2>Tópicos</h2>
+              <p style={styles.number}>{stats.topics}</p>
+            </div>
+
+            <div style={styles.card}>
+              <h2>Comentários</h2>
+              <p style={styles.number}>{stats.comments}</p>
+            </div>
+
+            <div style={styles.card}>
+              <h2>Categorias</h2>
+              <p style={styles.number}>{stats.categories}</p>
+            </div>
+
+          </div>
+
+        </div>
+
+      </Layout>
+    </ProtectedRoute>
   );
 }
 
 const styles = {
   container: {
-    height: '100vh',
-    background: '#0d0d0d',
-    display: 'flex',
-    flexDirection: 'column',
-    justifyContent: 'center',
-    alignItems: 'center'
-  },
-  input: {
-    margin: '5px',
-    padding: '10px',
-    width: '250px',
-    borderRadius: '6px',
-    border: '1px solid #333',
-    background: '#1a1a1a',
+    width: '100%',
+    minHeight: '100vh',
+    background: '#0a0a0a',
     color: '#fff'
   },
-  btn: {
-    marginTop: '10px',
-    background: '#f5c400',
-    padding: '10px 20px',
-    border: 'none',
-    borderRadius: '6px',
-    cursor: 'pointer',
+
+  title: {
+    color: '#f5c400',
+    marginBottom: 20
+  },
+
+  grid: {
+    display: 'grid',
+    gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
+    gap: 15
+  },
+
+  card: {
+    background: '#111',
+    padding: 20,
+    borderRadius: 12,
+    border: '1px solid #222',
+    transition: '0.2s'
+  },
+
+  number: {
+    fontSize: 32,
+    color: '#f5c400',
     fontWeight: 'bold'
   }
 };
