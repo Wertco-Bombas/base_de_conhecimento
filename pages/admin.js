@@ -13,21 +13,27 @@ export default function AdminPanel() {
   const [logs, setLogs] = useState([]);
 
   useEffect(() => {
-    if (user && isAdmin(user)) {
-      fetchData();
-    }
+    if (!user) return;
+
+    if (!isAdmin(user)) return;
+
+    fetchData();
   }, [user]);
 
   async function fetchData() {
-    const u = await supabase.from('profiles').select('*');
-    const l = await supabase.from('audit_log').select('*');
+    const { data: usersData } = await supabase.from('profiles').select('*');
+    const { data: logsData } = await supabase.from('audit_log').select('*');
 
-    setUsers(u.data || []);
-    setLogs(l.data || []);
+    setUsers(usersData || []);
+    setLogs(logsData || []);
   }
 
   async function updateRole(id, role) {
-    await supabase.from('profiles').update({ role }).eq('id', id);
+    await supabase
+      .from('profiles')
+      .update({ role })
+      .eq('id', id);
+
     fetchData();
   }
 
@@ -35,7 +41,9 @@ export default function AdminPanel() {
     return (
       <ProtectedRoute>
         <Layout>
-          <p style={{ color: '#fff' }}>Sem acesso</p>
+          <div style={{ padding: 20, color: '#fff' }}>
+            Sem acesso
+          </div>
         </Layout>
       </ProtectedRoute>
     );
@@ -57,18 +65,18 @@ export default function AdminPanel() {
                 value={u.role}
                 onChange={(e) => updateRole(u.id, e.target.value)}
               >
-                <option>user</option>
-                <option>supervisor</option>
-                <option>admin</option>
+                <option value="user">user</option>
+                <option value="supervisor">supervisor</option>
+                <option value="admin">admin</option>
               </select>
             </div>
           ))}
 
-          <h2>Logs</h2>
+          <h2 style={{ marginTop: 20 }}>Logs</h2>
 
           {logs.map(l => (
             <div key={l.id}>
-              <p>{l.action}</p>
+              <p style={{ color: '#f5c400' }}>{l.action}</p>
               <p>{l.description}</p>
             </div>
           ))}
