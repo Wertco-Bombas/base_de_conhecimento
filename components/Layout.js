@@ -27,17 +27,10 @@ export default function Layout({ children }) {
       <div style={styles.sidebar}>
         <h2 style={styles.logo}>WERTCO</h2>
 
-        <button onClick={() => router.push('/menu')} style={styles.link}>
-          Menu
-        </button>
-
-        <button onClick={() => router.push('/base')} style={styles.link}>
-          Base
-        </button>
-
-        <button onClick={() => router.push('/admin')} style={styles.link}>
-          Admin
-        </button>
+<button onClick={() => router.push('/menu')}>Menu</button>
+<button onClick={() => router.push('/base')}>Base de Conhecimento</button>
+<button onClick={() => router.push('/usuarios')}>Usuários</button>
+<button onClick={() => router.push('/treinamento')}>Treinamento</button>
       </div>
 
       {/* MAIN */}
