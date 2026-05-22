@@ -1,51 +1,38 @@
-import { useEffect, useState } from 'react';
+import { useRouter } from 'next/router';
 import Layout from '../components/Layout';
 import ProtectedRoute from '../components/ProtectedRoute';
-import { useRouter } from 'next/router';
-import { supabase } from '../lib/supabaseClient';
 
 export default function Menu() {
   const router = useRouter();
-  const [user, setUser] = useState(null);
-
-  useEffect(() => {
-    loadUser();
-  }, []);
-
-  async function loadUser() {
-    const { data } = await supabase.auth.getUser();
-    setUser(data?.user || null);
-  }
-
-  function go(path) {
-    router.push(path);
-  }
-
-  async function logout() {
-    await supabase.auth.signOut();
-    router.push('/');
-  }
 
   return (
     <ProtectedRoute>
       <Layout>
-        <div style={styles.container}>
 
+        <div style={styles.container}>
           <h1 style={styles.title}>Menu</h1>
 
-                   <div style={styles.grid}>
+          <div style={styles.grid}>
 
-            <button onClick={() => go('/base')} style={styles.btn}>
+            <button onClick={() => router.push('/base')} style={styles.btn}>
               Base de Conhecimento
             </button>
 
-            <button onClick={() => go('/admin')} style={styles.btn}>
+            <button onClick={() => router.push('/admin')} style={styles.btn}>
               Usuários / Admin
             </button>
 
-          </div>
+            <button onClick={() => router.push('/auditoria')} style={styles.btn}>
+              Auditoria
+            </button>
 
+            <button onClick={() => router.push('/treinamento')} style={styles.btn}>
+              Treinamento
+            </button>
+
+          </div>
         </div>
+
       </Layout>
     </ProtectedRoute>
   );
@@ -53,24 +40,19 @@ export default function Menu() {
 
 const styles = {
   container: {
-    width: '100%',
-    minHeight: '100vh',
     padding: 20,
-    background: '#0a0a0a',
-    color: '#fff',
-    display: 'flex',
-    flexDirection: 'column'
+    color: '#fff'
   },
 
-  title: { color: '#f5c400' },
-
-  user: { color: '#aaa' },
+  title: {
+    color: '#f5c400'
+  },
 
   grid: {
-    marginTop: 30,
     display: 'grid',
+    gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
     gap: 10,
-    gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))'
+    marginTop: 20
   },
 
   btn: {
@@ -80,14 +62,5 @@ const styles = {
     borderRadius: 10,
     cursor: 'pointer',
     fontWeight: 'bold'
-  },
-
-  logout: {
-    padding: 15,
-    background: '#222',
-    color: '#f5c400',
-    border: '1px solid #333',
-    borderRadius: 10,
-    cursor: 'pointer'
   }
 };
