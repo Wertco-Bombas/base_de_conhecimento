@@ -2,6 +2,8 @@ import { useEffect, useState } from 'react';
 import Layout from '../components/Layout';
 import ProtectedRoute from '../components/ProtectedRoute';
 import { supabase } from '../lib/supabaseClient';
+import { uploadImage } from '../lib/uploadImage';
+import { log } from '../lib/audit';
 
 export default function Base() {
   const [user, setUser] = useState(null);
@@ -12,21 +14,15 @@ export default function Base() {
 
   const [selectedTopic, setSelectedTopic] = useState(null);
 
-  // MODALS
-  const [showCatModal, setShowCatModal] = useState(false);
-  const [showTopicModal, setShowTopicModal] = useState(false);
+  const [search, setSearch] = useState('');
 
-  // FORM CATEGORY
-  const [catName, setCatName] = useState('');
-  const [catDesc, setCatDesc] = useState('');
+  // modais simples
+  const [editingTopic, setEditingTopic] = useState(null);
+  const [editingComment, setEditingComment] = useState(null);
 
-  // FORM TOPIC
-  const [topicTitle, setTopicTitle] = useState('');
-  const [topicDesc, setTopicDesc] = useState('');
-  const [topicCategory, setTopicCategory] = useState('');
-
-  // COMMENT
+  // forms
   const [commentText, setCommentText] = useState('');
+  const [commentImage, setCommentImage] = useState(null);
 
   useEffect(() => {
     init();
@@ -35,82 +31,95 @@ export default function Base() {
   async function init() {
     const u = await supabase.auth.getUser();
     setUser(u.data?.user);
-
     load();
   }
 
   async function load() {
-    const c = await supabase.from('categorias').select('*');
-    const t = await supabase.from('topicos').select('*');
-    const cm = await supabase.from('comentarios').select('*');
+    const { data: c } = await supabase.from('categorias').select('*');
+    const { data: t } = await supabase.from('topicos').select('*');
+    const { data: cm } = await supabase.from('comentarios').select('*');
 
-    setCategories(c.data || []);
-    setTopics(t.data || []);
-    setComments(cm.data || []);
+    setCategories(c || []);
+    setTopics(t || []);
+    setComments(cm || []);
   }
 
   /* =========================
-     CATEGORY
+     TOPIC EDIT
   ========================== */
 
-  async function createCategory() {
-    await supabase.from('categorias').insert([
-      {
-        nome: catName,
-        descricao: catDesc
-      }
-    ]);
+  async function updateTopic(id, title, desc) {
+    await supabase
+      .from('topicos')
+      .update({
+        titulo: title,
+        descricao: desc,
+        updated_at: new Date()
+      })
+      .eq('id', id);
 
-    setCatName('');
-    setCatDesc('');
-    setShowCatModal(false);
+    await log('UPDATE_TOPIC', user, 'topicos', id);
+
+    setEditingTopic(null);
     load();
   }
 
   /* =========================
-     TOPIC
-  ========================== */
-
-  async function createTopic() {
-    const { data } = await supabase.auth.getUser();
-
-    await supabase.from('topicos').insert([
-      {
-        titulo: topicTitle,
-        descricao: topicDesc,
-        categoria_id: topicCategory,
-        user_id: data.user.id,
-        created_at: new Date()
-      }
-    ]);
-
-    setTopicTitle('');
-    setTopicDesc('');
-    setTopicCategory('');
-    setShowTopicModal(false);
-    load();
-  }
-
-  /* =========================
-     COMMENT (FIX)
+     COMMENT CREATE (COM IMAGEM)
   ========================== */
 
   async function createComment(topicId) {
-    const { data } = await supabase.auth.getUser();
+    if (!commentText && !commentImage) return;
 
-    if (!commentText) return;
+    let imageUrl = null;
+
+    if (commentImage) {
+      imageUrl = await uploadImage(commentImage);
+    }
 
     await supabase.from('comentarios').insert([
       {
         topico_id: topicId,
         texto: commentText,
-        user_id: data.user.id
+        image_url: imageUrl,
+        user_id: user?.id
       }
     ]);
 
+    await log('CREATE_COMMENT', user, 'comentarios', topicId);
+
     setCommentText('');
+    setCommentImage(null);
+
     load();
   }
+
+  /* =========================
+     COMMENT EDIT
+  ========================== */
+
+  async function updateComment(id, text) {
+    await supabase
+      .from('comentarios')
+      .update({
+        texto: text,
+        updated_at: new Date()
+      })
+      .eq('id', id);
+
+    await log('UPDATE_COMMENT', user, 'comentarios', id);
+
+    setEditingComment(null);
+    load();
+  }
+
+  /* =========================
+     FILTER
+  ========================== */
+
+  const filteredTopics = topics.filter(t =>
+    t.titulo?.toLowerCase().includes(search.toLowerCase())
+  );
 
   return (
     <ProtectedRoute>
@@ -120,23 +129,18 @@ export default function Base() {
 
           <h1 style={styles.title}>Base de Conhecimento</h1>
 
-          {/* ACTION BUTTONS */}
-          <div style={styles.actions}>
-
-            <button onClick={() => setShowCatModal(true)} style={styles.btn}>
-              Nova Categoria
-            </button>
-
-            <button onClick={() => setShowTopicModal(true)} style={styles.btn}>
-              Novo Tópico
-            </button>
-
-          </div>
+          {/* SEARCH */}
+          <input
+            style={styles.search}
+            placeholder="Buscar tópicos..."
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+          />
 
           {/* TOPICS */}
           <div style={styles.list}>
 
-            {topics.map(t => {
+            {filteredTopics.map(t => {
 
               const cat = categories.find(c => c.id === t.categoria_id);
 
@@ -147,20 +151,33 @@ export default function Base() {
 
                   <p>{t.descricao}</p>
 
-                  <p style={{ color: '#aaa' }}>
-                    Categoria: {cat?.nome}
+                  <p style={{ color: '#888' }}>
+                    Categoria: {cat?.nome || 'Sem categoria'}
                   </p>
 
-                  <p style={{ fontSize: 12, color: '#888' }}>
-                    Criado por: {t.user_id} <br />
-                    {new Date(t.created_at).toLocaleString()}
+                  <p style={{ fontSize: 12, color: '#666' }}>
+                    Atualizado: {t.updated_at ? new Date(t.updated_at).toLocaleString() : '—'}
                   </p>
 
                   <button
+                    style={styles.btnSmall}
+                    onClick={() =>
+                      setEditingTopic(editingTopic === t.id ? null : t.id)
+                    }
+                  >
+                    Editar
+                  </button>
+
+                  {/* EDIT TOPIC */}
+                  {editingTopic === t.id && (
+                    <TopicEditor topic={t} onSave={updateTopic} />
+                  )}
+
+                  <button
+                    style={styles.commentBtn}
                     onClick={() =>
                       setSelectedTopic(selectedTopic === t.id ? null : t.id)
                     }
-                    style={styles.commentBtn}
                   >
                     Comentários
                   </button>
@@ -173,20 +190,51 @@ export default function Base() {
                         value={commentText}
                         onChange={(e) => setCommentText(e.target.value)}
                         style={styles.textarea}
+                        placeholder="Escreva comentário..."
+                      />
+
+                      <input
+                        type="file"
+                        onChange={(e) => setCommentImage(e.target.files[0])}
                       />
 
                       <button
                         onClick={() => createComment(t.id)}
                         style={styles.btn}
                       >
-                        Enviar
+                        Enviar comentário
                       </button>
 
                       {comments
                         .filter(c => c.topico_id === t.id)
                         .map(c => (
                           <div key={c.id} style={styles.comment}>
-                            {c.texto}
+
+                            {editingComment === c.id ? (
+                              <CommentEditor
+                                comment={c}
+                                onSave={updateComment}
+                              />
+                            ) : (
+                              <>
+                                <p>{c.texto}</p>
+
+                                {c.image_url && (
+                                  <img
+                                    src={c.image_url}
+                                    style={{ width: 200, borderRadius: 8 }}
+                                  />
+                                )}
+
+                                <button
+                                  style={styles.btnSmall}
+                                  onClick={() => setEditingComment(c.id)}
+                                >
+                                  Editar
+                                </button>
+                              </>
+                            )}
+
                           </div>
                         ))}
 
@@ -199,69 +247,6 @@ export default function Base() {
 
           </div>
 
-          {/* ================= MODAL CATEGORY ================= */}
-          {showCatModal && (
-            <Modal onClose={() => setShowCatModal(false)}>
-              <h3>Nova Categoria</h3>
-
-              <input
-                placeholder="Nome"
-                value={catName}
-                onChange={(e) => setCatName(e.target.value)}
-                style={styles.input}
-              />
-
-              <textarea
-                placeholder="Descrição"
-                value={catDesc}
-                onChange={(e) => setCatDesc(e.target.value)}
-                style={styles.textarea}
-              />
-
-              <button onClick={createCategory} style={styles.btn}>
-                Criar
-              </button>
-            </Modal>
-          )}
-
-          {/* ================= MODAL TOPIC ================= */}
-          {showTopicModal && (
-            <Modal onClose={() => setShowTopicModal(false)}>
-              <h3>Novo Tópico</h3>
-
-              <input
-                placeholder="Título"
-                value={topicTitle}
-                onChange={(e) => setTopicTitle(e.target.value)}
-                style={styles.input}
-              />
-
-              <textarea
-                placeholder="Descrição"
-                value={topicDesc}
-                onChange={(e) => setTopicDesc(e.target.value)}
-                style={styles.textarea}
-              />
-
-              <select
-                value={topicCategory}
-                onChange={(e) => setTopicCategory(e.target.value)}
-                style={styles.input}
-              >
-                <option value="">Selecione categoria</option>
-                {categories.map(c => (
-                  <option key={c.id} value={c.id}>
-                    {c.nome}
-                  </option>
-                ))}
-              </select>
-
-              <button onClick={createTopic} style={styles.btn}>
-                Criar
-              </button>
-            </Modal>
-          )}
-
         </div>
 
       </Layout>
@@ -269,93 +254,113 @@ export default function Base() {
   );
 }
 
-/* ================= MODAL ================= */
+/* =========================
+   EDIT COMPONENTS
+========================= */
 
-function Modal({ children, onClose }) {
+function TopicEditor({ topic, onSave }) {
+  const [title, setTitle] = useState(topic.titulo);
+  const [desc, setDesc] = useState(topic.descricao);
+
   return (
-    <div style={styles.modalBg} onClick={onClose}>
-      <div style={styles.modal} onClick={(e) => e.stopPropagation()}>
-        {children}
-      </div>
+    <div style={styles.editor}>
+      <input value={title} onChange={(e) => setTitle(e.target.value)} />
+      <textarea value={desc} onChange={(e) => setDesc(e.target.value)} />
+
+      <button onClick={() => onSave(topic.id, title, desc)}>
+        Salvar
+      </button>
     </div>
   );
 }
 
-/* ================= STYLES ================= */
+function CommentEditor({ comment, onSave }) {
+  const [text, setText] = useState(comment.texto);
+
+  return (
+    <div>
+      <textarea value={text} onChange={(e) => setText(e.target.value)} />
+      <button onClick={() => onSave(comment.id, text)}>
+        Salvar
+      </button>
+    </div>
+  );
+}
+
+/* =========================
+   STYLES
+========================= */
 
 const styles = {
   container: { padding: 20, color: '#fff' },
 
   title: { color: '#f5c400' },
 
-  actions: { display: 'flex', gap: 10 },
-
-  btn: {
-    background: '#f5c400',
-    border: 0,
-    padding: 10,
-    borderRadius: 8,
-    cursor: 'pointer'
-  },
-
-  input: {
+  search: {
     width: '100%',
     padding: 10,
-    marginTop: 10,
+    marginBottom: 15,
     background: '#111',
-    color: '#fff',
-    border: '1px solid #333'
-  },
-
-  textarea: {
-    width: '100%',
-    minHeight: 80,
-    marginTop: 10,
-    background: '#111',
+    border: '1px solid #333',
     color: '#fff'
   },
 
-  list: { marginTop: 20 },
+  list: { display: 'grid', gap: 10 },
 
   card: {
     padding: 15,
-    marginTop: 10,
     background: '#111',
     borderRadius: 10
   },
 
+  btn: {
+    marginTop: 10,
+    background: '#f5c400',
+    border: 0,
+    padding: 10,
+    borderRadius: 8
+  },
+
+  btnSmall: {
+    marginTop: 5,
+    background: '#333',
+    color: '#f5c400',
+    border: 0,
+    padding: 6,
+    borderRadius: 6,
+    cursor: 'pointer'
+  },
+
   commentBtn: {
     marginTop: 10,
-    background: '#333',
+    background: '#222',
     color: '#f5c400',
     border: 0,
     padding: 8,
     borderRadius: 6
   },
 
-  comments: { marginTop: 10 },
+  comments: {
+    marginTop: 10,
+    padding: 10,
+    background: '#000'
+  },
+
+  textarea: {
+    width: '100%',
+    minHeight: 70,
+    marginTop: 5
+  },
 
   comment: {
-    padding: 8,
+    marginTop: 10,
+    padding: 10,
     borderBottom: '1px solid #222'
   },
 
-  modalBg: {
-    position: 'fixed',
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
-    background: 'rgba(0,0,0,0.7)',
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center'
-  },
-
-  modal: {
-    background: '#111',
-    padding: 20,
-    borderRadius: 10,
-    width: 400
+  editor: {
+    padding: 10,
+    background: '#222',
+    marginTop: 10
   }
 };
