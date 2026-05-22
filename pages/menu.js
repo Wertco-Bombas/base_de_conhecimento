@@ -43,10 +43,6 @@ export default function Menu() {
               Usuários / Admin
             </button>
 
-            <button onClick={logout} style={styles.logout}>
-              Sair
-            </button>
-
           </div>
 
         </div>
