@@ -12,12 +12,21 @@ export default function Layout({ children }) {
 const styles = {
   page: {
     minHeight: '100vh',
+    width: '100vw',
     background: '#000',
     color: '#fff',
-    display: 'flex'
+    display: 'flex',
+    flexDirection: 'column',
+    margin: 0,
+    padding: 0,
+    overflow: 'hidden'
   },
+
   content: {
     flex: 1,
-    padding: 20
+    width: '100%',
+    margin: 0,
+    padding: 0, // 👈 removido o espaço que criava “moldura”
+    overflow: 'auto'
   }
 };
