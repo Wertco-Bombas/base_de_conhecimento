@@ -1,36 +1,20 @@
-import { useRouter } from 'next/router';
 import Layout from '../components/Layout';
 import ProtectedRoute from '../components/ProtectedRoute';
 
 export default function Menu() {
-  const router = useRouter();
-
   return (
     <ProtectedRoute>
       <Layout>
 
         <div style={styles.container}>
-          <h1 style={styles.title}>Menu</h1>
 
-          <div style={styles.grid}>
+          <h1 style={styles.title}>Dashboard</h1>
 
-            <button onClick={() => router.push('/base')} style={styles.btn}>
-              Base de Conhecimento
-            </button>
-
-            <button onClick={() => router.push('/admin')} style={styles.btn}>
-              Usuários / Admin
-            </button>
-
-            <button onClick={() => router.push('/auditoria')} style={styles.btn}>
-              Auditoria
-            </button>
-
-            <button onClick={() => router.push('/treinamento')} style={styles.btn}>
-              Treinamento
-            </button>
-
+          <div style={styles.box}>
+            <p>Bem-vindo ao sistema.</p>
+            <p>Aqui aparecerão avisos, métricas e notificações futuras.</p>
           </div>
+
         </div>
 
       </Layout>
@@ -48,19 +32,11 @@ const styles = {
     color: '#f5c400'
   },
 
-  grid: {
-    display: 'grid',
-    gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
-    gap: 10,
-    marginTop: 20
-  },
-
-  btn: {
-    padding: 15,
-    background: '#f5c400',
-    border: 0,
+  box: {
+    marginTop: 20,
+    padding: 20,
+    background: '#111',
     borderRadius: 10,
-    cursor: 'pointer',
-    fontWeight: 'bold'
+    border: '1px solid #222'
   }
 };
