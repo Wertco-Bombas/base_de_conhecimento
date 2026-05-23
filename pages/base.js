@@ -22,7 +22,7 @@ export default function Base() {
     const { data: topicsData, error: topicsError } = await supabase
       .from('topicos')
       .select('*')
-      .order('id', { ascending: false }); // 🔥 corrigido
+      .order('id', { ascending: false });
 
     const { data: commentsData, error: commentsError } = await supabase
       .from('comentarios')
@@ -70,13 +70,17 @@ export default function Base() {
   async function addComment(topicId, text) {
     if (!text) return;
 
-    await supabase.from('comentarios').insert({
+    const { error } = await supabase.from('comentarios').insert({
       topic_id: topicId,
       texto: text,
       status: 'approved'
     });
 
-    loadTopics();
+    console.log('COMMENT ERROR:', error);
+
+    if (!error) {
+      await loadTopics(); // 🔥 atualiza a tela após salvar
+    }
   }
 
   const filtered = topics
@@ -152,6 +156,7 @@ export default function Base() {
 
           {/* ADD COMMENT */}
           <div style={{ marginTop: 10 }}>
+
             <input
               placeholder="Comentar..."
               value={commentInputs[topic.id] || ''}
@@ -166,6 +171,7 @@ export default function Base() {
             <button onClick={() => addComment(topic.id, commentInputs[topic.id])}>
               Enviar
             </button>
+
           </div>
 
         </div>
