@@ -12,32 +12,42 @@ export default function Base() {
   const [newTopic, setNewTopic] = useState('');
   const [newCategory, setNewCategory] = useState('');
 
-  const [commentInputs, setCommentInputs] = useState({});
-
   useEffect(() => {
     loadTopics();
   }, []);
 
   async function loadTopics() {
-    const { data: topicsData } = await supabase
+    console.log('🔄 carregando tópicos...');
+
+    const { data: topicsData, error: topicsError } = await supabase
       .from('topicos')
       .select('*')
       .order('created_at', { ascending: false });
 
-    const { data: commentsData } = await supabase
+    const { data: commentsData, error: commentsError } = await supabase
       .from('comentarios')
       .select('*');
 
+    console.log('📌 TOPICOS DATA:', topicsData);
+    console.log('📌 TOPICOS ERROR:', topicsError);
+
+    console.log('💬 COMMENTS DATA:', commentsData);
+    console.log('💬 COMMENTS ERROR:', commentsError);
+
+    // segurança contra erro
+    const safeTopics = topicsData || [];
+    const safeComments = commentsData || [];
+
     const grouped = {};
 
-    (commentsData || []).forEach(c => {
+    safeComments.forEach(c => {
       const key = c.topic_id || c.topico_id;
 
       if (!grouped[key]) grouped[key] = [];
       grouped[key].push(c);
     });
 
-    setTopics(topicsData || []);
+    setTopics(safeTopics);
     setCommentsByTopic(grouped);
   }
 
@@ -64,9 +74,7 @@ export default function Base() {
     loadTopics();
   }
 
-  async function addComment(topicId) {
-    const text = commentInputs[topicId];
-
+  async function addComment(topicId, text) {
     if (!text) return;
 
     await supabase.from('comentarios').insert({
@@ -74,11 +82,6 @@ export default function Base() {
       texto: text,
       status: 'approved'
     });
-
-    setCommentInputs(prev => ({
-      ...prev,
-      [topicId]: ''
-    }));
 
     loadTopics();
   }
@@ -156,22 +159,25 @@ export default function Base() {
 
           {/* ADD COMMENT */}
           <div style={{ marginTop: 10 }}>
-
             <input
               placeholder="Comentar..."
-              value={commentInputs[topic.id] || ''}
-              onChange={e =>
-                setCommentInputs(prev => ({
-                  ...prev,
-                  [topic.id]: e.target.value
-                }))
-              }
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') {
+                  addComment(topic.id, e.target.value);
+                  e.target.value = '';
+                }
+              }}
             />
 
-            <button onClick={() => addComment(topic.id)}>
+            <button
+              onClick={(e) => {
+                const input = e.target.parentNode.querySelector('input');
+                addComment(topic.id, input.value);
+                input.value = '';
+              }}
+            >
               Enviar
             </button>
-
           </div>
 
         </div>
