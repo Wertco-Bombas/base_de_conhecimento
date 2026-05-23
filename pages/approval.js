@@ -1,106 +1,106 @@
 import { useEffect, useState } from 'react';
 import Layout from '../components/Layout';
 import { supabase } from '../lib/supabaseClient';
-import { logAction } from '../lib/audit';
 
 export default function Approval() {
-  const [items, setItems] = useState([]);
+
+  const [topics, setTopics] = useState([]);
+  const [comments, setComments] = useState([]);
 
   useEffect(() => {
     load();
   }, []);
 
   async function load() {
-    const { data } = await supabase
+
+    const { data: t } = await supabase
       .from('topicos')
       .select('*')
-      .eq('status', 'pending');
+      .eq('status', 'pending')
+      .order('id', { ascending: false });
 
-    const { data: comments } = await supabase
+    const { data: c } = await supabase
       .from('comentarios')
       .select('*')
-      .eq('status', 'pending');
+      .eq('status', 'pending')
+      .order('id', { ascending: false });
 
-    const merged = [
-      ...(data || []).map(i => ({ ...i, type: 'topic' })),
-      ...(comments || []).map(i => ({ ...i, type: 'comment' }))
-    ];
-
-    setItems(merged);
+    setTopics(t || []);
+    setComments(c || []);
   }
 
-  async function approve(item, type) {
-    const { data: { user } } = await supabase.auth.getUser();
+  async function approveTopic(id) {
 
     await supabase
-      .from(type === 'topic' ? 'topicos' : 'comentarios')
+      .from('topicos')
       .update({ status: 'approved' })
-      .eq('id', item.id);
-
-    await logAction({
-      user,
-      action: 'APPROVE',
-      entity: type,
-      entity_id: item.id
-    });
+      .eq('id', id);
 
     load();
   }
 
-  async function reject(item, type) {
-    const { data: { user } } = await supabase.auth.getUser();
+  async function rejectTopic(id) {
 
     await supabase
-      .from(type === 'topic' ? 'topicos' : 'comentarios')
+      .from('topicos')
       .update({ status: 'rejected' })
-      .eq('id', item.id);
+      .eq('id', id);
 
-    await logAction({
-      user,
-      action: 'REJECT',
-      entity: type,
-      entity_id: item.id
-    });
+    load();
+  }
+
+  async function approveComment(id) {
+
+    await supabase
+      .from('comentarios')
+      .update({ status: 'approved' })
+      .eq('id', id);
+
+    load();
+  }
+
+  async function rejectComment(id) {
+
+    await supabase
+      .from('comentarios')
+      .update({ status: 'rejected' })
+      .eq('id', id);
 
     load();
   }
 
   return (
     <Layout>
-      <div style={{ padding: 20, color: '#fff' }}>
 
-        <h1 style={{ color: '#f5c400' }}>Inbox de Aprovação</h1>
+      <h1 style={{ color: '#FFD600' }}>Aprovação</h1>
 
-        {items.map((item) => (
-          <div key={item.id} style={styles.card}>
+      <h2>Tópicos pendentes</h2>
 
-            <p style={{ color: '#f5c400' }}>
-              {item.type.toUpperCase()}
-            </p>
+      {topics.map(t => (
+        <div key={t.id} style={{ padding: 10, border: '1px solid #333', marginBottom: 10 }}>
 
-            <p>{item.titulo || item.texto}</p>
+          <h3>{t.titulo}</h3>
+          <p>{t.descricao}</p>
 
-            <button onClick={() => approve(item, item.type)}>
-              Aprovar
-            </button>
+          <button onClick={() => approveTopic(t.id)}>Aprovar</button>
+          <button onClick={() => rejectTopic(t.id)}>Rejeitar</button>
 
-            <button onClick={() => reject(item, item.type)}>
-              Rejeitar
-            </button>
+        </div>
+      ))}
 
-          </div>
-        ))}
+      <h2>Comentários pendentes</h2>
 
-      </div>
+      {comments.map(c => (
+        <div key={c.id} style={{ padding: 10, border: '1px solid #333', marginBottom: 10 }}>
+
+          <p>{c.texto}</p>
+
+          <button onClick={() => approveComment(c.id)}>Aprovar</button>
+          <button onClick={() => rejectComment(c.id)}>Rejeitar</button>
+
+        </div>
+      ))}
+
     </Layout>
   );
 }
-
-const styles = {
-  card: {
-    background: '#111',
-    padding: 10,
-    marginTop: 10,
-    borderRadius: 8
-  }
-};
