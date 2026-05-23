@@ -22,7 +22,7 @@ export default function Base() {
     const { data: topicsData, error: topicsError } = await supabase
       .from('topicos')
       .select('*')
-      .order('created_at', { ascending: false });
+      .order('id', { ascending: false });
 
     const { data: commentsData, error: commentsError } = await supabase
       .from('comentarios')
