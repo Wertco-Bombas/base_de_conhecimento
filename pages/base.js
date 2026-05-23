@@ -3,22 +3,22 @@ import Layout from '../components/Layout';
 import { supabase } from '../lib/supabaseClient';
 
 export default function Base() {
-  const [user, setUser] = useState(null);
-
   const [topics, setTopics] = useState([]);
-  const [commentsByTopic, setCommentsByTopic] = useState({});
+
+  const [categories, setCategories] = useState([]);
 
   const [q, setQ] = useState('');
-  const [commentInputs, setCommentInputs] = useState({});
 
-  const [editingId, setEditingId] = useState(null);
-  const [editingText, setEditingText] = useState('');
+  // MODALS
+  const [openTopic, setOpenTopic] = useState(false);
+  const [openCategory, setOpenCategory] = useState(false);
+
+  // FORM
+  const [newTopic, setNewTopic] = useState('');
+  const [selectedCategory, setSelectedCategory] = useState('');
+  const [newCategory, setNewCategory] = useState('');
 
   useEffect(() => {
-    supabase.auth.getUser().then(({ data }) => {
-      setUser(data?.user || null);
-    });
-
     load();
   }, []);
 
@@ -28,56 +28,56 @@ export default function Base() {
       .select('*')
       .order('id', { ascending: false });
 
-    const { data: commentsData } = await supabase
-      .from('comentarios')
-      .select('*');
-
-    const grouped = {};
-
-    (commentsData || []).forEach(c => {
-      if (!grouped[c.topic_id]) grouped[c.topic_id] = [];
-      grouped[c.topic_id].push(c);
-    });
-
     setTopics(topicsData || []);
-    setCommentsByTopic(grouped);
+
+    // categorias dinâmicas (simples)
+    const cats = [...new Set((topicsData || []).map(t => t.categoria))];
+    setCategories(cats);
   }
 
-  async function addComment(topicId) {
-    const text = commentInputs[topicId];
+  // ---------------- TOPIC ----------------
+  async function createTopic() {
+    if (!newTopic || !selectedCategory) return;
 
-    if (!text || !text.trim()) return;
-
-    const { error } = await supabase.from('comentarios').insert({
-      topic_id: topicId,
-      texto: text,
-      user_id: user?.id
+    await supabase.from('topicos').insert({
+      titulo: newTopic,
+      categoria: selectedCategory
     });
 
-    if (!error) {
-      setCommentInputs(prev => ({ ...prev, [topicId]: '' }));
-      load();
-    }
-  }
-
-  async function deleteComment(id) {
-    await supabase.from('comentarios').delete().eq('id', id);
+    setNewTopic('');
+    setSelectedCategory('');
+    setOpenTopic(false);
     load();
   }
 
-  function startEdit(comment) {
-    setEditingId(comment.id);
-    setEditingText(comment.texto);
+  async function deleteTopic(id) {
+    await supabase.from('topicos').delete().eq('id', id);
+    load();
   }
 
-  async function saveEdit(id) {
-    await supabase
-      .from('comentarios')
-      .update({ texto: editingText })
-      .eq('id', id);
+  // ---------------- CATEGORY ----------------
+  async function createCategory() {
+    if (!newCategory) return;
 
-    setEditingId(null);
-    setEditingText('');
+    // categoria não é tabela, então só UI (ou pode evoluir depois)
+    setCategories(prev => [...new Set([...prev, newCategory])]);
+
+    setNewCategory('');
+    setOpenCategory(false);
+  }
+
+  async function deleteCategory(cat) {
+    const confirmDelete = confirm(
+      `Excluir categoria "${cat}" e todos os tópicos dela?`
+    );
+
+    if (!confirmDelete) return;
+
+    await supabase
+      .from('topicos')
+      .delete()
+      .eq('categoria', cat);
+
     load();
   }
 
@@ -88,108 +88,202 @@ export default function Base() {
   return (
     <Layout>
 
-      <h1>Base de Conhecimento</h1>
+      {/* HEADER */}
+      <div style={styles.header}>
+        <h1>Base de Conhecimento</h1>
+
+        <div style={styles.actions}>
+          <button onClick={() => setOpenCategory(true)}>
+            + Categoria
+          </button>
+
+          <button onClick={() => setOpenTopic(true)}>
+            + Tópico
+          </button>
+        </div>
+      </div>
 
       {/* SEARCH */}
       <input
-        placeholder="Buscar..."
+        style={styles.search}
+        placeholder="Buscar tópicos..."
         value={q}
         onChange={e => setQ(e.target.value)}
-        style={styles.search}
       />
+
+      {/* CATEGORIES */}
+      <div style={styles.categoryBar}>
+        {categories.map((cat, i) => (
+          <div key={i} style={styles.categoryChip}>
+            {cat}
+
+            <button onClick={() => deleteCategory(cat)}>
+              ✕
+            </button>
+          </div>
+        ))}
+      </div>
 
       {/* TOPICS */}
       {filtered.map(topic => (
         <div key={topic.id} style={styles.card}>
 
-          <h3>{topic.titulo}</h3>
-          <p style={{ color: '#f5c400' }}>{topic.categoria}</p>
+          <div style={styles.cardHeader}>
+            <h3>{topic.titulo}</h3>
 
-          {/* COMMENTS */}
-          {(commentsByTopic[topic.id] || []).map(c => (
-            <div key={c.id} style={styles.comment}>
-
-              {editingId === c.id ? (
-                <>
-                  <input
-                    value={editingText}
-                    onChange={e => setEditingText(e.target.value)}
-                    style={styles.input}
-                  />
-                  <button onClick={() => saveEdit(c.id)}>Salvar</button>
-                </>
-              ) : (
-                <>
-                  <span>💬 {c.texto}</span>
-
-                  <button onClick={() => startEdit(c)}>✏️</button>
-                  <button onClick={() => deleteComment(c.id)}>🗑</button>
-                </>
-              )}
-
-            </div>
-          ))}
-
-          {/* ADD COMMENT */}
-          <div style={styles.row}>
-            <input
-              placeholder="Comentar..."
-              value={commentInputs[topic.id] || ''}
-              onChange={e =>
-                setCommentInputs(prev => ({
-                  ...prev,
-                  [topic.id]: e.target.value
-                }))
-              }
-              style={styles.input}
-            />
-
-            <button onClick={() => addComment(topic.id)}>
-              enviar
+            <button onClick={() => deleteTopic(topic.id)}>
+              Excluir
             </button>
           </div>
 
+          <span style={styles.tag}>
+            {topic.categoria}
+          </span>
+
         </div>
       ))}
+
+      {/* ---------------- MODAL TOPIC ---------------- */}
+      {openTopic && (
+        <div style={styles.modal}>
+          <div style={styles.modalBox}>
+
+            <h3>Novo Tópico</h3>
+
+            <input
+              placeholder="Título"
+              value={newTopic}
+              onChange={e => setNewTopic(e.target.value)}
+            />
+
+            {/* CATEGORIA SELECT */}
+            <select
+              value={selectedCategory}
+              onChange={e => setSelectedCategory(e.target.value)}
+            >
+              <option value="">Selecione categoria</option>
+              {categories.map((c, i) => (
+                <option key={i} value={c}>{c}</option>
+              ))}
+            </select>
+
+            <button onClick={createTopic}>
+              Criar
+            </button>
+
+            <button onClick={() => setOpenTopic(false)}>
+              Fechar
+            </button>
+
+          </div>
+        </div>
+      )}
+
+      {/* ---------------- MODAL CATEGORY ---------------- */}
+      {openCategory && (
+        <div style={styles.modal}>
+          <div style={styles.modalBox}>
+
+            <h3>Nova Categoria</h3>
+
+            <input
+              placeholder="Nome da categoria"
+              value={newCategory}
+              onChange={e => setNewCategory(e.target.value)}
+            />
+
+            <button onClick={createCategory}>
+              Criar
+            </button>
+
+            <button onClick={() => setOpenCategory(false)}>
+              Fechar
+            </button>
+
+          </div>
+        </div>
+      )}
 
     </Layout>
   );
 }
 
 const styles = {
-  card: {
-    background: '#111',
-    padding: 15,
-    marginBottom: 10,
-    borderRadius: 10
+  header: {
+    display: 'flex',
+    justifyContent: 'space-between',
+    marginBottom: 20,
+    alignItems: 'center'
+  },
+
+  actions: {
+    display: 'flex',
+    gap: 10
   },
 
   search: {
     width: '100%',
     padding: 10,
-    marginBottom: 20,
+    marginBottom: 15,
     background: '#111',
-    color: '#fff'
+    color: '#fff',
+    border: '1px solid #333',
+    borderRadius: 8
   },
 
-  comment: {
-    display: 'flex',
-    justifyContent: 'space-between',
-    marginTop: 5,
-    color: '#aaa'
-  },
-
-  row: {
+  categoryBar: {
     display: 'flex',
     gap: 10,
-    marginTop: 10
+    marginBottom: 20,
+    flexWrap: 'wrap'
   },
 
-  input: {
-    flex: 1,
-    padding: 8,
-    background: '#000',
+  categoryChip: {
+    background: '#222',
+    padding: '5px 10px',
+    borderRadius: 20,
     color: '#fff',
-    border: '1px solid #333'
+    display: 'flex',
+    gap: 8,
+    alignItems: 'center'
+  },
+
+  card: {
+    background: '#111',
+    padding: 15,
+    borderRadius: 10,
+    marginBottom: 10
+  },
+
+  cardHeader: {
+    display: 'flex',
+    justifyContent: 'space-between'
+  },
+
+  tag: {
+    color: '#f5c400',
+    fontSize: 12
+  },
+
+  modal: {
+    position: 'fixed',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    background: 'rgba(0,0,0,0.7)',
+    display: 'flex',
+    justifyContent: 'center',
+    alignItems: 'center'
+  },
+
+  modalBox: {
+    background: '#111',
+    padding: 20,
+    borderRadius: 10,
+    width: 320,
+    display: 'flex',
+    flexDirection: 'column',
+    gap: 10
   }
 };
