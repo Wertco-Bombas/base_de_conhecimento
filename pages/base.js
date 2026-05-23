@@ -12,7 +12,11 @@ export default function Base() {
   const [q, setQ] = useState('');
   const [commentInput, setCommentInput] = useState({});
 
-  const [replyTo, setReplyTo] = useState(null);
+  // ⭐ FIX IMPORTANTE: reply precisa guardar contexto completo
+  const [replyTo, setReplyTo] = useState({
+    commentId: null,
+    topicId: null
+  });
 
   const [showTopic, setShowTopic] = useState(false);
 
@@ -36,7 +40,7 @@ export default function Base() {
     setComments(c || []);
   }
 
-  // ---------------- CREATE TOPIC ----------------
+  // ---------------- TOPIC ----------------
   async function createTopic() {
     await supabase.from('topicos').insert({
       titulo: newTopic,
@@ -50,15 +54,15 @@ export default function Base() {
     load();
   }
 
-  // ---------------- ADD COMMENT / REPLY ----------------
+  // ---------------- COMMENT / REPLY ----------------
   async function addComment(topicId) {
     const text = commentInput[topicId];
 
     if (!text || !text.trim()) return;
 
     const { error } = await supabase.from('comentarios').insert({
-      topic_id: topicId,
-      parent_id: replyTo || null,
+      topic_id: replyTo.topicId || topicId,   // ⭐ FIX
+      parent_id: replyTo.commentId || null,   // ⭐ FIX
       texto: text,
       user_email: user?.email,
       created_at: new Date()
@@ -70,7 +74,7 @@ export default function Base() {
     }
 
     setCommentInput(prev => ({ ...prev, [topicId]: '' }));
-    setReplyTo(null);
+    setReplyTo({ commentId: null, topicId: null });
     load();
   }
 
@@ -99,7 +103,6 @@ export default function Base() {
     return topicMatch || commentMatch;
   });
 
-  // format data
   function formatDate(date) {
     if (!date) return '';
     return new Date(date).toLocaleString('pt-BR');
@@ -129,22 +132,22 @@ export default function Base() {
             <div>
               <h3>{t.titulo}</h3>
               <small style={{ color: '#f5c400' }}>
-                📂 {t.categoria || 'Sem categoria'}
+                📂 {t.categoria}
               </small>
             </div>
 
             <button onClick={() => deleteTopic(t.id)}>
-              Excluir
+              excluir
             </button>
           </div>
 
           <p>{t.descricao}</p>
 
           <small style={{ color: '#777' }}>
-            criado por: {t.user_email} • {formatDate(t.created_at)}
+            {t.user_email} • {formatDate(t.created_at)}
           </small>
 
-          {/* COMMENTS */}
+          {/* COMMENTS ROOT */}
           {comments
             .filter(c => c.topic_id === t.id && !c.parent_id)
             .map(c => (
@@ -158,9 +161,17 @@ export default function Base() {
                 </div>
 
                 <div style={styles.actions}>
-                  <button onClick={() => setReplyTo(c.id)}>
+                  <button
+                    onClick={() =>
+                      setReplyTo({
+                        commentId: c.id,
+                        topicId: t.id
+                      })
+                    }
+                  >
                     responder
                   </button>
+
                   <button onClick={() => deleteComment(c.id)}>
                     excluir
                   </button>
@@ -187,7 +198,9 @@ export default function Base() {
           {/* INPUT COMMENT */}
           <div style={styles.row}>
             <input
-              placeholder={replyTo ? "Respondendo..." : "Comentar..."}
+              placeholder={
+                replyTo.commentId ? "Respondendo comentário..." : "Comentar..."
+              }
               value={commentInput[t.id] || ''}
               onChange={e =>
                 setCommentInput(prev => ({
@@ -197,8 +210,8 @@ export default function Base() {
               }
             />
 
-            {replyTo && (
-              <button onClick={() => setReplyTo(null)}>
+            {replyTo.commentId && (
+              <button onClick={() => setReplyTo({ commentId: null, topicId: null })}>
                 cancelar resposta
               </button>
             )}
@@ -248,44 +261,15 @@ export default function Base() {
 }
 
 const styles = {
-  search: {
-    width: '100%',
-    padding: 10,
-    marginBottom: 20,
-    background: '#111',
-    color: '#fff'
-  },
+  search: { width: '100%', padding: 10, marginBottom: 20, background: '#111', color: '#fff' },
+  btn: { marginBottom: 20, padding: 10, background: '#222', color: '#fff' },
+  card: { background: '#111', padding: 15, marginBottom: 10, borderRadius: 8 },
 
-  btn: {
-    marginBottom: 20,
-    padding: 10,
-    background: '#222',
-    color: '#fff'
-  },
+  header: { display: 'flex', justifyContent: 'space-between' },
 
-  card: {
-    background: '#111',
-    padding: 15,
-    marginBottom: 10,
-    borderRadius: 8
-  },
+  comment: { marginTop: 10, fontSize: 12, color: '#aaa' },
 
-  header: {
-    display: 'flex',
-    justifyContent: 'space-between'
-  },
-
-  comment: {
-    marginTop: 10,
-    fontSize: 12,
-    color: '#aaa'
-  },
-
-  actions: {
-    display: 'flex',
-    gap: 10,
-    marginTop: 5
-  },
+  actions: { display: 'flex', gap: 10, marginTop: 5 },
 
   meta: {
     display: 'flex',
@@ -294,22 +278,11 @@ const styles = {
     color: '#777'
   },
 
-  row: {
-    display: 'flex',
-    gap: 10,
-    marginTop: 10
-  },
+  row: { display: 'flex', gap: 10, marginTop: 10 },
 
-  replyBox: {
-    marginLeft: 20,
-    marginTop: 5
-  },
+  replyBox: { marginLeft: 20, marginTop: 5 },
 
-  reply: {
-    fontSize: 11,
-    color: '#777',
-    marginTop: 5
-  },
+  reply: { fontSize: 11, color: '#777', marginTop: 5 },
 
   modal: {
     position: 'fixed',
