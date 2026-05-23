@@ -8,10 +8,8 @@ export default function Base() {
 
   const [topics, setTopics] = useState([]);
   const [comments, setComments] = useState([]);
-  const [categories, setCategories] = useState([]);
 
   const [q, setQ] = useState('');
-
   const [commentInput, setCommentInput] = useState({});
 
   const [showTopic, setShowTopic] = useState(false);
@@ -29,15 +27,18 @@ export default function Base() {
   }, []);
 
   async function load() {
-    const { data: t } = await supabase.from('topicos').select('*');
-    const { data: c } = await supabase.from('comentarios').select('*');
+    const { data: t, error: errT } = await supabase.from('topicos').select('*');
+    const { data: c, error: errC } = await supabase.from('comentarios').select('*');
+
+    console.log("TOPICOS:", t, errT);
+    console.log("COMMENTS:", c, errC);
 
     setTopics(t || []);
     setComments(c || []);
   }
 
   async function createTopic() {
-    await supabase.from('topicos').insert({
+    const { error } = await supabase.from('topicos').insert({
       titulo: newTopic,
       descricao: newDesc,
       categoria: newCat,
@@ -45,21 +46,45 @@ export default function Base() {
       created_at: new Date()
     });
 
+    if (error) {
+      alert("Erro ao criar tópico: " + error.message);
+      return;
+    }
+
     setShowTopic(false);
     load();
   }
 
+  // 🔥 FUNÇÃO CRÍTICA (COM DEBUG REAL)
   async function addComment(topicId) {
     const text = commentInput[topicId];
 
-    if (!text) return;
-
-    await supabase.from('comentarios').insert({
-      topic_id: topicId,
-      texto: text,
-      user_email: user?.email,
-      created_at: new Date()
+    console.log("ENVIANDO COMENTÁRIO:", {
+      topicId,
+      text,
+      user: user?.email
     });
+
+    if (!text || !text.trim()) return;
+
+    const { data, error } = await supabase
+      .from('comentarios')
+      .insert([
+        {
+          topic_id: topicId,
+          texto: text,
+          user_email: user?.email,
+          created_at: new Date()
+        }
+      ])
+      .select();
+
+    console.log("RESPOSTA SUPABASE:", { data, error });
+
+    if (error) {
+      alert("Erro ao salvar comentário: " + error.message);
+      return;
+    }
 
     setCommentInput(prev => ({ ...prev, [topicId]: '' }));
     load();
@@ -75,7 +100,7 @@ export default function Base() {
     load();
   }
 
-  // 🔍 BUSCA GLOBAL (TOPICOS + COMENTÁRIOS)
+  // 🔍 BUSCA GLOBAL
   const filteredTopics = topics.filter(t => {
     const topicMatch =
       (t.titulo + t.descricao + t.categoria)
@@ -112,10 +137,7 @@ export default function Base() {
 
           <div style={styles.header}>
             <h3>{t.titulo}</h3>
-
-            <button onClick={() => deleteTopic(t.id)}>
-              Excluir
-            </button>
+            <button onClick={() => deleteTopic(t.id)}>Excluir</button>
           </div>
 
           <p>{t.descricao}</p>
@@ -129,9 +151,7 @@ export default function Base() {
                 💬 {c.texto} <br />
                 <small>{c.user_email}</small>
 
-                <button onClick={() => deleteComment(c.id)}>
-                  x
-                </button>
+                <button onClick={() => deleteComment(c.id)}>x</button>
               </div>
             ))}
 
@@ -193,45 +213,12 @@ export default function Base() {
 }
 
 const styles = {
-  search: {
-    width: '100%',
-    padding: 10,
-    marginBottom: 20,
-    background: '#111',
-    color: '#fff'
-  },
-
-  btn: {
-    marginBottom: 20,
-    padding: 10,
-    background: '#222',
-    color: '#fff'
-  },
-
-  card: {
-    background: '#111',
-    padding: 15,
-    marginBottom: 10,
-    borderRadius: 8
-  },
-
-  header: {
-    display: 'flex',
-    justifyContent: 'space-between'
-  },
-
-  comment: {
-    marginTop: 8,
-    fontSize: 12,
-    color: '#aaa'
-  },
-
-  row: {
-    display: 'flex',
-    gap: 10,
-    marginTop: 10
-  },
-
+  search: { width: '100%', padding: 10, marginBottom: 20, background: '#111', color: '#fff' },
+  btn: { marginBottom: 20, padding: 10, background: '#222', color: '#fff' },
+  card: { background: '#111', padding: 15, marginBottom: 10, borderRadius: 8 },
+  header: { display: 'flex', justifyContent: 'space-between' },
+  comment: { marginTop: 8, fontSize: 12, color: '#aaa' },
+  row: { display: 'flex', gap: 10, marginTop: 10 },
   modal: {
     position: 'fixed',
     inset: 0,
@@ -240,7 +227,6 @@ const styles = {
     justifyContent: 'center',
     alignItems: 'center'
   },
-
   modalBox: {
     background: '#111',
     padding: 20,
