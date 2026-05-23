@@ -1,16 +1,33 @@
-import { useEffect } from 'react';
-import useUser from '../lib/useUser';
+import { useEffect, useState } from 'react';
+import { supabase } from '../lib/supabaseClient';
 
-export default function ProtectedRoute({ children }) {
-  const user = useUser();
+export default function ProtectedRoute({ children, allowedRoles = [] }) {
+  const [user, setUser] = useState(null);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    if (user === null) {
-      // ainda carregando
-    }
-  }, [user]);
+    supabase.auth.getUser().then(({ data }) => {
+      setUser(data?.user || null);
+      setLoading(false);
+    });
+  }, []);
 
-  if (!user) return <p style={{ color: '#fff' }}>Carregando...</p>;
+  if (loading) return <div style={{ color: '#fff' }}>Carregando...</div>;
+
+  if (!user) {
+    window.location.href = '/';
+    return null;
+  }
+
+  const role = user?.role;
+
+  if (allowedRoles.length && !allowedRoles.includes(role)) {
+    return (
+      <div style={{ color: '#fff', padding: 20 }}>
+        Acesso negado
+      </div>
+    );
+  }
 
   return children;
 }
