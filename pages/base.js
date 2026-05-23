@@ -13,13 +13,8 @@ export default function Base() {
   const [q, setQ] = useState('');
 
   const [commentInput, setCommentInput] = useState({});
-  const [replyTo, setReplyTo] = useState(null);
 
-  const [editComment, setEditComment] = useState(null);
-  const [editText, setEditText] = useState('');
-
-  const [showTopicModal, setShowTopicModal] = useState(false);
-  const [showCategoryModal, setShowCategoryModal] = useState(false);
+  const [showTopic, setShowTopic] = useState(false);
 
   const [newTopic, setNewTopic] = useState('');
   const [newDesc, setNewDesc] = useState('');
@@ -27,21 +22,18 @@ export default function Base() {
 
   useEffect(() => {
     supabase.auth.getUser().then(({ data }) => {
-      setUser(data?.user);
+      setUser(data?.user || null);
     });
 
     load();
   }, []);
 
   async function load() {
-
     const { data: t } = await supabase.from('topicos').select('*');
     const { data: c } = await supabase.from('comentarios').select('*');
-    const { data: cat } = await supabase.from('categorias').select('*');
 
     setTopics(t || []);
     setComments(c || []);
-    setCategories(cat || []);
   }
 
   async function createTopic() {
@@ -53,16 +45,17 @@ export default function Base() {
       created_at: new Date()
     });
 
-    setShowTopicModal(false);
+    setShowTopic(false);
     load();
   }
 
-  async function addComment(topicId, parentId = null) {
+  async function addComment(topicId) {
     const text = commentInput[topicId];
+
+    if (!text) return;
 
     await supabase.from('comentarios').insert({
       topic_id: topicId,
-      parent_id: parentId,
       texto: text,
       user_email: user?.email,
       created_at: new Date()
@@ -72,92 +65,80 @@ export default function Base() {
     load();
   }
 
+  async function deleteTopic(id) {
+    await supabase.from('topicos').delete().eq('id', id);
+    load();
+  }
+
   async function deleteComment(id) {
     await supabase.from('comentarios').delete().eq('id', id);
     load();
   }
 
-  async function updateComment(id) {
-    await supabase
-      .from('comentarios')
-      .update({ texto: editText })
-      .eq('id', id);
+  // 🔍 BUSCA GLOBAL (TOPICOS + COMENTÁRIOS)
+  const filteredTopics = topics.filter(t => {
+    const topicMatch =
+      (t.titulo + t.descricao + t.categoria)
+        .toLowerCase()
+        .includes(q.toLowerCase());
 
-    setEditComment(null);
-    load();
-  }
+    const commentMatch = comments.some(c =>
+      c.topic_id === t.id &&
+      c.texto?.toLowerCase().includes(q.toLowerCase())
+    );
 
-  const filteredTopics = topics.filter(t =>
-    (t.titulo + t.descricao).toLowerCase().includes(q.toLowerCase())
-  );
+    return topicMatch || commentMatch;
+  });
 
   return (
     <Layout>
 
       {/* SEARCH */}
       <input
-        placeholder="Buscar tudo..."
+        placeholder="Buscar tópicos e comentários..."
         value={q}
         onChange={e => setQ(e.target.value)}
         style={styles.search}
       />
 
       {/* ACTIONS */}
-      <div style={styles.actions}>
-        <button onClick={() => setShowCategoryModal(true)}>Nova Categoria</button>
-        <button onClick={() => setShowTopicModal(true)}>Novo Tópico</button>
-      </div>
+      <button onClick={() => setShowTopic(true)} style={styles.btn}>
+        + Novo Tópico
+      </button>
 
       {/* TOPICS */}
       {filteredTopics.map(t => (
         <div key={t.id} style={styles.card}>
 
-          <h3>{t.titulo}</h3>
+          <div style={styles.header}>
+            <h3>{t.titulo}</h3>
+
+            <button onClick={() => deleteTopic(t.id)}>
+              Excluir
+            </button>
+          </div>
+
           <p>{t.descricao}</p>
           <small>{t.categoria}</small>
 
           {/* COMMENTS */}
           {comments
-            .filter(c => c.topic_id === t.id && !c.parent_id)
+            .filter(c => c.topic_id === t.id)
             .map(c => (
               <div key={c.id} style={styles.comment}>
+                💬 {c.texto} <br />
+                <small>{c.user_email}</small>
 
-                {editComment === c.id ? (
-                  <>
-                    <input value={editText} onChange={e => setEditText(e.target.value)} />
-                    <button onClick={() => updateComment(c.id)}>salvar</button>
-                  </>
-                ) : (
-                  <>
-                    <span>{c.texto}</span>
-
-                    <button onClick={() => {
-                      setEditComment(c.id);
-                      setEditText(c.texto);
-                    }}>editar</button>
-
-                    <button onClick={() => deleteComment(c.id)}>excluir</button>
-
-                    <button onClick={() => setReplyTo(c.id)}>responder</button>
-                  </>
-                )}
-
-                {/* REPLIES */}
-                {comments
-                  .filter(r => r.parent_id === c.id)
-                  .map(r => (
-                    <div key={r.id} style={styles.reply}>
-                      ↳ {r.texto}
-                    </div>
-                  ))}
-
+                <button onClick={() => deleteComment(c.id)}>
+                  x
+                </button>
               </div>
             ))}
 
-          {/* INPUT COMMENT */}
+          {/* ADD COMMENT */}
           <div style={styles.row}>
             <input
-              placeholder={replyTo ? "Responder..." : "Comentar..."}
+              placeholder="Comentar..."
               value={commentInput[t.id] || ''}
               onChange={e =>
                 setCommentInput(prev => ({
@@ -167,7 +148,7 @@ export default function Base() {
               }
             />
 
-            <button onClick={() => addComment(t.id, replyTo)}>
+            <button onClick={() => addComment(t.id)}>
               enviar
             </button>
           </div>
@@ -175,20 +156,95 @@ export default function Base() {
         </div>
       ))}
 
+      {/* MODAL TOPIC */}
+      {showTopic && (
+        <div style={styles.modal}>
+          <div style={styles.modalBox}>
+
+            <h3>Novo Tópico</h3>
+
+            <input
+              placeholder="Título"
+              value={newTopic}
+              onChange={e => setNewTopic(e.target.value)}
+            />
+
+            <input
+              placeholder="Descrição"
+              value={newDesc}
+              onChange={e => setNewDesc(e.target.value)}
+            />
+
+            <input
+              placeholder="Categoria"
+              value={newCat}
+              onChange={e => setNewCat(e.target.value)}
+            />
+
+            <button onClick={createTopic}>Salvar</button>
+            <button onClick={() => setShowTopic(false)}>Fechar</button>
+
+          </div>
+        </div>
+      )}
+
     </Layout>
   );
 }
 
 const styles = {
-  search: { width: '100%', padding: 10, marginBottom: 20 },
+  search: {
+    width: '100%',
+    padding: 10,
+    marginBottom: 20,
+    background: '#111',
+    color: '#fff'
+  },
 
-  actions: { display: 'flex', gap: 10, marginBottom: 20 },
+  btn: {
+    marginBottom: 20,
+    padding: 10,
+    background: '#222',
+    color: '#fff'
+  },
 
-  card: { background: '#111', padding: 15, marginBottom: 10 },
+  card: {
+    background: '#111',
+    padding: 15,
+    marginBottom: 10,
+    borderRadius: 8
+  },
 
-  comment: { marginTop: 10, color: '#aaa' },
+  header: {
+    display: 'flex',
+    justifyContent: 'space-between'
+  },
 
-  reply: { marginLeft: 20, color: '#888', fontSize: 12 },
+  comment: {
+    marginTop: 8,
+    fontSize: 12,
+    color: '#aaa'
+  },
 
-  row: { display: 'flex', gap: 10, marginTop: 10 }
+  row: {
+    display: 'flex',
+    gap: 10,
+    marginTop: 10
+  },
+
+  modal: {
+    position: 'fixed',
+    inset: 0,
+    background: 'rgba(0,0,0,0.7)',
+    display: 'flex',
+    justifyContent: 'center',
+    alignItems: 'center'
+  },
+
+  modalBox: {
+    background: '#111',
+    padding: 20,
+    borderRadius: 10,
+    width: 400
+  }
 };
