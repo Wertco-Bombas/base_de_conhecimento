@@ -6,24 +6,14 @@ export default function Base() {
   const [user, setUser] = useState(null);
 
   const [topics, setTopics] = useState([]);
-  const [commentsByTopic, setCommentsByTopic] = useState({});
+  const [commentsByTopic, setCommentsByTopic] = useState([]);
   const [categories, setCategories] = useState([]);
 
-  const [q, setQ] = useState('');
+  const [showTopicModal, setShowTopicModal] = useState(false);
 
-  // TOPIC
-  const [openTopicModal, setOpenTopicModal] = useState(false);
   const [newTopic, setNewTopic] = useState('');
   const [newDescription, setNewDescription] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('');
-
-  // COMMENT
-  const [commentInputs, setCommentInputs] = useState({});
-  const [replyTo, setReplyTo] = useState({});
-
-  // EDIT COMMENT
-  const [editingId, setEditingId] = useState(null);
-  const [editingText, setEditingText] = useState('');
 
   useEffect(() => {
     supabase.auth.getUser().then(({ data }) => {
@@ -57,10 +47,7 @@ export default function Base() {
     setCategories(cats);
   }
 
-  // ---------------- TOPIC ----------------
   async function createTopic() {
-    if (!newTopic || !selectedCategory) return;
-
     await supabase.from('topicos').insert({
       titulo: newTopic,
       descricao: newDescription,
@@ -69,11 +56,10 @@ export default function Base() {
       created_at: new Date()
     });
 
+    setShowTopicModal(false);
     setNewTopic('');
     setNewDescription('');
     setSelectedCategory('');
-    setOpenTopicModal(false);
-
     load();
   }
 
@@ -82,183 +68,71 @@ export default function Base() {
     load();
   }
 
-  // ---------------- COMMENT ----------------
-  async function addComment(topicId) {
-    const text = commentInputs[topicId];
-    const parent = replyTo[topicId] || null;
-
-    if (!text || !text.trim()) return;
-
-    await supabase.from('comentarios').insert({
-      topic_id: topicId,
-      parent_id: parent,
-      texto: text,
-      user_id: user?.id,
-      user_email: user?.email,
-      created_at: new Date()
-    });
-
-    setCommentInputs(prev => ({ ...prev, [topicId]: '' }));
-    setReplyTo(prev => ({ ...prev, [topicId]: null }));
-
-    load();
+  async function logout() {
+    await supabase.auth.signOut();
+    window.location.href = '/';
   }
-
-  async function deleteComment(id) {
-    await supabase.from('comentarios').delete().eq('id', id);
-    load();
-  }
-
-  function startEdit(c) {
-    setEditingId(c.id);
-    setEditingText(c.texto);
-  }
-
-  async function saveEdit(id) {
-    await supabase
-      .from('comentarios')
-      .update({ texto: editingText })
-      .eq('id', id);
-
-    setEditingId(null);
-    setEditingText('');
-    load();
-  }
-
-  // ---------------- RENDER COMMENTS TREE ----------------
-  const renderComments = (topicId, parentId = null, level = 0) => {
-    return (commentsByTopic[topicId] || [])
-      .filter(c => (c.parent_id || null) === parentId)
-      .map(c => (
-        <div key={c.id} style={{ marginLeft: level * 20, marginTop: 10 }}>
-
-          {editingId === c.id ? (
-            <>
-              <input
-                value={editingText}
-                onChange={e => setEditingText(e.target.value)}
-                style={styles.input}
-              />
-              <button onClick={() => saveEdit(c.id)}>Salvar</button>
-            </>
-          ) : (
-            <>
-              {/* AUTHOR + DATE */}
-              <div style={{ fontSize: 11, color: '#777' }}>
-                👤 {c.user_email || 'anônimo'} •{' '}
-                {c.created_at
-                  ? new Date(c.created_at).toLocaleString('pt-BR')
-                  : ''}
-              </div>
-
-              <div style={{ color: '#aaa' }}>
-                💬 {c.texto}
-              </div>
-
-              <div style={{ display: 'flex', gap: 5 }}>
-                <button onClick={() => startEdit(c)}>✏️</button>
-                <button onClick={() => deleteComment(c.id)}>🗑</button>
-
-                <button
-                  onClick={() =>
-                    setReplyTo(prev => ({
-                      ...prev,
-                      [topicId]: c.id
-                    }))
-                  }
-                >
-                  responder
-                </button>
-              </div>
-
-              {renderComments(topicId, c.id, level + 1)}
-            </>
-          )}
-
-        </div>
-      ));
-  };
-
-  const filtered = topics.filter(t =>
-    (t.titulo || '').toLowerCase().includes(q.toLowerCase())
-  );
 
   return (
-    <Layout>
+    <div style={styles.page}>
 
-      <h1>Base de Conhecimento</h1>
+      {/* TOP BAR */}
+      <div style={styles.topbar}>
+        <div style={styles.brand}>WERTCO</div>
 
-      {/* SEARCH */}
-      <input
-        placeholder="Buscar..."
-        value={q}
-        onChange={e => setQ(e.target.value)}
-        style={styles.search}
-      />
+        <div style={styles.userBox}>
+          <span style={{ color: '#aaa', fontSize: 12 }}>
+            {user?.email || 'não logado'}
+          </span>
 
-      {/* TOPICS */}
-      {filtered.map(topic => (
-        <div key={topic.id} style={styles.card}>
-
-          <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-            <h3>{topic.titulo}</h3>
-            <button onClick={() => deleteTopic(topic.id)}>Excluir</button>
-          </div>
-
-          <p>{topic.descricao}</p>
-
-          {/* AUTHOR + DATE TOPIC */}
-          <p style={{ fontSize: 12, color: '#777' }}>
-            👤 {topic.user_email || 'anônimo'} •{' '}
-            {topic.created_at
-              ? new Date(topic.created_at).toLocaleString('pt-BR')
-              : ''}
-          </p>
-
-          <p style={{ color: '#f5c400' }}>{topic.categoria}</p>
-
-          {/* COMMENTS TREE */}
-          {renderComments(topic.id)}
-
-          {/* ADD COMMENT */}
-          <div style={{ display: 'flex', gap: 10, marginTop: 10 }}>
-
-            <input
-              placeholder={
-                replyTo[topic.id]
-                  ? 'Respondendo comentário...'
-                  : 'Comentar no tópico...'
-              }
-              value={commentInputs[topic.id] || ''}
-              onChange={e =>
-                setCommentInputs(prev => ({
-                  ...prev,
-                  [topic.id]: e.target.value
-                }))
-              }
-              style={styles.input}
-            />
-
-            {replyTo[topic.id] && (
-              <button
-                onClick={() =>
-                  setReplyTo(prev => ({ ...prev, [topic.id]: null }))
-                }
-              >
-                cancelar resposta
-              </button>
-            )}
-
-            <button onClick={() => addComment(topic.id)}>
-              enviar
-            </button>
-          </div>
-
+          <button onClick={logout} style={styles.logout}>
+            Sair
+          </button>
         </div>
-      ))}
+      </div>
 
-      {/* MODAL TOPIC */}
-      {openTopicModal && (
+      <div style={styles.container}>
+
+        {/* HEADER ACTIONS */}
+        <div style={styles.header}>
+          <h2>Base de Conhecimento</h2>
+
+          <button
+            style={styles.primaryBtn}
+            onClick={() => setShowTopicModal(true)}
+          >
+            + Novo Tópico
+          </button>
+        </div>
+
+        {/* TOPICS */}
+        {topics.map(topic => (
+          <div key={topic.id} style={styles.card}>
+
+            <div style={styles.cardHeader}>
+              <h3>{topic.titulo}</h3>
+
+              <button
+                style={styles.dangerBtn}
+                onClick={() => deleteTopic(topic.id)}
+              >
+                Excluir
+              </button>
+            </div>
+
+            <p style={{ color: '#ccc' }}>{topic.descricao}</p>
+
+            <span style={styles.tag}>
+              {topic.categoria}
+            </span>
+
+          </div>
+        ))}
+
+      </div>
+
+      {/* MODAL */}
+      {showTopicModal && (
         <div style={styles.modal}>
           <div style={styles.modalBox}>
 
@@ -268,17 +142,20 @@ export default function Base() {
               placeholder="Título"
               value={newTopic}
               onChange={e => setNewTopic(e.target.value)}
+              style={styles.input}
             />
 
             <textarea
               placeholder="Descrição"
               value={newDescription}
               onChange={e => setNewDescription(e.target.value)}
+              style={styles.input}
             />
 
             <select
               value={selectedCategory}
               onChange={e => setSelectedCategory(e.target.value)}
+              style={styles.input}
             >
               <option value="">Categoria</option>
               {categories.map((c, i) => (
@@ -286,40 +163,101 @@ export default function Base() {
               ))}
             </select>
 
-            <button onClick={createTopic}>Criar</button>
-            <button onClick={() => setOpenTopicModal(false)}>Fechar</button>
+            <button onClick={createTopic} style={styles.primaryBtn}>
+              Criar
+            </button>
+
+            <button onClick={() => setShowTopicModal(false)}>
+              Cancelar
+            </button>
 
           </div>
         </div>
       )}
 
-    </Layout>
+    </div>
   );
 }
 
 const styles = {
+  page: {
+    background: '#0b0b0b',
+    minHeight: '100vh',
+    color: '#fff'
+  },
+
+  topbar: {
+    display: 'flex',
+    justifyContent: 'space-between',
+    padding: '15px 20px',
+    borderBottom: '1px solid #222'
+  },
+
+  brand: {
+    fontWeight: 'bold',
+    fontSize: 18,
+    color: '#f5c400'
+  },
+
+  userBox: {
+    display: 'flex',
+    gap: 10,
+    alignItems: 'center'
+  },
+
+  logout: {
+    background: '#222',
+    color: '#fff',
+    border: '1px solid #333',
+    padding: '5px 10px',
+    borderRadius: 6,
+    cursor: 'pointer'
+  },
+
+  container: {
+    padding: 20
+  },
+
+  header: {
+    display: 'flex',
+    justifyContent: 'space-between',
+    marginBottom: 20
+  },
+
+  primaryBtn: {
+    background: '#f5c400',
+    border: 'none',
+    padding: '8px 12px',
+    borderRadius: 6,
+    cursor: 'pointer',
+    fontWeight: 'bold'
+  },
+
+  dangerBtn: {
+    background: '#2a2a2a',
+    color: '#ff4d4d',
+    border: '1px solid #333',
+    padding: '5px 8px',
+    borderRadius: 6
+  },
+
   card: {
     background: '#111',
     padding: 15,
-    marginTop: 10,
+    marginBottom: 10,
     borderRadius: 10
   },
 
-  search: {
-    width: '100%',
-    padding: 10,
-    marginBottom: 20,
-    background: '#111',
-    color: '#fff',
-    border: '1px solid #333'
+  cardHeader: {
+    display: 'flex',
+    justifyContent: 'space-between'
   },
 
-  input: {
-    flex: 1,
-    padding: 8,
-    background: '#000',
-    color: '#fff',
-    border: '1px solid #333'
+  tag: {
+    display: 'inline-block',
+    marginTop: 10,
+    fontSize: 12,
+    color: '#f5c400'
   },
 
   modal: {
@@ -335,9 +273,17 @@ const styles = {
     background: '#111',
     padding: 20,
     borderRadius: 10,
-    width: 420,
+    width: 400,
     display: 'flex',
     flexDirection: 'column',
     gap: 10
+  },
+
+  input: {
+    padding: 10,
+    background: '#000',
+    border: '1px solid #333',
+    color: '#fff',
+    borderRadius: 6
   }
 };
