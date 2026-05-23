@@ -1,6 +1,7 @@
 import { useEffect, useState, useMemo } from 'react';
 import Layout from '../components/Layout';
 import { supabase } from '../lib/supabaseClient';
+import { canAutoApprove } from '../lib/permissions';
 
 export default function Base() {
 
@@ -71,7 +72,8 @@ export default function Base() {
         descricao: newDesc,
         categoria_id: catData.id,
         user_email: user?.email,
-        created_at: new Date().toISOString()
+        created_at: new Date().toISOString(),
+        status: canAutoApprove(user) ? 'approved' : 'pending'
       });
 
     if (error) {
@@ -100,7 +102,8 @@ export default function Base() {
         parent_id: parentId,
         texto: text,
         user_email: user?.email,
-        created_at: new Date().toISOString()
+       created_at: new Date().toISOString(),
+        status: canAutoApprove(user) ? 'approved' : 'pending'
       });
 
     if (error) {
@@ -379,7 +382,11 @@ export default function Base() {
 
       </div>
 
-      {filteredTopics.map(topic => {
+      {visibleTopics.map(topic => {
+        const visibleTopics =
+  topics.filter(t =>
+    t.status === 'approved' || canAutoApprove(user)
+  );
 
         const tree = buildTree(comments, null, topic.id);
 
