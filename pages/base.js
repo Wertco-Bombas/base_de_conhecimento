@@ -44,36 +44,48 @@ export default function Base() {
     setComments(c || []);
   }
 
-  async function createTopic() {
+async function createTopic() {
 
-    if (!newTopic || !newCat) {
-      alert('Preencha título e categoria');
-      return;
-    }
-
-    const { error } = await supabase
-      .from('topicos')
-      .insert({
-        titulo: newTopic,
-        descricao: newDesc,
-        categoria: newCat,
-        user_email: user?.email,
-        created_at: new Date().toISOString()
-      });
-
-    if (error) {
-      alert(error.message);
-      return;
-    }
-
-    setNewTopic('');
-    setNewDesc('');
-    setNewCat('');
-
-    setShowTopic(false);
-
-    load();
+  if (!newTopic || !newCat) {
+    alert('Preencha título e categoria');
+    return;
   }
+
+  // 1 - buscar categoria_id pelo nome
+  const { data: catData, error: catError } = await supabase
+    .from('categorias')
+    .select('id')
+    .eq('nome', newCat)
+    .single();
+
+  if (catError || !catData) {
+    alert('Categoria não encontrada');
+    return;
+  }
+
+  const { error } = await supabase
+    .from('topicos')
+    .insert({
+      titulo: newTopic,
+      descricao: newDesc,
+      categoria_id: catData.id, // ✅ CORREÇÃO AQUI
+      user_email: user?.email,
+      created_at: new Date().toISOString()
+    });
+
+  if (error) {
+    alert(error.message);
+    return;
+  }
+
+  setNewTopic('');
+  setNewDesc('');
+  setNewCat('');
+
+  setShowTopic(false);
+
+  load();
+}
 
   async function addComment(topicId, parentId = null, texto = null) {
 
