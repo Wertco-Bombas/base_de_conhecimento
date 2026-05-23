@@ -1,7 +1,7 @@
 import { useEffect, useState, useMemo } from 'react';
 import Layout from '../components/Layout';
 import { supabase } from '../lib/supabaseClient';
-import { canAutoApprove } from '../lib/permissions';
+import { canApprove(user) } from '../lib/permissions';
 
 export default function Base() {
 
