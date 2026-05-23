@@ -12,10 +12,7 @@ export default function Base() {
   const [q, setQ] = useState('');
   const [commentInput, setCommentInput] = useState({});
 
-  const [replyTo, setReplyTo] = useState({
-    commentId: null,
-    topicId: null
-  });
+  const [replyTo, setReplyTo] = useState(null);
 
   const [showTopic, setShowTopic] = useState(false);
 
@@ -32,11 +29,8 @@ export default function Base() {
   }, []);
 
   async function load() {
-    const { data: t, error: errT } = await supabase.from('topicos').select('*');
-    const { data: c, error: errC } = await supabase.from('comentarios').select('*');
-
-    console.log("TOPICOS:", t, errT);
-    console.log("COMMENTS:", c, errC);
+    const { data: t } = await supabase.from('topicos').select('*');
+    const { data: c } = await supabase.from('comentarios').select('*');
 
     setTopics(t || []);
     setComments(c || []);
@@ -44,7 +38,7 @@ export default function Base() {
 
   // ---------------- TOPIC ----------------
   async function createTopic() {
-    const { error } = await supabase.from('topicos').insert({
+    await supabase.from('topicos').insert({
       titulo: newTopic,
       descricao: newDesc,
       categoria: newCat,
@@ -52,55 +46,7 @@ export default function Base() {
       created_at: new Date().toISOString()
     });
 
-    if (error) {
-      alert("Erro ao criar tópico: " + error.message);
-      return;
-    }
-
     setShowTopic(false);
-    load();
-  }
-
-  // ---------------- COMMENT / REPLY (DEBUG FORÇADO) ----------------
-  async function addComment(topicId) {
-    const text = commentInput[topicId];
-
-    console.log("📌 ENVIANDO COMENTÁRIO:", {
-      topicId,
-      text,
-      replyTo,
-      user: user?.email
-    });
-
-    if (!text || !text.trim()) {
-      alert("Comentário vazio");
-      return;
-    }
-
-    const payload = {
-      topic_id: topicId,
-      parent_id: replyTo?.commentId || null,
-      texto: text,
-      user_email: user?.email || "anon",
-      created_at: new Date().toISOString()
-    };
-
-    console.log("📦 PAYLOAD:", payload);
-
-    const { data, error } = await supabase
-      .from('comentarios')
-      .insert(payload)
-      .select();
-
-    console.log("🟢 RESPOSTA SUPABASE:", { data, error });
-
-    if (error) {
-      alert("Erro ao salvar comentário: " + error.message);
-      return;
-    }
-
-    setCommentInput(prev => ({ ...prev, [topicId]: '' }));
-    setReplyTo({ commentId: null, topicId: null });
     load();
   }
 
@@ -109,12 +55,49 @@ export default function Base() {
     load();
   }
 
+  // ---------------- COMMENT ----------------
+  async function addComment(topicId) {
+    const text = commentInput[topicId];
+
+    if (!text || !text.trim()) return;
+
+    await supabase.from('comentarios').insert({
+      topic_id: topicId,
+      parent_id: replyTo?.commentId || null,
+      texto: text,
+      user_email: user?.email,
+      created_at: new Date().toISOString()
+    });
+
+    setCommentInput(prev => ({ ...prev, [topicId]: '' }));
+    setReplyTo(null);
+    load();
+  }
+
   async function deleteComment(id) {
     await supabase.from('comentarios').delete().eq('id', id);
     load();
   }
 
-  // ---------------- SEARCH GLOBAL ----------------
+  // ---------------- TREE BUILDER ----------------
+  function buildTree(list, parentId = null, topicId = null) {
+    return list
+      .filter(c =>
+        c.parent_id === parentId &&
+        (topicId ? c.topic_id === topicId : true)
+      )
+      .map(c => ({
+        ...c,
+        children: buildTree(list, c.id, topicId)
+      }));
+  }
+
+  const formatDate = (d) =>
+    d ? new Date(d).toLocaleString('pt-BR') : '';
+
+  const commentTree = buildTree(comments);
+
+  // ---------------- SEARCH ----------------
   const filteredTopics = topics.filter(t => {
     const topicMatch =
       (t.titulo + t.descricao + t.categoria)
@@ -129,9 +112,40 @@ export default function Base() {
     return topicMatch || commentMatch;
   });
 
-  function formatDate(d) {
-    if (!d) return '';
-    return new Date(d).toLocaleString('pt-BR');
+  // ---------------- COMMENT NODE (RECURSIVO) ----------------
+  function CommentNode({ comment }) {
+    return (
+      <div style={styles.commentBox}>
+
+        <div style={styles.meta}>
+          {comment.user_email} • {formatDate(comment.created_at)}
+        </div>
+
+        <div>💬 {comment.texto}</div>
+
+        <div style={styles.actions}>
+          <button onClick={() =>
+            setReplyTo({
+              commentId: comment.id,
+              topicId: comment.topic_id
+            })
+          }>
+            responder
+          </button>
+
+          <button onClick={() => deleteComment(comment.id)}>
+            excluir
+          </button>
+        </div>
+
+        <div style={styles.children}>
+          {comment.children?.map(child => (
+            <CommentNode key={child.id} comment={child} />
+          ))}
+        </div>
+
+      </div>
+    );
   }
 
   return (
@@ -139,7 +153,7 @@ export default function Base() {
 
       {/* SEARCH */}
       <input
-        placeholder="Buscar tópicos e comentários..."
+        placeholder="Buscar..."
         value={q}
         onChange={e => setQ(e.target.value)}
         style={styles.search}
@@ -151,98 +165,62 @@ export default function Base() {
       </button>
 
       {/* TOPICS */}
-      {filteredTopics.map(t => (
-        <div key={t.id} style={styles.card}>
+      {filteredTopics.map(t => {
 
-          <div style={styles.header}>
-            <div>
-              <h3>{t.titulo}</h3>
-              <small>📂 {t.categoria}</small>
+        const tree = buildTree(comments, null, t.id);
+
+        return (
+          <div key={t.id} style={styles.card}>
+
+            <div style={styles.header}>
+              <div>
+                <h3>{t.titulo}</h3>
+                <small>{t.categoria}</small>
+              </div>
+
+              <button onClick={() => deleteTopic(t.id)}>
+                excluir
+              </button>
             </div>
 
-            <button onClick={() => deleteTopic(t.id)}>
-              excluir
-            </button>
-          </div>
+            <p>{t.descricao}</p>
 
-          <p>{t.descricao}</p>
+            <small>
+              {t.user_email} • {formatDate(t.created_at)}
+            </small>
 
-          <small>
-            {t.user_email} • {formatDate(t.created_at)}
-          </small>
-
-          {/* COMMENTS */}
-          {comments
-            .filter(c => c.topic_id === t.id && !c.parent_id)
-            .map(c => (
-              <div key={c.id} style={styles.comment}>
-
-                💬 {c.texto}
-
-                <div style={styles.meta}>
-                  <small>{c.user_email}</small>
-                  <small>{formatDate(c.created_at)}</small>
-                </div>
-
-                <div style={styles.actions}>
-                  <button onClick={() =>
-                    setReplyTo({
-                      commentId: c.id,
-                      topicId: t.id
-                    })
-                  }>
-                    responder
-                  </button>
-
-                  <button onClick={() => deleteComment(c.id)}>
-                    excluir
-                  </button>
-                </div>
-
-                {/* REPLIES */}
-                <div style={styles.replyBox}>
-                  {comments
-                    .filter(r => r.parent_id === c.id)
-                    .map(r => (
-                      <div key={r.id} style={styles.reply}>
-                        ↳ {r.texto}
-                        <div style={styles.meta}>
-                          <small>{r.user_email}</small>
-                          <small>{formatDate(r.created_at)}</small>
-                        </div>
-                      </div>
-                    ))}
-                </div>
-
-              </div>
+            {/* COMMENTS TREE */}
+            {tree.map(c => (
+              <CommentNode key={c.id} comment={c} />
             ))}
 
-          {/* INPUT */}
-          <div style={styles.row}>
-            <input
-              placeholder={replyTo.commentId ? "Respondendo..." : "Comentar..."}
-              value={commentInput[t.id] || ''}
-              onChange={e =>
-                setCommentInput(prev => ({
-                  ...prev,
-                  [t.id]: e.target.value
-                }))
-              }
-            />
+            {/* INPUT */}
+            <div style={styles.row}>
+              <input
+                placeholder={replyTo ? "Respondendo..." : "Comentar..."}
+                value={commentInput[t.id] || ''}
+                onChange={e =>
+                  setCommentInput(prev => ({
+                    ...prev,
+                    [t.id]: e.target.value
+                  }))
+                }
+              />
 
-            {replyTo.commentId && (
-              <button onClick={() => setReplyTo({ commentId: null, topicId: null })}>
-                cancelar
+              {replyTo && (
+                <button onClick={() => setReplyTo(null)}>
+                  cancelar
+                </button>
+              )}
+
+              <button onClick={() => addComment(t.id)}>
+                enviar
               </button>
-            )}
+            </div>
 
-            <button onClick={() => addComment(t.id)}>
-              enviar
-            </button>
           </div>
-
-        </div>
-      ))}
+        );
+      })}
 
       {/* MODAL TOPIC */}
       {showTopic && (
@@ -281,28 +259,60 @@ export default function Base() {
 }
 
 const styles = {
-  search: { width: '100%', padding: 10, marginBottom: 20, background: '#111', color: '#fff' },
-  btn: { marginBottom: 20, padding: 10, background: '#222', color: '#fff' },
-  card: { background: '#111', padding: 15, marginBottom: 10, borderRadius: 8 },
+  search: {
+    width: '100%',
+    padding: 10,
+    marginBottom: 20,
+    background: '#111',
+    color: '#fff'
+  },
 
-  header: { display: 'flex', justifyContent: 'space-between' },
+  btn: {
+    marginBottom: 20,
+    padding: 10,
+    background: '#222',
+    color: '#fff'
+  },
 
-  comment: { marginTop: 10, fontSize: 12, color: '#aaa' },
+  card: {
+    background: '#111',
+    padding: 15,
+    marginBottom: 10,
+    borderRadius: 8
+  },
 
-  actions: { display: 'flex', gap: 10, marginTop: 5 },
+  header: {
+    display: 'flex',
+    justifyContent: 'space-between'
+  },
+
+  row: {
+    display: 'flex',
+    gap: 10,
+    marginTop: 10
+  },
+
+  commentBox: {
+    marginLeft: 15,
+    marginTop: 10,
+    borderLeft: '1px solid #333',
+    paddingLeft: 10
+  },
 
   meta: {
-    display: 'flex',
-    justifyContent: 'space-between',
     fontSize: 10,
     color: '#777'
   },
 
-  row: { display: 'flex', gap: 10, marginTop: 10 },
+  actions: {
+    display: 'flex',
+    gap: 10,
+    marginTop: 5
+  },
 
-  replyBox: { marginLeft: 20, marginTop: 5 },
-
-  reply: { fontSize: 11, color: '#777', marginTop: 5 },
+  children: {
+    marginTop: 10
+  },
 
   modal: {
     position: 'fixed',
