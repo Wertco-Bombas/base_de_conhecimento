@@ -1,7 +1,7 @@
 import { useEffect, useState, useMemo } from 'react';
 import Layout from '../components/Layout';
 import { supabase } from '../lib/supabaseClient';
-import { canApprove(user) } from '../lib/permissions';
+import { canApprove } from '../lib/permissions';
 
 export default function Base() {
 
@@ -73,7 +73,7 @@ export default function Base() {
         categoria_id: catData.id,
         user_email: user?.email,
         created_at: new Date().toISOString(),
-        status: canAutoApprove(user) ? 'approved' : 'pending'
+        status: canApprove(user) ? 'approved' : 'pending'
       });
 
     if (error) {
@@ -102,8 +102,8 @@ export default function Base() {
         parent_id: parentId,
         texto: text,
         user_email: user?.email,
-       created_at: new Date().toISOString(),
-        status: canAutoApprove(user) ? 'approved' : 'pending'
+        created_at: new Date().toISOString(),
+        status: canApprove(user) ? 'approved' : 'pending'
       });
 
     if (error) {
@@ -240,12 +240,19 @@ export default function Base() {
 
   }, [topics, comments, q]);
 
+  const visibleTopics = useMemo(() => {
+
+    return filteredTopics.filter(t =>
+      t.status === 'approved' || canApprove(user)
+    );
+
+  }, [filteredTopics, user]);
+
   function formatDate(date) {
     if (!date) return '';
     return new Date(date).toLocaleString('pt-BR');
   }
 
-  // 🔥 FIX PRINCIPAL: memoizar componente (isso resolve o foco quebrando)
   const CommentNode = useMemo(() => {
 
     function Node({ comment, level = 0 }) {
@@ -383,10 +390,6 @@ export default function Base() {
       </div>
 
       {visibleTopics.map(topic => {
-        const visibleTopics =
-  topics.filter(t =>
-    t.status === 'approved' || canAutoApprove(user)
-  );
 
         const tree = buildTree(comments, null, topic.id);
 
@@ -515,5 +518,5 @@ const styles = {
   commentText: { marginTop: 8, color: '#eee', lineHeight: 1.5 },
   commentActions: { display: 'flex', gap: 8, marginTop: 10 },
   modal: { position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.85)', display: 'flex', justifyContent: 'center', alignItems: 'center', zIndex: 999 },
-  modalBox: { width: 450, background: '#111', border: '1px solid #FFD600', borderRadius: 18, padding: 24, display: 'flex', flexDirection: 'column', gap: 14 }
+  modalBox: { width: 450, background: '#111', border: '1px solid '#FFD600', borderRadius: 18, padding: 24, display: 'flex', flexDirection: 'column', gap: 14 }
 };
