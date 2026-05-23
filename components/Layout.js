@@ -1,6 +1,20 @@
+import { useEffect, useState } from 'react';
 import { supabase } from '../lib/supabaseClient';
 
 export default function Layout({ children }) {
+  const [user, setUser] = useState(null);
+
+  useEffect(() => {
+    supabase.auth.getUser().then(({ data }) => {
+      setUser(data?.user || null);
+    });
+  }, []);
+
+  async function logout() {
+    await supabase.auth.signOut();
+    window.location.href = '/';
+  }
+
   return (
     <div style={styles.wrapper}>
 
@@ -9,11 +23,15 @@ export default function Layout({ children }) {
         <div style={styles.brand}>WERTCO</div>
 
         <a href="/base">📚 Base</a>
-        <a href="/admin">⚙ Admin</a>
-        <a href="/auditoria">📊 Auditoria</a>
 
         <div style={styles.bottom}>
-          <UserBox />
+          <div style={styles.user}>
+            👤 {user?.email || 'Não logado'}
+          </div>
+
+          <button onClick={logout} style={styles.logout}>
+            Sair
+          </button>
         </div>
       </div>
 
@@ -26,31 +44,13 @@ export default function Layout({ children }) {
   );
 }
 
-function UserBox() {
-  const user = typeof window !== 'undefined'
-    ? JSON.parse(localStorage.getItem('user') || 'null')
-    : null;
-
-  async function logout() {
-    await supabase.auth.signOut();
-    localStorage.removeItem('user');
-    window.location.href = '/';
-  }
-
-  return (
-    <div>
-      <p style={{ fontSize: 12 }}>{user?.email}</p>
-      <button onClick={logout}>Sair</button>
-    </div>
-  );
-}
-
 const styles = {
   wrapper: {
     display: 'flex',
     minHeight: '100vh',
     background: '#0b0b0b',
-    color: '#fff'
+    color: '#fff',
+    fontFamily: 'Arial'
   },
 
   sidebar: {
@@ -63,7 +63,7 @@ const styles = {
   },
 
   brand: {
-    fontSize: 18,
+    fontSize: 20,
     fontWeight: 'bold',
     color: '#f5c400',
     marginBottom: 20
@@ -76,5 +76,20 @@ const styles = {
 
   bottom: {
     marginTop: 'auto'
+  },
+
+  user: {
+    fontSize: 12,
+    marginBottom: 10,
+    color: '#aaa'
+  },
+
+  logout: {
+    padding: 8,
+    width: '100%',
+    background: '#222',
+    color: '#fff',
+    border: '1px solid #333',
+    cursor: 'pointer'
   }
 };
