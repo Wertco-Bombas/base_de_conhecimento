@@ -19,6 +19,8 @@ export default function Base() {
   }, []);
 
   async function loadTopics() {
+    console.log('🔄 carregando dados...');
+
     const { data: topicsData, error: topicsError } = await supabase
       .from('topicos')
       .select('*')
@@ -28,8 +30,8 @@ export default function Base() {
       .from('comentarios')
       .select('*');
 
-    console.log('TOPICOS:', topicsData, topicsError);
-    console.log('COMMENTS:', commentsData, commentsError);
+    console.log('📌 TOPICOS:', topicsData, topicsError);
+    console.log('💬 COMMENTS:', commentsData, commentsError);
 
     const grouped = {};
 
@@ -47,40 +49,57 @@ export default function Base() {
   async function createTopic() {
     if (!newTopic) return;
 
-    await supabase.from('topicos').insert({
+    const { error } = await supabase.from('topicos').insert({
       titulo: newTopic,
       categoria: newCategory,
       status: 'approved'
     });
 
-    setNewTopic('');
-    setNewCategory('');
-    loadTopics();
+    console.log('CREATE TOPIC ERROR:', error);
+
+    if (!error) {
+      setNewTopic('');
+      setNewCategory('');
+      loadTopics();
+    }
   }
 
   async function deleteTopic(id) {
-    await supabase
+    const { error } = await supabase
       .from('topicos')
       .delete()
       .eq('id', id);
 
-    loadTopics();
+    console.log('DELETE ERROR:', error);
+
+    if (!error) {
+      loadTopics();
+    }
   }
 
   async function addComment(topicId, text) {
-    if (!text) return;
+    console.log('🟡 CLICK ADD COMMENT:', { topicId, text });
 
-    const { error } = await supabase.from('comentarios').insert({
+    if (!text || !text.trim()) {
+      console.log('❌ texto vazio');
+      return;
+    }
+
+    const { data, error } = await supabase.from('comentarios').insert({
       topic_id: topicId,
       texto: text,
       status: 'approved'
     });
 
-    console.log('COMMENT ERROR:', error);
+    console.log('🟢 INSERT DATA:', data);
+    console.log('🔴 INSERT ERROR:', error);
 
-    if (!error) {
-      await loadTopics(); // 🔥 atualiza a tela após salvar
+    if (error) {
+      alert('Erro ao salvar comentário: ' + error.message);
+      return;
     }
+
+    await loadTopics();
   }
 
   const filtered = topics
@@ -168,7 +187,12 @@ export default function Base() {
               }
             />
 
-            <button onClick={() => addComment(topic.id, commentInputs[topic.id])}>
+            <button
+              onClick={() => {
+                console.log('🔵 BOTÃO CLICADO');
+                addComment(topic.id, commentInputs[topic.id]);
+              }}
+            >
               Enviar
             </button>
 
