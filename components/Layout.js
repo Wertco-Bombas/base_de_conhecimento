@@ -1,58 +1,14 @@
 import { useEffect, useState } from 'react';
 import { supabase } from '../lib/supabaseClient';
-import { canApprove, isAdmin } from '../lib/permissions';
 
 export default function Layout({ children }) {
   const [user, setUser] = useState(null);
-  const [checkedPending, setCheckedPending] = useState(false);
 
   useEffect(() => {
     supabase.auth.getUser().then(({ data }) => {
       setUser(data?.user || null);
     });
   }, []);
-
-  useEffect(() => {
-
-    async function checkPending() {
-
-      if (!user) return;
-      if (checkedPending) return;
-
-      if (!canApprove(user)) return;
-
-      const { data: topics } = await supabase
-        .from('topicos')
-        .select('id')
-        .eq('status', 'pending');
-
-      const { data: comments } = await supabase
-        .from('comentarios')
-        .select('id')
-        .eq('status', 'pending');
-
-      const total = (topics?.length || 0) + (comments?.length || 0);
-
-      if (total > 0) {
-
-        const go = confirm(
-          `🔔 Pendências de aprovação:\n\n` +
-          `Tópicos: ${topics?.length || 0}\n` +
-          `Comentários: ${comments?.length || 0}\n\n` +
-          `Ir para aprovação?`
-        );
-
-        if (go) {
-          window.location.href = '/approval';
-        }
-      }
-
-      setCheckedPending(true);
-    }
-
-    checkPending();
-
-  }, [user]);
 
   async function logout() {
     await supabase.auth.signOut();
@@ -66,25 +22,24 @@ export default function Layout({ children }) {
       <div style={styles.sidebar}>
         <div style={styles.brand}>WERTCO</div>
 
-        <a href="/base">📚 Base</a>
+        {/* MENU DINÂMICO */}
+        {user && (
+          <>
+            <a href="/base">📚 Base</a>
 
-        {/* supervisor/admin */}
-        {user && (user.role === 'supervisor' || user.role === 'admin') && (
-          <a href="/approval">✅ Aprovação</a>
-        )}
+            {(user.role === 'supervisor' || user.role === 'admin') && (
+              <a href="/approval">✅ Aprovação</a>
+            )}
 
-        {/* admin only */}
-        {user && user.role === 'admin' && (
-          <a href="/admin">👥 Usuários</a>
+            {user.role === 'admin' && (
+              <a href="/admin">👥 Usuários</a>
+            )}
+          </>
         )}
 
         <div style={styles.bottom}>
           <div style={styles.user}>
             👤 {user?.email || 'Não logado'}
-            <br />
-            <span style={{ fontSize: 11, color: '#f5c400' }}>
-              {user?.role || ''}
-            </span>
           </div>
 
           <button onClick={logout} style={styles.logout}>
