@@ -19,19 +19,14 @@ export default function Base() {
   }, []);
 
   async function loadTopics() {
-    console.log('🔄 carregando dados...');
-
-    const { data: topicsData, error: topicsError } = await supabase
+    const { data: topicsData } = await supabase
       .from('topicos')
       .select('*')
       .order('id', { ascending: false });
 
-    const { data: commentsData, error: commentsError } = await supabase
+    const { data: commentsData } = await supabase
       .from('comentarios')
       .select('*');
-
-    console.log('📌 TOPICOS:', topicsData, topicsError);
-    console.log('💬 COMMENTS:', commentsData, commentsError);
 
     const grouped = {};
 
@@ -49,57 +44,30 @@ export default function Base() {
   async function createTopic() {
     if (!newTopic) return;
 
-    const { error } = await supabase.from('topicos').insert({
+    await supabase.from('topicos').insert({
       titulo: newTopic,
-      categoria: newCategory,
-      status: 'approved'
+      categoria: newCategory
     });
 
-    console.log('CREATE TOPIC ERROR:', error);
-
-    if (!error) {
-      setNewTopic('');
-      setNewCategory('');
-      loadTopics();
-    }
+    setNewTopic('');
+    setNewCategory('');
+    loadTopics();
   }
 
   async function deleteTopic(id) {
-    const { error } = await supabase
-      .from('topicos')
-      .delete()
-      .eq('id', id);
-
-    console.log('DELETE ERROR:', error);
-
-    if (!error) {
-      loadTopics();
-    }
+    await supabase.from('topicos').delete().eq('id', id);
+    loadTopics();
   }
 
   async function addComment(topicId, text) {
-    console.log('🟡 CLICK ADD COMMENT:', { topicId, text });
+    if (!text || !text.trim()) return;
 
-    if (!text || !text.trim()) {
-      console.log('❌ texto vazio');
-      return;
-    }
-
-    const { data, error } = await supabase.from('comentarios').insert({
+    const { error } = await supabase.from('comentarios').insert({
       topic_id: topicId,
-      texto: text,
-      status: 'approved'
+      texto: text
     });
 
-    console.log('🟢 INSERT DATA:', data);
-    console.log('🔴 INSERT ERROR:', error);
-
-    if (error) {
-      alert('Erro ao salvar comentário: ' + error.message);
-      return;
-    }
-
-    await loadTopics();
+    if (!error) loadTopics();
   }
 
   const filtered = topics
@@ -113,42 +81,34 @@ export default function Base() {
   return (
     <Layout>
 
-      <h1>Base de Conhecimento</h1>
+      {/* HEADER */}
+      <div style={styles.header}>
+        <h1>Base de Conhecimento</h1>
 
-      {/* CREATE TOPIC */}
-      <div style={styles.box}>
-        <input
-          placeholder="Novo tópico"
-          value={newTopic}
-          onChange={e => setNewTopic(e.target.value)}
-        />
-
-        <input
-          placeholder="Categoria"
-          value={newCategory}
-          onChange={e => setNewCategory(e.target.value)}
-        />
-
-        <button onClick={createTopic}>Criar</button>
+        <div style={styles.actions}>
+          <a href="/nova-categoria" style={styles.button}>+ Categoria</a>
+          <a href="/novo-topico" style={styles.buttonPrimary}>+ Tópico</a>
+          <a href="/excluir-categoria" style={styles.buttonDanger}>Excluir Categoria</a>
+        </div>
       </div>
 
-      {/* SEARCH + FILTER */}
-      <div style={styles.box}>
+      {/* SEARCH */}
+      <div style={styles.searchBox}>
         <input
-          placeholder="Buscar..."
+          style={styles.search}
+          placeholder="Buscar tópicos..."
           value={q}
           onChange={e => setQ(e.target.value)}
         />
 
         <select
+          style={styles.select}
           value={category}
           onChange={e => setCategory(e.target.value)}
         >
           <option value="">Todas categorias</option>
           {[...new Set(topics.map(t => t.categoria))].map((c, i) => (
-            <option key={i} value={c}>
-              {c}
-            </option>
+            <option key={i} value={c}>{c}</option>
           ))}
         </select>
       </div>
@@ -157,27 +117,33 @@ export default function Base() {
       {filtered.map(topic => (
         <div key={topic.id} style={styles.card}>
 
-          <h3>{topic.titulo}</h3>
-          <p>{topic.categoria}</p>
+          <div style={styles.cardHeader}>
+            <h3>{topic.titulo}</h3>
 
-          <button onClick={() => deleteTopic(topic.id)}>
-            Excluir
-          </button>
+            <button
+              style={styles.deleteBtn}
+              onClick={() => deleteTopic(topic.id)}
+            >
+              Excluir
+            </button>
+          </div>
 
-          {/* COMMENTS LIST */}
-          <div style={{ marginTop: 10 }}>
+          <p style={styles.category}>{topic.categoria}</p>
+
+          {/* COMMENTS */}
+          <div style={styles.comments}>
             {(commentsByTopic[topic.id] || []).map(c => (
-              <div key={c.id} style={{ color: '#aaa', fontSize: 12 }}>
+              <div key={c.id} style={styles.comment}>
                 💬 {c.texto}
               </div>
             ))}
           </div>
 
           {/* ADD COMMENT */}
-          <div style={{ marginTop: 10 }}>
-
+          <div style={styles.commentBox}>
             <input
-              placeholder="Comentar..."
+              style={styles.commentInput}
+              placeholder="Escrever comentário..."
               value={commentInputs[topic.id] || ''}
               onChange={e =>
                 setCommentInputs(prev => ({
@@ -188,14 +154,13 @@ export default function Base() {
             />
 
             <button
-              onClick={() => {
-                console.log('🔵 BOTÃO CLICADO');
-                addComment(topic.id, commentInputs[topic.id]);
-              }}
+              style={styles.sendBtn}
+              onClick={() =>
+                addComment(topic.id, commentInputs[topic.id])
+              }
             >
               Enviar
             </button>
-
           </div>
 
         </div>
@@ -206,15 +171,110 @@ export default function Base() {
 }
 
 const styles = {
-  box: {
-    marginBottom: 15,
+  header: {
+    display: 'flex',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 20
+  },
+
+  actions: {
     display: 'flex',
     gap: 10
   },
+
+  button: {
+    padding: '8px 12px',
+    background: '#222',
+    color: '#fff',
+    borderRadius: 6,
+    textDecoration: 'none'
+  },
+
+  buttonPrimary: {
+    padding: '8px 12px',
+    background: '#f5c400',
+    color: '#000',
+    borderRadius: 6,
+    textDecoration: 'none'
+  },
+
+  buttonDanger: {
+    padding: '8px 12px',
+    background: '#ff4444',
+    color: '#fff',
+    borderRadius: 6,
+    textDecoration: 'none'
+  },
+
+  searchBox: {
+    display: 'flex',
+    gap: 10,
+    marginBottom: 20
+  },
+
+  search: {
+    flex: 1,
+    padding: 10,
+    borderRadius: 8,
+    border: '1px solid #333',
+    background: '#111',
+    color: '#fff'
+  },
+
+  select: {
+    padding: 10,
+    borderRadius: 8,
+    background: '#111',
+    color: '#fff'
+  },
+
   card: {
     background: '#111',
     padding: 15,
-    marginBottom: 10,
-    borderRadius: 8
+    borderRadius: 10,
+    marginBottom: 12
+  },
+
+  cardHeader: {
+    display: 'flex',
+    justifyContent: 'space-between'
+  },
+
+  category: {
+    color: '#f5c400',
+    fontSize: 12
+  },
+
+  comments: {
+    marginTop: 10
+  },
+
+  comment: {
+    fontSize: 12,
+    color: '#aaa'
+  },
+
+  commentBox: {
+    display: 'flex',
+    gap: 10,
+    marginTop: 10
+  },
+
+  commentInput: {
+    flex: 1,
+    padding: 8,
+    borderRadius: 6,
+    border: '1px solid #333',
+    background: '#000',
+    color: '#fff'
+  },
+
+  sendBtn: {
+    padding: '8px 12px',
+    background: '#f5c400',
+    borderRadius: 6,
+    border: 'none',
+    cursor: 'pointer'
   }
 };
