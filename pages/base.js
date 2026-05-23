@@ -12,42 +12,35 @@ export default function Base() {
   const [newTopic, setNewTopic] = useState('');
   const [newCategory, setNewCategory] = useState('');
 
+  const [commentInputs, setCommentInputs] = useState({});
+
   useEffect(() => {
     loadTopics();
   }, []);
 
   async function loadTopics() {
-    console.log('🔄 carregando tópicos...');
-
     const { data: topicsData, error: topicsError } = await supabase
       .from('topicos')
       .select('*')
-      .order('id', { ascending: false });
+      .order('id', { ascending: false }); // 🔥 corrigido
 
     const { data: commentsData, error: commentsError } = await supabase
       .from('comentarios')
       .select('*');
 
-    console.log('📌 TOPICOS DATA:', topicsData);
-    console.log('📌 TOPICOS ERROR:', topicsError);
-
-    console.log('💬 COMMENTS DATA:', commentsData);
-    console.log('💬 COMMENTS ERROR:', commentsError);
-
-    // segurança contra erro
-    const safeTopics = topicsData || [];
-    const safeComments = commentsData || [];
+    console.log('TOPICOS:', topicsData, topicsError);
+    console.log('COMMENTS:', commentsData, commentsError);
 
     const grouped = {};
 
-    safeComments.forEach(c => {
+    (commentsData || []).forEach(c => {
       const key = c.topic_id || c.topico_id;
 
       if (!grouped[key]) grouped[key] = [];
       grouped[key].push(c);
     });
 
-    setTopics(safeTopics);
+    setTopics(topicsData || []);
     setCommentsByTopic(grouped);
   }
 
@@ -161,21 +154,16 @@ export default function Base() {
           <div style={{ marginTop: 10 }}>
             <input
               placeholder="Comentar..."
-              onKeyDown={(e) => {
-                if (e.key === 'Enter') {
-                  addComment(topic.id, e.target.value);
-                  e.target.value = '';
-                }
-              }}
+              value={commentInputs[topic.id] || ''}
+              onChange={e =>
+                setCommentInputs(prev => ({
+                  ...prev,
+                  [topic.id]: e.target.value
+                }))
+              }
             />
 
-            <button
-              onClick={(e) => {
-                const input = e.target.parentNode.querySelector('input');
-                addComment(topic.id, input.value);
-                input.value = '';
-              }}
-            >
+            <button onClick={() => addComment(topic.id, commentInputs[topic.id])}>
               Enviar
             </button>
           </div>
