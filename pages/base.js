@@ -106,6 +106,10 @@ export default function Base() {
 
   async function deleteTopic(id) {
 
+    const confirmar = confirm('Excluir tópico?');
+
+    if (!confirmar) return;
+
     await supabase
       .from('topicos')
       .delete()
@@ -116,12 +120,59 @@ export default function Base() {
 
   async function deleteComment(id) {
 
+    const confirmar = confirm('Excluir comentário?');
+
+    if (!confirmar) return;
+
     await supabase
       .from('comentarios')
       .delete()
       .eq('id', id);
 
     load();
+  }
+
+  async function createCategory() {
+
+    const nome = prompt('Nome da categoria');
+
+    if (!nome) return;
+
+    const { error } = await supabase
+      .from('categorias')
+      .insert({
+        nome
+      });
+
+    if (error) {
+      alert(error.message);
+      return;
+    }
+
+    alert('Categoria criada');
+  }
+
+  async function deleteCategory() {
+
+    const nome = prompt('Nome da categoria');
+
+    if (!nome) return;
+
+    const confirmar = confirm('Excluir categoria?');
+
+    if (!confirmar) return;
+
+    const { error } = await supabase
+      .from('categorias')
+      .delete()
+      .eq('nome', nome);
+
+    if (error) {
+      alert(error.message);
+      return;
+    }
+
+    alert('Categoria removida');
   }
 
   function buildTree(list, parentId = null, topicId = null) {
@@ -248,7 +299,7 @@ export default function Base() {
         style={styles.search}
       />
 
-      {/* BUTTON */}
+      {/* TOP BUTTONS */}
       <div style={styles.topBar}>
 
         <button
@@ -256,6 +307,20 @@ export default function Base() {
           onClick={() => setShowTopic(true)}
         >
           + Novo Tópico
+        </button>
+
+        <button
+          style={styles.mainBtn}
+          onClick={createCategory}
+        >
+          + Nova Categoria
+        </button>
+
+        <button
+          style={styles.smallBtnDanger}
+          onClick={deleteCategory}
+        >
+          Excluir Categoria
         </button>
 
       </div>
@@ -291,7 +356,7 @@ export default function Base() {
                 style={styles.smallBtnDanger}
                 onClick={() => deleteTopic(topic.id)}
               >
-                excluir
+                excluir tópico
               </button>
 
             </div>
@@ -326,7 +391,7 @@ export default function Base() {
 
             </div>
 
-            {/* COMMENT */}
+            {/* ADD COMMENT */}
             <div style={styles.row}>
 
               <input
@@ -414,7 +479,9 @@ const styles = {
 
   topBar: {
     display: 'flex',
-    marginBottom: 20
+    gap: 10,
+    marginBottom: 20,
+    flexWrap: 'wrap'
   },
 
   search: {
