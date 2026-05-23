@@ -1,12 +1,9 @@
 import { useEffect, useState } from 'react';
 import Layout from '../components/Layout';
-import ProtectedRoute from '../components/ProtectedRoute';
 import { supabase } from '../lib/supabaseClient';
-import useUser from '../lib/useUser';
-import { isAdmin } from '../lib/permissions';
 
 export default function Admin() {
-  const user = useUser();
+
   const [users, setUsers] = useState([]);
 
   useEffect(() => {
@@ -14,26 +11,56 @@ export default function Admin() {
   }, []);
 
   async function load() {
-    const { data } = await supabase.from('profiles').select('*');
+
+    const { data } = await supabase
+      .from('profiles')
+      .select('*')
+      .order('created_at', { ascending: false });
+
     setUsers(data || []);
   }
 
-  if (!isAdmin(user)) return <p>Sem acesso</p>;
+  async function updateRole(id, role) {
+
+    await supabase
+      .from('profiles')
+      .update({ role })
+      .eq('id', id);
+
+    load();
+  }
+
+  async function createUser() {
+
+    const email = prompt('Email');
+    const role = prompt('Role (user/supervisor/admin)');
+
+    await supabase
+      .from('profiles')
+      .insert({ email, role });
+
+    load();
+  }
 
   return (
-    <ProtectedRoute>
-      <Layout>
+    <Layout>
 
-        <h1 style={{ color: '#f5c400' }}>Admin</h1>
+      <h1>Admin Users</h1>
 
-        {users.map(u => (
-          <div key={u.id}>
-            <p>{u.name || u.email}</p>
-            <p>{u.role}</p>
-          </div>
-        ))}
+      <button onClick={createUser}>Criar usuário</button>
 
-      </Layout>
-    </ProtectedRoute>
+      {users.map(u => (
+        <div key={u.id} style={{ padding: 10 }}>
+
+          <p>{u.email} - {u.role}</p>
+
+          <button onClick={() => updateRole(u.id, 'user')}>user</button>
+          <button onClick={() => updateRole(u.id, 'supervisor')}>supervisor</button>
+          <button onClick={() => updateRole(u.id, 'admin')}>admin</button>
+
+        </div>
+      ))}
+
+    </Layout>
   );
 }
