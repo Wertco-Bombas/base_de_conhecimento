@@ -12,11 +12,7 @@ export default function Base() {
   const [q, setQ] = useState('');
   const [commentInput, setCommentInput] = useState({});
 
-  // ✅ FIX: reply agora é objeto estruturado
-  const [replyTo, setReplyTo] = useState({
-    commentId: null,
-    topicId: null
-  });
+  const [replyTo, setReplyTo] = useState(null);
 
   const [showTopic, setShowTopic] = useState(false);
 
@@ -40,36 +36,33 @@ export default function Base() {
     setComments(c || []);
   }
 
+  // ---------------- CREATE TOPIC ----------------
   async function createTopic() {
     await supabase.from('topicos').insert({
       titulo: newTopic,
       descricao: newDesc,
       categoria: newCat,
       user_email: user?.email,
-      created_at: new Date().toISOString()
+      created_at: new Date()
     });
 
     setShowTopic(false);
     load();
   }
 
-  // =========================
-  // COMENTÁRIOS + RESPOSTAS
-  // =========================
+  // ---------------- ADD COMMENT / REPLY ----------------
   async function addComment(topicId) {
     const text = commentInput[topicId];
 
     if (!text || !text.trim()) return;
 
-    const { error } = await supabase.from('comentarios').insert([
-      {
-        topic_id: topicId,
-        parent_id: replyTo.commentId || null, // ✅ FIX REAL
-        texto: text,
-        user_email: user?.email,
-        created_at: new Date().toISOString()
-      }
-    ]);
+    const { error } = await supabase.from('comentarios').insert({
+      topic_id: topicId,
+      parent_id: replyTo || null,
+      texto: text,
+      user_email: user?.email,
+      created_at: new Date()
+    });
 
     if (error) {
       alert(error.message);
@@ -77,7 +70,7 @@ export default function Base() {
     }
 
     setCommentInput(prev => ({ ...prev, [topicId]: '' }));
-    setReplyTo({ commentId: null, topicId: null });
+    setReplyTo(null);
     load();
   }
 
@@ -89,17 +82,6 @@ export default function Base() {
   async function deleteComment(id) {
     await supabase.from('comentarios').delete().eq('id', id);
     load();
-  }
-
-  function formatDate(date) {
-    if (!date) return '';
-    return new Date(date).toLocaleString('pt-BR', {
-      day: '2-digit',
-      month: '2-digit',
-      year: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit'
-    });
   }
 
   // 🔍 BUSCA GLOBAL
@@ -116,6 +98,12 @@ export default function Base() {
 
     return topicMatch || commentMatch;
   });
+
+  // format data
+  function formatDate(date) {
+    if (!date) return '';
+    return new Date(date).toLocaleString('pt-BR');
+  }
 
   return (
     <Layout>
@@ -138,14 +126,25 @@ export default function Base() {
         <div key={t.id} style={styles.card}>
 
           <div style={styles.header}>
-            <h3>{t.titulo}</h3>
-            <button onClick={() => deleteTopic(t.id)}>Excluir</button>
+            <div>
+              <h3>{t.titulo}</h3>
+              <small style={{ color: '#f5c400' }}>
+                📂 {t.categoria || 'Sem categoria'}
+              </small>
+            </div>
+
+            <button onClick={() => deleteTopic(t.id)}>
+              Excluir
+            </button>
           </div>
 
           <p>{t.descricao}</p>
-          <small>{t.categoria}</small>
 
-          {/* COMMENTS PRINCIPAIS */}
+          <small style={{ color: '#777' }}>
+            criado por: {t.user_email} • {formatDate(t.created_at)}
+          </small>
+
+          {/* COMMENTS */}
           {comments
             .filter(c => c.topic_id === t.id && !c.parent_id)
             .map(c => (
@@ -154,39 +153,30 @@ export default function Base() {
                 💬 {c.texto}
 
                 <div style={styles.meta}>
-                  👤 {c.user_email || 'anônimo'} • 📅 {formatDate(c.created_at)}
+                  <small>{c.user_email}</small>
+                  <small>{formatDate(c.created_at)}</small>
                 </div>
 
-                <div style={{ marginTop: 4 }}>
-                  <button
-                    onClick={() =>
-                      setReplyTo({
-                        commentId: c.id,
-                        topicId: t.id
-                      })
-                    }
-                  >
+                <div style={styles.actions}>
+                  <button onClick={() => setReplyTo(c.id)}>
                     responder
                   </button>
-
                   <button onClick={() => deleteComment(c.id)}>
-                    x
+                    excluir
                   </button>
                 </div>
 
-                {/* RESPOSTAS */}
+                {/* REPLIES */}
                 <div style={styles.replyBox}>
                   {comments
                     .filter(r => r.parent_id === c.id)
                     .map(r => (
                       <div key={r.id} style={styles.reply}>
-
                         ↳ {r.texto}
-
-                        <div style={styles.metaReply}>
-                          👤 {r.user_email || 'anônimo'} • 📅 {formatDate(r.created_at)}
+                        <div style={styles.meta}>
+                          <small>{r.user_email}</small>
+                          <small>{formatDate(r.created_at)}</small>
                         </div>
-
                       </div>
                     ))}
                 </div>
@@ -194,14 +184,10 @@ export default function Base() {
               </div>
             ))}
 
-          {/* ADD COMMENT */}
+          {/* INPUT COMMENT */}
           <div style={styles.row}>
             <input
-              placeholder={
-                replyTo.commentId
-                  ? "Respondendo comentário..."
-                  : "Comentar..."
-              }
+              placeholder={replyTo ? "Respondendo..." : "Comentar..."}
               value={commentInput[t.id] || ''}
               onChange={e =>
                 setCommentInput(prev => ({
@@ -211,12 +197,8 @@ export default function Base() {
               }
             />
 
-            {replyTo.commentId && (
-              <button
-                onClick={() =>
-                  setReplyTo({ commentId: null, topicId: null })
-                }
-              >
+            {replyTo && (
+              <button onClick={() => setReplyTo(null)}>
                 cancelar resposta
               </button>
             )}
@@ -242,7 +224,7 @@ export default function Base() {
               onChange={e => setNewTopic(e.target.value)}
             />
 
-            <input
+            <textarea
               placeholder="Descrição"
               value={newDesc}
               onChange={e => setNewDesc(e.target.value)}
@@ -294,21 +276,22 @@ const styles = {
   },
 
   comment: {
-    marginTop: 8,
+    marginTop: 10,
     fontSize: 12,
     color: '#aaa'
   },
 
-  meta: {
-    fontSize: 10,
-    color: '#666',
-    marginTop: 2
+  actions: {
+    display: 'flex',
+    gap: 10,
+    marginTop: 5
   },
 
-  metaReply: {
+  meta: {
+    display: 'flex',
+    justifyContent: 'space-between',
     fontSize: 10,
-    color: '#555',
-    marginTop: 2
+    color: '#777'
   },
 
   row: {
@@ -325,7 +308,7 @@ const styles = {
   reply: {
     fontSize: 11,
     color: '#777',
-    marginBottom: 6
+    marginTop: 5
   },
 
   modal: {
