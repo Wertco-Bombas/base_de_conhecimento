@@ -6,11 +6,16 @@ export default function Base() {
   const [user, setUser] = useState(null);
 
   const [topics, setTopics] = useState([]);
-  const [commentsByTopic, setCommentsByTopic] = useState([]);
+  const [commentsByTopic, setCommentsByTopic] = useState({});
   const [categories, setCategories] = useState([]);
 
+  // MODAIS
   const [showTopicModal, setShowTopicModal] = useState(false);
+  const [showCategoryModal, setShowCategoryModal] = useState(false);
+  const [showDeleteTopicModal, setShowDeleteTopicModal] = useState(false);
+  const [showDeleteCategoryModal, setShowDeleteCategoryModal] = useState(false);
 
+  // TOPIC FORM
   const [newTopic, setNewTopic] = useState('');
   const [newDescription, setNewDescription] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('');
@@ -47,7 +52,10 @@ export default function Base() {
     setCategories(cats);
   }
 
+  // ---------------- TOPIC ----------------
   async function createTopic() {
+    if (!newTopic || !selectedCategory) return;
+
     await supabase.from('topicos').insert({
       titulo: newTopic,
       descricao: newDescription,
@@ -56,10 +64,11 @@ export default function Base() {
       created_at: new Date()
     });
 
-    setShowTopicModal(false);
     setNewTopic('');
     setNewDescription('');
     setSelectedCategory('');
+    setShowTopicModal(false);
+
     load();
   }
 
@@ -68,177 +77,144 @@ export default function Base() {
     load();
   }
 
-  async function logout() {
-    await supabase.auth.signOut();
-    window.location.href = '/';
+  // ---------------- CATEGORY (placeholder) ----------------
+  async function createCategory() {
+    alert('Aqui você pode criar tabela categorias depois');
+    setShowCategoryModal(false);
+  }
+
+  async function deleteCategory() {
+    alert('Precisa implementar tabela de categorias');
+    setShowDeleteCategoryModal(false);
   }
 
   return (
-    <div style={styles.page}>
+    <Layout>
 
-      {/* TOP BAR */}
-      <div style={styles.topbar}>
-        <div style={styles.brand}>WERTCO</div>
+      {/* HEADER */}
+      <div style={styles.header}>
+        <h1>Base de Conhecimento</h1>
 
-        <div style={styles.userBox}>
-          <span style={{ color: '#aaa', fontSize: 12 }}>
-            {user?.email || 'não logado'}
-          </span>
+        <div style={styles.actions}>
+          <button onClick={() => setShowCategoryModal(true)}>
+            + Categoria
+          </button>
 
-          <button onClick={logout} style={styles.logout}>
-            Sair
+          <button onClick={() => setShowTopicModal(true)}>
+            + Tópico
+          </button>
+
+          <button onClick={() => setShowDeleteCategoryModal(true)}>
+            Excluir Categoria
           </button>
         </div>
       </div>
 
-      <div style={styles.container}>
+      {/* LISTA DE TÓPICOS */}
+      {topics.map(topic => (
+        <div key={topic.id} style={styles.card}>
 
-        {/* HEADER ACTIONS */}
-        <div style={styles.header}>
-          <h2>Base de Conhecimento</h2>
+          <div style={styles.topRow}>
+            <h3>{topic.titulo}</h3>
 
-          <button
-            style={styles.primaryBtn}
-            onClick={() => setShowTopicModal(true)}
-          >
-            + Novo Tópico
-          </button>
-        </div>
-
-        {/* TOPICS */}
-        {topics.map(topic => (
-          <div key={topic.id} style={styles.card}>
-
-            <div style={styles.cardHeader}>
-              <h3>{topic.titulo}</h3>
-
-              <button
-                style={styles.dangerBtn}
-                onClick={() => deleteTopic(topic.id)}
-              >
-                Excluir
-              </button>
-            </div>
-
-            <p style={{ color: '#ccc' }}>{topic.descricao}</p>
-
-            <span style={styles.tag}>
-              {topic.categoria}
-            </span>
-
+            <button onClick={() => deleteTopic(topic.id)}>
+              Excluir Tópico
+            </button>
           </div>
-        ))}
 
-      </div>
+          <p>{topic.descricao}</p>
 
-      {/* MODAL */}
+          <p style={styles.category}>
+            {topic.categoria}
+          </p>
+
+          {/* COMMENTS PREVIEW */}
+          {(commentsByTopic[topic.id] || []).slice(0, 3).map(c => (
+            <div key={c.id} style={styles.comment}>
+              💬 {c.texto}
+            </div>
+          ))}
+
+        </div>
+      ))}
+
+      {/* ---------------- MODAL TOPIC ---------------- */}
       {showTopicModal && (
         <div style={styles.modal}>
           <div style={styles.modalBox}>
-
             <h3>Novo Tópico</h3>
 
             <input
               placeholder="Título"
               value={newTopic}
               onChange={e => setNewTopic(e.target.value)}
-              style={styles.input}
             />
 
             <textarea
               placeholder="Descrição"
               value={newDescription}
               onChange={e => setNewDescription(e.target.value)}
-              style={styles.input}
             />
 
             <select
               value={selectedCategory}
               onChange={e => setSelectedCategory(e.target.value)}
-              style={styles.input}
             >
-              <option value="">Categoria</option>
+              <option value="">Selecione categoria</option>
               {categories.map((c, i) => (
                 <option key={i} value={c}>{c}</option>
               ))}
             </select>
 
-            <button onClick={createTopic} style={styles.primaryBtn}>
-              Criar
-            </button>
-
-            <button onClick={() => setShowTopicModal(false)}>
-              Cancelar
-            </button>
-
+            <button onClick={createTopic}>Salvar</button>
+            <button onClick={() => setShowTopicModal(false)}>Fechar</button>
           </div>
         </div>
       )}
 
-    </div>
+      {/* ---------------- MODAL CATEGORY ---------------- */}
+      {showCategoryModal && (
+        <div style={styles.modal}>
+          <div style={styles.modalBox}>
+            <h3>Nova Categoria</h3>
+            <p>Você pode evoluir isso depois com tabela própria.</p>
+
+            <button onClick={createCategory}>OK</button>
+            <button onClick={() => setShowCategoryModal(false)}>
+              Fechar
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* DELETE CATEGORY */}
+      {showDeleteCategoryModal && (
+        <div style={styles.modal}>
+          <div style={styles.modalBox}>
+            <h3>Excluir Categoria</h3>
+
+            <button onClick={deleteCategory}>Confirmar</button>
+            <button onClick={() => setShowDeleteCategoryModal(false)}>
+              Fechar
+            </button>
+          </div>
+        </div>
+      )}
+
+    </Layout>
   );
 }
 
 const styles = {
-  page: {
-    background: '#0b0b0b',
-    minHeight: '100vh',
-    color: '#fff'
-  },
-
-  topbar: {
-    display: 'flex',
-    justifyContent: 'space-between',
-    padding: '15px 20px',
-    borderBottom: '1px solid #222'
-  },
-
-  brand: {
-    fontWeight: 'bold',
-    fontSize: 18,
-    color: '#f5c400'
-  },
-
-  userBox: {
-    display: 'flex',
-    gap: 10,
-    alignItems: 'center'
-  },
-
-  logout: {
-    background: '#222',
-    color: '#fff',
-    border: '1px solid #333',
-    padding: '5px 10px',
-    borderRadius: 6,
-    cursor: 'pointer'
-  },
-
-  container: {
-    padding: 20
-  },
-
   header: {
     display: 'flex',
     justifyContent: 'space-between',
     marginBottom: 20
   },
 
-  primaryBtn: {
-    background: '#f5c400',
-    border: 'none',
-    padding: '8px 12px',
-    borderRadius: 6,
-    cursor: 'pointer',
-    fontWeight: 'bold'
-  },
-
-  dangerBtn: {
-    background: '#2a2a2a',
-    color: '#ff4d4d',
-    border: '1px solid #333',
-    padding: '5px 8px',
-    borderRadius: 6
+  actions: {
+    display: 'flex',
+    gap: 10
   },
 
   card: {
@@ -248,16 +224,18 @@ const styles = {
     borderRadius: 10
   },
 
-  cardHeader: {
+  topRow: {
     display: 'flex',
     justifyContent: 'space-between'
   },
 
-  tag: {
-    display: 'inline-block',
-    marginTop: 10,
-    fontSize: 12,
+  category: {
     color: '#f5c400'
+  },
+
+  comment: {
+    fontSize: 12,
+    color: '#aaa'
   },
 
   modal: {
@@ -277,13 +255,5 @@ const styles = {
     display: 'flex',
     flexDirection: 'column',
     gap: 10
-  },
-
-  input: {
-    padding: 10,
-    background: '#000',
-    border: '1px solid #333',
-    color: '#fff',
-    borderRadius: 6
   }
 };
