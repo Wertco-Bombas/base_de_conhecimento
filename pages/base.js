@@ -12,6 +12,8 @@ export default function Base() {
   const [q, setQ] = useState('');
   const [commentInput, setCommentInput] = useState({});
 
+  const [replyTo, setReplyTo] = useState(null); // ⭐ NOVO
+
   const [showTopic, setShowTopic] = useState(false);
 
   const [newTopic, setNewTopic] = useState('');
@@ -55,31 +57,23 @@ export default function Base() {
     load();
   }
 
-  // 🔥 FUNÇÃO CRÍTICA (COM DEBUG REAL)
+  // 🔥 AGORA SUPORTA TÓPICO + RESPOSTA
   async function addComment(topicId) {
     const text = commentInput[topicId];
 
-    console.log("ENVIANDO COMENTÁRIO:", {
-      topicId,
-      text,
-      user: user?.email
-    });
-
     if (!text || !text.trim()) return;
 
-    const { data, error } = await supabase
+    const { error } = await supabase
       .from('comentarios')
       .insert([
         {
           topic_id: topicId,
+          parent_id: replyTo, // ⭐ AQUI ESTÁ A MÁGICA
           texto: text,
           user_email: user?.email,
           created_at: new Date()
         }
-      ])
-      .select();
-
-    console.log("RESPOSTA SUPABASE:", { data, error });
+      ]);
 
     if (error) {
       alert("Erro ao salvar comentário: " + error.message);
@@ -87,6 +81,7 @@ export default function Base() {
     }
 
     setCommentInput(prev => ({ ...prev, [topicId]: '' }));
+    setReplyTo(null);
     load();
   }
 
@@ -143,22 +138,45 @@ export default function Base() {
           <p>{t.descricao}</p>
           <small>{t.categoria}</small>
 
-          {/* COMMENTS */}
+          {/* COMMENTS PRINCIPAIS */}
           {comments
-            .filter(c => c.topic_id === t.id)
+            .filter(c => c.topic_id === t.id && !c.parent_id)
             .map(c => (
               <div key={c.id} style={styles.comment}>
+
                 💬 {c.texto} <br />
                 <small>{c.user_email}</small>
 
-                <button onClick={() => deleteComment(c.id)}>x</button>
+                <div style={{ marginTop: 4 }}>
+                  <button onClick={() => setReplyTo(c.id)}>
+                    responder
+                  </button>
+
+                  <button onClick={() => deleteComment(c.id)}>
+                    x
+                  </button>
+                </div>
+
+                {/* RESPOSTAS */}
+                <div style={styles.replyBox}>
+                  {comments
+                    .filter(r => r.parent_id === c.id)
+                    .map(r => (
+                      <div key={r.id} style={styles.reply}>
+                        ↳ {r.texto}
+                      </div>
+                    ))}
+                </div>
+
               </div>
             ))}
 
           {/* ADD COMMENT */}
           <div style={styles.row}>
             <input
-              placeholder="Comentar..."
+              placeholder={
+                replyTo ? "Respondendo comentário..." : "Comentar..."
+              }
               value={commentInput[t.id] || ''}
               onChange={e =>
                 setCommentInput(prev => ({
@@ -167,6 +185,12 @@ export default function Base() {
                 }))
               }
             />
+
+            {replyTo && (
+              <button onClick={() => setReplyTo(null)}>
+                cancelar resposta
+              </button>
+            )}
 
             <button onClick={() => addComment(t.id)}>
               enviar
@@ -219,6 +243,17 @@ const styles = {
   header: { display: 'flex', justifyContent: 'space-between' },
   comment: { marginTop: 8, fontSize: 12, color: '#aaa' },
   row: { display: 'flex', gap: 10, marginTop: 10 },
+
+  replyBox: {
+    marginLeft: 20,
+    marginTop: 5
+  },
+
+  reply: {
+    fontSize: 11,
+    color: '#777'
+  },
+
   modal: {
     position: 'fixed',
     inset: 0,
@@ -227,6 +262,7 @@ const styles = {
     justifyContent: 'center',
     alignItems: 'center'
   },
+
   modalBox: {
     background: '#111',
     padding: 20,
