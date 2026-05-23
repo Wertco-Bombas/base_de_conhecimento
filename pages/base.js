@@ -259,74 +259,123 @@ export default function Base() {
 }
 
 const styles = {
+
+  // fundo geral do card de tópico
+  card: {
+    background: '#0f0f10',
+    border: '1px solid #1f1f22',
+    padding: 18,
+    marginBottom: 14,
+    borderRadius: 12,
+    boxShadow: '0 0 0 1px rgba(255,255,255,0.02)'
+  },
+
+  // título do header do tópico
+  header: {
+    display: 'flex',
+    justifyContent: 'space-between',
+    alignItems: 'flex-start',
+    marginBottom: 10
+  },
+
+  // input de busca
   search: {
     width: '100%',
-    padding: 10,
-    marginBottom: 20,
-    background: '#111',
-    color: '#fff'
+    padding: 12,
+    marginBottom: 18,
+    background: '#0b0b0c',
+    border: '1px solid #2a2a2e',
+    color: '#fff',
+    borderRadius: 10,
+    outline: 'none'
   },
 
+  // botão padrão
   btn: {
-    marginBottom: 20,
+    marginBottom: 18,
+    padding: '10px 14px',
+    background: '#1a1a1d',
+    color: '#fff',
+    border: '1px solid #2a2a2e',
+    borderRadius: 10,
+    cursor: 'pointer'
+  },
+
+  // linha de input comentário
+  row: {
+    display: 'flex',
+    gap: 10,
+    marginTop: 12
+  },
+
+  // input comentário
+  input: {
+    flex: 1,
     padding: 10,
-    background: '#222',
-    color: '#fff'
+    background: '#0b0b0c',
+    border: '1px solid #2a2a2e',
+    color: '#fff',
+    borderRadius: 10,
+    outline: 'none'
   },
 
-  card: {
-    background: '#111',
-    padding: 15,
-    marginBottom: 10,
-    borderRadius: 8
+  // comentário principal
+  commentBox: {
+    marginLeft: 14,
+    marginTop: 10,
+    padding: 10,
+    borderLeft: '2px solid #2a2a2e',
+    background: '#0b0b0c',
+    borderRadius: 10
   },
 
-  header: {
+  // metadata (user + data)
+  meta: {
+    fontSize: 11,
+    color: '#8a8a8a',
+    marginBottom: 6,
     display: 'flex',
     justifyContent: 'space-between'
   },
 
-  row: {
-    display: 'flex',
-    gap: 10,
-    marginTop: 10
-  },
-
-  commentBox: {
-    marginLeft: 15,
-    marginTop: 10,
-    borderLeft: '1px solid #333',
-    paddingLeft: 10
-  },
-
-  meta: {
-    fontSize: 10,
-    color: '#777'
-  },
-
+  // botões de ação
   actions: {
     display: 'flex',
-    gap: 10,
-    marginTop: 5
+    gap: 8,
+    marginTop: 8
   },
 
+  // replies
   children: {
     marginTop: 10
   },
 
+  // modal overlay
   modal: {
     position: 'fixed',
     inset: 0,
-    background: 'rgba(0,0,0,0.7)',
+    background: 'rgba(0,0,0,0.75)',
     display: 'flex',
     justifyContent: 'center',
     alignItems: 'center'
   },
 
+  // modal box
   modalBox: {
-    background: '#111',
+    background: '#0f0f10',
     padding: 20,
-    borderRadius: 10,
-    width: 400
+    borderRadius: 14,
+    width: 420,
+    border: '1px solid #2a2a2e',
+    display: 'flex',
+    flexDirection: 'column',
+    gap: 10
+  },
+
+  // categoria pequena
+  category: {
+    fontSize: 12,
+    color: '#f5c400',
+    marginTop: 4
   }
 };
