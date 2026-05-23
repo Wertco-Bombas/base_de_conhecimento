@@ -154,25 +154,62 @@ export default function Base() {
 
   async function deleteCategory() {
 
-    const nome = prompt('Nome da categoria');
-
-    if (!nome) return;
-
-    const confirmar = confirm('Excluir categoria?');
-
-    if (!confirmar) return;
-
-    const { error } = await supabase
+    const { data, error } = await supabase
       .from('categorias')
-      .delete()
-      .eq('nome', nome);
+      .select('*')
+      .order('nome');
 
     if (error) {
       alert(error.message);
       return;
     }
 
-    alert('Categoria removida');
+    if (!data?.length) {
+      alert('Nenhuma categoria cadastrada');
+      return;
+    }
+
+    const lista = data
+      .map((c, i) => `${i + 1} - ${c.nome}`)
+      .join('\n');
+
+    const resposta = prompt(
+      `Categorias disponíveis:\n\n${lista}\n\nDigite os números separados por vírgula.\nEx: 1,3`
+    );
+
+    if (!resposta) return;
+
+    const indexes = resposta
+      .split(',')
+      .map(v => parseInt(v.trim()) - 1)
+      .filter(v => v >= 0);
+
+    const categoriasSelecionadas = indexes
+      .map(i => data[i]?.nome)
+      .filter(Boolean);
+
+    if (!categoriasSelecionadas.length) {
+      alert('Nenhuma categoria válida selecionada');
+      return;
+    }
+
+    const confirmar = confirm(
+      `Excluir categorias:\n\n${categoriasSelecionadas.join('\n')} ?`
+    );
+
+    if (!confirmar) return;
+
+    const { error: deleteError } = await supabase
+      .from('categorias')
+      .delete()
+      .in('nome', categoriasSelecionadas);
+
+    if (deleteError) {
+      alert(deleteError.message);
+      return;
+    }
+
+    alert('Categorias excluídas com sucesso');
   }
 
   function buildTree(list, parentId = null, topicId = null) {
