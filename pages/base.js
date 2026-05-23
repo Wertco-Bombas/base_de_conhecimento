@@ -7,15 +7,15 @@ export default function Base() {
 
   const [topics, setTopics] = useState([]);
   const [commentsByTopic, setCommentsByTopic] = useState({});
+  const [categories, setCategories] = useState([]);
 
-  const [q, setQ] = useState('');
-  const [commentInputs, setCommentInputs] = useState({});
-
+  // MODAIS
   const [showTopicModal, setShowTopicModal] = useState(false);
   const [showCategoryModal, setShowCategoryModal] = useState(false);
   const [showDeleteTopicModal, setShowDeleteTopicModal] = useState(false);
   const [showDeleteCategoryModal, setShowDeleteCategoryModal] = useState(false);
 
+  // TOPIC FORM
   const [newTopic, setNewTopic] = useState('');
   const [newDescription, setNewDescription] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('');
@@ -47,6 +47,9 @@ export default function Base() {
 
     setTopics(topicsData || []);
     setCommentsByTopic(grouped);
+
+    const cats = [...new Set((topicsData || []).map(t => t.categoria))];
+    setCategories(cats);
   }
 
   // ---------------- TOPIC ----------------
@@ -74,33 +77,16 @@ export default function Base() {
     load();
   }
 
-  // ---------------- COMMENTS ----------------
-  async function addComment(topicId) {
-    const text = commentInputs[topicId];
-
-    if (!text || !text.trim()) return;
-
-    const { error } = await supabase.from('comentarios').insert({
-      topic_id: topicId,
-      texto: text,
-      user_email: user?.email,
-      created_at: new Date()
-    });
-
-    if (!error) {
-      setCommentInputs(prev => ({
-        ...prev,
-        [topicId]: ''
-      }));
-      load();
-    } else {
-      console.log('ERROR COMMENT:', error);
-    }
+  // ---------------- CATEGORY (placeholder) ----------------
+  async function createCategory() {
+    alert('Aqui você pode criar tabela categorias depois');
+    setShowCategoryModal(false);
   }
 
-  const filtered = topics.filter(t =>
-    (t.titulo || '').toLowerCase().includes(q.toLowerCase())
-  );
+  async function deleteCategory() {
+    alert('Precisa implementar tabela de categorias');
+    setShowDeleteCategoryModal(false);
+  }
 
   return (
     <Layout>
@@ -124,16 +110,8 @@ export default function Base() {
         </div>
       </div>
 
-      {/* SEARCH */}
-      <input
-        placeholder="Buscar..."
-        value={q}
-        onChange={e => setQ(e.target.value)}
-        style={styles.search}
-      />
-
-      {/* TOPICS */}
-      {filtered.map(topic => (
+      {/* LISTA DE TÓPICOS */}
+      {topics.map(topic => (
         <div key={topic.id} style={styles.card}>
 
           <div style={styles.topRow}>
@@ -150,38 +128,17 @@ export default function Base() {
             {topic.categoria}
           </p>
 
-          {/* COMMENTS LIST */}
-          <div style={{ marginTop: 10 }}>
-            {(commentsByTopic[topic.id] || []).map(c => (
-              <div key={c.id} style={styles.comment}>
-                💬 {c.texto}
-              </div>
-            ))}
-          </div>
-
-          {/* COMMENT INPUT */}
-          <div style={styles.commentBox}>
-            <input
-              placeholder="Comentar..."
-              value={commentInputs[topic.id] || ''}
-              onChange={e =>
-                setCommentInputs(prev => ({
-                  ...prev,
-                  [topic.id]: e.target.value
-                }))
-              }
-              style={styles.input}
-            />
-
-            <button onClick={() => addComment(topic.id)}>
-              enviar
-            </button>
-          </div>
+          {/* COMMENTS PREVIEW */}
+          {(commentsByTopic[topic.id] || []).slice(0, 3).map(c => (
+            <div key={c.id} style={styles.comment}>
+              💬 {c.texto}
+            </div>
+          ))}
 
         </div>
       ))}
 
-      {/* MODAL TOPIC */}
+      {/* ---------------- MODAL TOPIC ---------------- */}
       {showTopicModal && (
         <div style={styles.modal}>
           <div style={styles.modalBox}>
@@ -199,27 +156,33 @@ export default function Base() {
               onChange={e => setNewDescription(e.target.value)}
             />
 
-            <input
-              placeholder="Categoria"
+            <select
               value={selectedCategory}
               onChange={e => setSelectedCategory(e.target.value)}
-            />
+            >
+              <option value="">Selecione categoria</option>
+              {categories.map((c, i) => (
+                <option key={i} value={c}>{c}</option>
+              ))}
+            </select>
 
             <button onClick={createTopic}>Salvar</button>
-            <button onClick={() => setShowTopicModal(false)}>
-              Fechar
-            </button>
+            <button onClick={() => setShowTopicModal(false)}>Fechar</button>
           </div>
         </div>
       )}
 
-      {/* CATEGORY MODAL */}
+      {/* ---------------- MODAL CATEGORY ---------------- */}
       {showCategoryModal && (
         <div style={styles.modal}>
           <div style={styles.modalBox}>
             <h3>Nova Categoria</h3>
-            <p>implementar depois</p>
-            <button onClick={() => setShowCategoryModal(false)}>OK</button>
+            <p>Você pode evoluir isso depois com tabela própria.</p>
+
+            <button onClick={createCategory}>OK</button>
+            <button onClick={() => setShowCategoryModal(false)}>
+              Fechar
+            </button>
           </div>
         </div>
       )}
@@ -229,8 +192,10 @@ export default function Base() {
         <div style={styles.modal}>
           <div style={styles.modalBox}>
             <h3>Excluir Categoria</h3>
+
+            <button onClick={deleteCategory}>Confirmar</button>
             <button onClick={() => setShowDeleteCategoryModal(false)}>
-              fechar
+              Fechar
             </button>
           </div>
         </div>
@@ -252,15 +217,6 @@ const styles = {
     gap: 10
   },
 
-  search: {
-    width: '100%',
-    padding: 10,
-    marginBottom: 20,
-    background: '#111',
-    color: '#fff',
-    border: '1px solid #333'
-  },
-
   card: {
     background: '#111',
     padding: 15,
@@ -279,22 +235,7 @@ const styles = {
 
   comment: {
     fontSize: 12,
-    color: '#aaa',
-    marginTop: 4
-  },
-
-  commentBox: {
-    display: 'flex',
-    gap: 10,
-    marginTop: 10
-  },
-
-  input: {
-    flex: 1,
-    padding: 8,
-    background: '#000',
-    color: '#fff',
-    border: '1px solid #333'
+    color: '#aaa'
   },
 
   modal: {
