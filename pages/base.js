@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useMemo } from 'react';
 import Layout from '../components/Layout';
 import { supabase } from '../lib/supabaseClient';
 
@@ -11,7 +11,6 @@ export default function Base() {
 
   const [q, setQ] = useState('');
   const [commentInput, setCommentInput] = useState({});
-
   const [replyInput, setReplyInput] = useState({});
 
   const [showTopic, setShowTopic] = useState(false);
@@ -21,13 +20,11 @@ export default function Base() {
   const [newCat, setNewCat] = useState('');
 
   useEffect(() => {
-
     supabase.auth.getUser().then(({ data }) => {
       setUser(data?.user || null);
     });
 
     load();
-
   }, []);
 
   async function load() {
@@ -76,10 +73,7 @@ export default function Base() {
       .select()
       .single();
 
-    if (error) {
-      alert(error.message);
-      return;
-    }
+    if (error) return alert(error.message);
 
     setTopics(prev => [data, ...prev]);
 
@@ -107,10 +101,7 @@ export default function Base() {
       .select()
       .single();
 
-    if (error) {
-      alert(error.message);
-      return;
-    }
+    if (error) return alert(error.message);
 
     setComments(prev => [...prev, data]);
 
@@ -120,10 +111,23 @@ export default function Base() {
     }));
   }
 
+  async function deleteComment(id) {
+
+    const ok = confirm('Excluir comentário?');
+    if (!ok) return;
+
+    await supabase
+      .from('comentarios')
+      .delete()
+      .eq('id', id);
+
+    setComments(prev => prev.filter(c => c.id !== id));
+  }
+
   async function deleteTopic(id) {
 
-    const confirmar = confirm('Excluir tópico?');
-    if (!confirmar) return;
+    const ok = confirm('Excluir tópico?');
+    if (!ok) return;
 
     await supabase
       .from('topicos')
@@ -134,220 +138,134 @@ export default function Base() {
     setComments(prev => prev.filter(c => c.topic_id !== id));
   }
 
-  async function deleteComment(id) {
-
-    const confirmar = confirm('Excluir comentário?');
-    if (!confirmar) return;
-
-    await supabase
-      .from('comentarios')
-      .delete()
-      .eq('id', id);
-
-    setComments(prev => prev.filter(c => c.id !== id));
-  }
-
-  async function createCategory() {
-
-    const nome = prompt('Nome da categoria');
-    if (!nome) return;
-
-    const { error } = await supabase
-      .from('categorias')
-      .insert({ nome });
-
-    if (error) return alert(error.message);
-
-    alert('Categoria criada');
-  }
-
-  async function deleteCategory() {
-
-    const { data, error } = await supabase
-      .from('categorias')
-      .select('*')
-      .order('nome');
-
-    if (error) return alert(error.message);
-    if (!data?.length) return alert('Nenhuma categoria cadastrada');
-
-    const lista = data
-      .map((c, i) => `${i + 1} - ${c.nome}`)
-      .join('\n');
-
-    const resposta = prompt(
-      `Categorias disponíveis:\n\n${lista}\n\nDigite os números separados por vírgula.`
-    );
-
-    if (!resposta) return;
-
-    const indexes = resposta
-      .split(',')
-      .map(v => parseInt(v.trim()) - 1)
-      .filter(v => v >= 0);
-
-    const categoriasSelecionadas = indexes
-      .map(i => data[i]?.nome)
-      .filter(Boolean);
-
-    if (!categoriasSelecionadas.length) {
-      return alert('Nenhuma categoria válida selecionada');
-    }
-
-    const confirmar = confirm(
-      `Excluir categorias:\n\n${categoriasSelecionadas.join('\n')} ?`
-    );
-
-    if (!confirmar) return;
-
-    const { error: deleteError } = await supabase
-      .from('categorias')
-      .delete()
-      .in('nome', categoriasSelecionadas);
-
-    if (deleteError) return alert(deleteError.message);
-
-    alert('Categorias excluídas com sucesso');
-  }
-
   function buildTree(list, parentId = null, topicId = null) {
 
     return list
-      .filter(c =>
-        c.parent_id === parentId &&
-        c.topic_id === topicId
-      )
+      .filter(c => c.parent_id === parentId && c.topic_id === topicId)
       .map(c => ({
         ...c,
         children: buildTree(list, c.id, topicId)
       }));
   }
 
-  const filteredTopics = topics.filter(t => {
+  const filteredTopics = useMemo(() => {
 
-    const topicMatch =
-      `${t.titulo} ${t.descricao} ${t.categoria}`
-        .toLowerCase()
-        .includes(q.toLowerCase());
+    return topics.filter(t => {
 
-    const commentMatch = comments.some(c =>
-      c.topic_id === t.id &&
-      c.texto?.toLowerCase().includes(q.toLowerCase())
-    );
+      const topicMatch =
+        `${t.titulo} ${t.descricao}`
+          .toLowerCase()
+          .includes(q.toLowerCase());
 
-    return topicMatch || commentMatch;
-  });
+      const commentMatch = comments.some(c =>
+        c.topic_id === t.id &&
+        c.texto?.toLowerCase().includes(q.toLowerCase())
+      );
+
+      return topicMatch || commentMatch;
+    });
+
+  }, [topics, comments, q]);
 
   function formatDate(date) {
-    if (!date) return '';
-    return new Date(date).toLocaleString('pt-BR');
+    return date ? new Date(date).toLocaleString('pt-BR') : '';
   }
 
-  function CommentNode({ comment, level = 0 }) {
+  const CommentNode = useMemo(() => {
 
-    return (
-      <div
-        style={{
-          ...styles.commentBox,
-          marginLeft: level * 25
-        }}
-      >
+    function Node({ comment, level = 0 }) {
 
-        <div style={styles.commentMeta}>
-          <span>{comment.user_email || 'Usuário'}</span>
-          <span>{formatDate(comment.created_at)}</span>
-        </div>
+      const hasReply = replyInput.hasOwnProperty(comment.id);
 
-        <div style={styles.commentText}>
-          💬 {comment.texto}
-        </div>
+      return (
+        <div style={{ ...styles.commentBox, marginLeft: level * 25 }}>
 
-        <div style={styles.commentActions}>
-
-          <button
-            style={styles.smallBtn}
-            onClick={() => {
-              setReplyInput(prev => ({
-                ...prev,
-                [comment.id]: prev[comment.id] ?? ''
-              }));
-            }}
-          >
-            responder
-          </button>
-
-          <button
-            style={styles.smallBtnDanger}
-            onClick={() => deleteComment(comment.id)}
-          >
-            excluir
-          </button>
-
-        </div>
-
-        <div
-          style={{
-            marginTop: 10,
-            display: replyInput.hasOwnProperty(comment.id)
-              ? 'flex'
-              : 'none',
-            gap: 8
-          }}
-        >
-
-          <input
-            style={styles.input}
-            placeholder="Escreva sua resposta..."
-            value={replyInput[comment.id] || ''}
-            onChange={(e) =>
-              setReplyInput(prev => ({
-                ...prev,
-                [comment.id]: e.target.value
-              }))
-            }
-          />
-
-          <button
-            style={styles.mainBtn}
-            onClick={async () => {
-              await addComment(
-                comment.topic_id,
-                comment.id,
-                replyInput[comment.id]
-              );
-
-              setReplyInput(prev => ({
-                ...prev,
-                [comment.id]: ''
-              }));
-            }}
-          >
-            enviar
-          </button>
-
-        </div>
-
-        {comment.children?.length > 0 && (
-          <div>
-            {comment.children.map(child => (
-              <CommentNode
-                key={child.id}
-                comment={child}
-                level={level + 1}
-              />
-            ))}
+          <div style={styles.commentMeta}>
+            <span>{comment.user_email}</span>
+            <span>{formatDate(comment.created_at)}</span>
           </div>
-        )}
 
-      </div>
-    );
-  }
+          <div style={styles.commentText}>
+            💬 {comment.texto}
+          </div>
+
+          <div style={styles.commentActions}>
+
+            <button
+              style={styles.smallBtn}
+              onClick={() => {
+                setReplyInput(prev => ({
+                  ...prev,
+                  [comment.id]: ''
+                }));
+              }}
+            >
+              responder
+            </button>
+
+            <button
+              style={styles.smallBtnDanger}
+              onClick={() => deleteComment(comment.id)}
+            >
+              excluir
+            </button>
+
+          </div>
+
+          {hasReply && (
+            <div style={{ marginTop: 10, display: 'flex', gap: 8 }}>
+
+              <input
+                style={styles.input}
+                value={replyInput[comment.id] || ''}
+                placeholder="Responder..."
+                onChange={(e) =>
+                  setReplyInput(prev => ({
+                    ...prev,
+                    [comment.id]: e.target.value
+                  }))
+                }
+              />
+
+              <button
+                style={styles.mainBtn}
+                onClick={async () => {
+
+                  await addComment(
+                    comment.topic_id,
+                    comment.id,
+                    replyInput[comment.id]
+                  );
+
+                  setReplyInput(prev => ({
+                    ...prev,
+                    [comment.id]: ''
+                  }));
+                }}
+              >
+                enviar
+              </button>
+
+            </div>
+          )}
+
+          {comment.children?.map(child => (
+            <Node key={child.id} comment={child} level={level + 1} />
+          ))}
+
+        </div>
+      );
+    }
+
+    return Node;
+
+  }, [replyInput, comments]);
 
   return (
     <Layout>
 
       <input
-        placeholder="Buscar tópicos e comentários..."
+        placeholder="Buscar..."
         value={q}
         onChange={e => setQ(e.target.value)}
         style={styles.search}
@@ -355,77 +273,43 @@ export default function Base() {
 
       <div style={styles.topBar}>
 
-        <button
-          style={styles.mainBtn}
-          onClick={() => setShowTopic(true)}
-        >
+        <button style={styles.mainBtn} onClick={() => setShowTopic(true)}>
           + Novo Tópico
-        </button>
-
-        <button
-          style={styles.mainBtn}
-          onClick={createCategory}
-        >
-          + Nova Categoria
-        </button>
-
-        <button
-          style={styles.smallBtnDanger}
-          onClick={deleteCategory}
-        >
-          Excluir Categoria
         </button>
 
       </div>
 
       {filteredTopics.map(topic => {
 
-        const tree = buildTree(comments, null, topic.id);
+        const tree = useMemo(() =>
+          buildTree(comments, null, topic.id),
+          [comments, topic.id]
+        );
 
         return (
           <div key={topic.id} style={styles.card}>
 
-            <div style={styles.header}>
-              <div>
-                <h2 style={styles.title}>{topic.titulo}</h2>
-                <div style={styles.category}>{topic.categoria}</div>
-              </div>
+            <h2>{topic.titulo}</h2>
 
-              <button
-                style={styles.smallBtnDanger}
-                onClick={() => deleteTopic(topic.id)}
-              >
-                excluir tópico
-              </button>
-            </div>
-
-            <p style={styles.desc}>{topic.descricao}</p>
-
-            <div style={styles.meta}>
-              <span>{topic.user_email}</span>
-              <span>{formatDate(topic.created_at)}</span>
-            </div>
+            <p>{topic.descricao}</p>
 
             <div style={{ marginTop: 20 }}>
               {tree.map(comment => (
-                <CommentNode
-                  key={comment.id}
-                  comment={comment}
-                />
+                <CommentNode key={comment.id} comment={comment} />
               ))}
             </div>
 
-            <div style={styles.row}>
+            <div style={{ display: 'flex', gap: 10, marginTop: 15 }}>
+
               <input
-                placeholder="Escreva um comentário..."
+                style={styles.input}
                 value={commentInput[topic.id] || ''}
-                onChange={e =>
+                onChange={(e) =>
                   setCommentInput(prev => ({
                     ...prev,
                     [topic.id]: e.target.value
                   }))
                 }
-                style={styles.input}
               />
 
               <button
@@ -434,79 +318,27 @@ export default function Base() {
               >
                 enviar
               </button>
+
             </div>
 
           </div>
         );
       })}
 
-      {showTopic && (
-        <div style={styles.modal}>
-          <div style={styles.modalBox}>
-
-            <h2 style={{ color: '#FFD600' }}>Novo Tópico</h2>
-
-            <input
-              style={styles.input}
-              placeholder="Título"
-              value={newTopic}
-              onChange={e => setNewTopic(e.target.value)}
-            />
-
-            <textarea
-              style={styles.input}
-              placeholder="Descrição"
-              value={newDesc}
-              onChange={e => setNewDesc(e.target.value)}
-            />
-
-            <input
-              style={styles.input}
-              placeholder="Categoria"
-              value={newCat}
-              onChange={e => setNewCat(e.target.value)}
-            />
-
-            <button
-              style={styles.mainBtn}
-              onClick={createTopic}
-            >
-              salvar
-            </button>
-
-            <button
-              style={styles.smallBtn}
-              onClick={() => setShowTopic(false)}
-            >
-              fechar
-            </button>
-
-          </div>
-        </div>
-      )}
-
     </Layout>
   );
 }
 
 const styles = {
-  topBar: { display: 'flex', gap: 10, marginBottom: 20, flexWrap: 'wrap' },
-  search: { width: '100%', padding: 14, borderRadius: 14, border: '1px solid #2a2a2a', background: '#0b0b0b', color: '#fff', marginBottom: 20, fontSize: 15, outline: 'none' },
-  card: { background: '#111', border: '1px solid #222', borderRadius: 18, padding: 20, marginBottom: 18, color: '#fff', boxShadow: '0 0 20px rgba(0,0,0,0.4)' },
-  header: { display: 'flex', justifyContent: 'space-between', alignItems: 'center' },
-  title: { margin: 0, fontSize: 24 },
-  category: { display: 'inline-block', marginTop: 8, background: '#FFD600', color: '#000', padding: '5px 10px', borderRadius: 999, fontSize: 12, fontWeight: 'bold' },
-  desc: { color: '#bbb', marginTop: 16, lineHeight: 1.6 },
-  meta: { display: 'flex', justifyContent: 'space-between', marginTop: 16, color: '#777', fontSize: 12 },
-  row: { display: 'flex', gap: 10, marginTop: 20 },
-  input: { flex: 1, background: '#0b0b0b', border: '1px solid #2a2a2a', borderRadius: 12, padding: 12, color: '#fff', outline: 'none' },
-  mainBtn: { background: '#FFD600', color: '#000', border: 'none', borderRadius: 12, padding: '12px 18px', fontWeight: 'bold', cursor: 'pointer' },
-  smallBtn: { background: 'transparent', border: '1px solid #FFD600', color: '#FFD600', padding: '6px 10px', borderRadius: 10, cursor: 'pointer' },
-  smallBtnDanger: { background: 'transparent', border: '1px solid #ff4d4d', color: '#ff4d4d', padding: '6px 10px', borderRadius: 10, cursor: 'pointer' },
-  commentBox: { marginTop: 16, padding: 12, borderLeft: '2px solid #FFD600', background: '#0d0d0d', borderRadius: 10 },
-  commentMeta: { display: 'flex', justifyContent: 'space-between', color: '#888', fontSize: 11 },
-  commentText: { marginTop: 8, color: '#eee', lineHeight: 1.5 },
-  commentActions: { display: 'flex', gap: 8, marginTop: 10 },
-  modal: { position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.85)', display: 'flex', justifyContent: 'center', alignItems: 'center', zIndex: 999 },
-  modalBox: { width: 450, background: '#111', border: '1px solid #FFD600', borderRadius: 18, padding: 24, display: 'flex', flexDirection: 'column', gap: 14 }
+  search: { width: '100%', padding: 12, marginBottom: 20 },
+  card: { padding: 20, border: '1px solid #333', marginBottom: 20 },
+  input: { flex: 1, padding: 10 },
+  mainBtn: { padding: 10, background: '#FFD600' },
+  smallBtn: { marginRight: 8 },
+  smallBtnDanger: { color: 'red' },
+  commentBox: { padding: 10, borderLeft: '2px solid #FFD600' },
+  commentMeta: { fontSize: 12, opacity: 0.7 },
+  commentText: { marginTop: 5 },
+  commentActions: { display: 'flex', gap: 8, marginTop: 5 },
+  topBar: { marginBottom: 20 }
 };
