@@ -135,7 +135,11 @@ export default function Base() {
           </div>
 
           <p>{t.descricao}</p>
-          <small>{t.categoria}</small>
+
+          {/* ✅ CATEGORIA DESTACADA (NOVO) */}
+          <div style={styles.categoryTag}>
+            📁 {t.categoria || 'Sem categoria'}
+          </div>
 
           {/* COMMENTS PRINCIPAIS */}
           {comments
@@ -245,11 +249,38 @@ export default function Base() {
 }
 
 const styles = {
-  search: { width: '100%', padding: 10, marginBottom: 20, background: '#111', color: '#fff' },
-  btn: { marginBottom: 20, padding: 10, background: '#222', color: '#fff' },
-  card: { background: '#111', padding: 15, marginBottom: 10, borderRadius: 8 },
-  header: { display: 'flex', justifyContent: 'space-between' },
-  comment: { marginTop: 8, fontSize: 12, color: '#aaa' },
+  search: {
+    width: '100%',
+    padding: 10,
+    marginBottom: 20,
+    background: '#111',
+    color: '#fff'
+  },
+
+  btn: {
+    marginBottom: 20,
+    padding: 10,
+    background: '#222',
+    color: '#fff'
+  },
+
+  card: {
+    background: '#111',
+    padding: 15,
+    marginBottom: 10,
+    borderRadius: 8
+  },
+
+  header: {
+    display: 'flex',
+    justifyContent: 'space-between'
+  },
+
+  comment: {
+    marginTop: 8,
+    fontSize: 12,
+    color: '#aaa'
+  },
 
   meta: {
     fontSize: 10,
@@ -263,7 +294,11 @@ const styles = {
     marginTop: 2
   },
 
-  row: { display: 'flex', gap: 10, marginTop: 10 },
+  row: {
+    display: 'flex',
+    gap: 10,
+    marginTop: 10
+  },
 
   replyBox: {
     marginLeft: 20,
@@ -290,5 +325,17 @@ const styles = {
     padding: 20,
     borderRadius: 10,
     width: 400
+  },
+
+  // ✅ NOVO ESTILO DA CATEGORIA
+  categoryTag: {
+    display: 'inline-block',
+    marginTop: 6,
+    padding: '4px 8px',
+    fontSize: 11,
+    borderRadius: 6,
+    background: '#1f1f1f',
+    color: '#f5c400',
+    border: '1px solid #333'
   }
 };
