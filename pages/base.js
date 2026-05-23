@@ -12,7 +12,7 @@ export default function Base() {
   const [q, setQ] = useState('');
   const [commentInput, setCommentInput] = useState({});
 
-  const [replyTo, setReplyTo] = useState(null); // ⭐ NOVO
+  const [replyTo, setReplyTo] = useState(null);
 
   const [showTopic, setShowTopic] = useState(false);
 
@@ -57,7 +57,6 @@ export default function Base() {
     load();
   }
 
-  // 🔥 AGORA SUPORTA TÓPICO + RESPOSTA
   async function addComment(topicId) {
     const text = commentInput[topicId];
 
@@ -68,7 +67,7 @@ export default function Base() {
       .insert([
         {
           topic_id: topicId,
-          parent_id: replyTo, // ⭐ AQUI ESTÁ A MÁGICA
+          parent_id: replyTo,
           texto: text,
           user_email: user?.email,
           created_at: new Date()
@@ -93,6 +92,41 @@ export default function Base() {
   async function deleteComment(id) {
     await supabase.from('comentarios').delete().eq('id', id);
     load();
+  }
+
+  // 🔥 FUNÇÃO RECURSIVA (THREAD INFINITA)
+  function renderComments(parentId, topicId, level = 0) {
+    return comments
+      .filter(c => c.topic_id === topicId && c.parent_id === parentId)
+      .map(c => (
+        <div
+          key={c.id}
+          style={{
+            marginLeft: level * 20,
+            marginTop: 8,
+            fontSize: level === 0 ? 12 : 11,
+            color: level === 0 ? '#aaa' : '#777'
+          }}
+        >
+
+          💬 {c.texto} <br />
+          <small>{c.user_email}</small>
+
+          <div style={{ marginTop: 4 }}>
+            <button onClick={() => setReplyTo(c.id)}>
+              responder
+            </button>
+
+            <button onClick={() => deleteComment(c.id)}>
+              x
+            </button>
+          </div>
+
+          {/* 🔥 RECURSÃO INFINITA */}
+          {renderComments(c.id, topicId, level + 1)}
+
+        </div>
+      ));
   }
 
   // 🔍 BUSCA GLOBAL
@@ -138,38 +172,8 @@ export default function Base() {
           <p>{t.descricao}</p>
           <small>{t.categoria}</small>
 
-          {/* COMMENTS PRINCIPAIS */}
-          {comments
-            .filter(c => c.topic_id === t.id && !c.parent_id)
-            .map(c => (
-              <div key={c.id} style={styles.comment}>
-
-                💬 {c.texto} <br />
-                <small>{c.user_email}</small>
-
-                <div style={{ marginTop: 4 }}>
-                  <button onClick={() => setReplyTo(c.id)}>
-                    responder
-                  </button>
-
-                  <button onClick={() => deleteComment(c.id)}>
-                    x
-                  </button>
-                </div>
-
-                {/* RESPOSTAS */}
-                <div style={styles.replyBox}>
-                  {comments
-                    .filter(r => r.parent_id === c.id)
-                    .map(r => (
-                      <div key={r.id} style={styles.reply}>
-                        ↳ {r.texto}
-                      </div>
-                    ))}
-                </div>
-
-              </div>
-            ))}
+          {/* 🔥 THREAD INFINITA AQUI */}
+          {renderComments(null, t.id)}
 
           {/* ADD COMMENT */}
           <div style={styles.row}>
@@ -241,18 +245,7 @@ const styles = {
   btn: { marginBottom: 20, padding: 10, background: '#222', color: '#fff' },
   card: { background: '#111', padding: 15, marginBottom: 10, borderRadius: 8 },
   header: { display: 'flex', justifyContent: 'space-between' },
-  comment: { marginTop: 8, fontSize: 12, color: '#aaa' },
   row: { display: 'flex', gap: 10, marginTop: 10 },
-
-  replyBox: {
-    marginLeft: 20,
-    marginTop: 5
-  },
-
-  reply: {
-    fontSize: 11,
-    color: '#777'
-  },
 
   modal: {
     position: 'fixed',
