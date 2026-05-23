@@ -12,7 +12,7 @@ export default function Base() {
   const [q, setQ] = useState('');
   const [commentInput, setCommentInput] = useState({});
 
-  // 🔥 FIX: agora é por comentário (não global)
+  // ✅ resposta por comentário (corrigido)
   const [replyInput, setReplyInput] = useState({});
 
   const [showTopic, setShowTopic] = useState(false);
@@ -260,13 +260,12 @@ export default function Base() {
 
         <div style={styles.commentActions}>
 
-          {/* responder */}
           <button
             style={styles.smallBtn}
             onClick={() => {
               setReplyInput(prev => ({
                 ...prev,
-                [comment.id]: prev[comment.id] || ''
+                [comment.id]: prev[comment.id] ?? ''
               }));
             }}
           >
@@ -282,40 +281,46 @@ export default function Base() {
 
         </div>
 
-        {/* INPUT INLINE (SEM BUG) */}
-        {replyInput[comment.id] !== undefined && (
-          <div style={{ marginTop: 10, display: 'flex', gap: 8 }}>
-            <input
-              style={styles.input}
-              placeholder="Escreva sua resposta..."
-              value={replyInput[comment.id] || ''}
-              onChange={(e) =>
-                setReplyInput(prev => ({
-                  ...prev,
-                  [comment.id]: e.target.value
-                }))
-              }
-            />
+        {/* ✅ INPUT SEM DESMONTAR (FIX DEFINITIVO) */}
+        <div
+          style={{
+            marginTop: 10,
+            display: replyInput.hasOwnProperty(comment.id)
+              ? 'flex'
+              : 'none',
+            gap: 8
+          }}
+        >
+          <input
+            style={styles.input}
+            placeholder="Escreva sua resposta..."
+            value={replyInput[comment.id] || ''}
+            onChange={(e) =>
+              setReplyInput(prev => ({
+                ...prev,
+                [comment.id]: e.target.value
+              }))
+            }
+          />
 
-            <button
-              style={styles.mainBtn}
-              onClick={async () => {
-                await addComment(
-                  comment.topic_id,
-                  comment.id,
-                  replyInput[comment.id]
-                );
+          <button
+            style={styles.mainBtn}
+            onClick={async () => {
+              await addComment(
+                comment.topic_id,
+                comment.id,
+                replyInput[comment.id]
+              );
 
-                setReplyInput(prev => ({
-                  ...prev,
-                  [comment.id]: ''
-                }));
-              }}
-            >
-              enviar
-            </button>
-          </div>
-        )}
+              setReplyInput(prev => ({
+                ...prev,
+                [comment.id]: ''
+              }));
+            }}
+          >
+            enviar
+          </button>
+        </div>
 
         {comment.children?.length > 0 && (
           <div>
@@ -433,6 +438,7 @@ export default function Base() {
       {showTopic && (
         <div style={styles.modal}>
           <div style={styles.modalBox}>
+
             <h2 style={{ color: '#FFD600' }}>Novo Tópico</h2>
 
             <input
