@@ -12,15 +12,14 @@ export default function Base() {
   const [q, setQ] = useState('');
   const [commentInput, setCommentInput] = useState({});
 
+  // 🔥 FIX: agora é por comentário (não global)
+  const [replyInput, setReplyInput] = useState({});
+
   const [showTopic, setShowTopic] = useState(false);
 
   const [newTopic, setNewTopic] = useState('');
   const [newDesc, setNewDesc] = useState('');
   const [newCat, setNewCat] = useState('');
-
-  // ✅ NOVO
-  const [replyingTo, setReplyingTo] = useState(null);
-  const [replyText, setReplyText] = useState('');
 
   useEffect(() => {
 
@@ -49,6 +48,7 @@ export default function Base() {
   }
 
   async function createTopic() {
+
     if (!newTopic || !newCat) {
       alert('Preencha título e categoria');
       return;
@@ -118,6 +118,7 @@ export default function Base() {
   }
 
   async function deleteTopic(id) {
+
     const confirmar = confirm('Excluir tópico?');
     if (!confirmar) return;
 
@@ -130,6 +131,7 @@ export default function Base() {
   }
 
   async function deleteComment(id) {
+
     const confirmar = confirm('Excluir comentário?');
     if (!confirmar) return;
 
@@ -142,6 +144,7 @@ export default function Base() {
   }
 
   async function createCategory() {
+
     const nome = prompt('Nome da categoria');
     if (!nome) return;
 
@@ -257,12 +260,14 @@ export default function Base() {
 
         <div style={styles.commentActions}>
 
-          {/* 🔥 BOTÃO RESPONDER (SEM PROMPT) */}
+          {/* responder */}
           <button
             style={styles.smallBtn}
             onClick={() => {
-              setReplyingTo(comment.id);
-              setReplyText('');
+              setReplyInput(prev => ({
+                ...prev,
+                [comment.id]: prev[comment.id] || ''
+              }));
             }}
           >
             responder
@@ -274,16 +279,22 @@ export default function Base() {
           >
             excluir
           </button>
+
         </div>
 
-        {/* 🔥 INPUT INLINE DE RESPOSTA */}
-        {replyingTo === comment.id && (
+        {/* INPUT INLINE (SEM BUG) */}
+        {replyInput[comment.id] !== undefined && (
           <div style={{ marginTop: 10, display: 'flex', gap: 8 }}>
             <input
               style={styles.input}
               placeholder="Escreva sua resposta..."
-              value={replyText}
-              onChange={(e) => setReplyText(e.target.value)}
+              value={replyInput[comment.id] || ''}
+              onChange={(e) =>
+                setReplyInput(prev => ({
+                  ...prev,
+                  [comment.id]: e.target.value
+                }))
+              }
             />
 
             <button
@@ -292,11 +303,13 @@ export default function Base() {
                 await addComment(
                   comment.topic_id,
                   comment.id,
-                  replyText
+                  replyInput[comment.id]
                 );
 
-                setReplyingTo(null);
-                setReplyText('');
+                setReplyInput(prev => ({
+                  ...prev,
+                  [comment.id]: ''
+                }));
               }}
             >
               enviar
@@ -315,6 +328,7 @@ export default function Base() {
             ))}
           </div>
         )}
+
       </div>
     );
   }
