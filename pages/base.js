@@ -11,19 +11,19 @@ export default function Base() {
 
   const [q, setQ] = useState('');
 
-  const [commentInputs, setCommentInputs] = useState({});
+  // TOPIC
+  const [openTopicModal, setOpenTopicModal] = useState(false);
+  const [newTopic, setNewTopic] = useState('');
+  const [newDescription, setNewDescription] = useState('');
+  const [selectedCategory, setSelectedCategory] = useState('');
 
+  // COMMENT
+  const [commentInputs, setCommentInputs] = useState({});
+  const [replyTo, setReplyTo] = useState({}); // topicId -> parentId
+
+  // EDIT
   const [editingId, setEditingId] = useState(null);
   const [editingText, setEditingText] = useState('');
-
-  // MODALS
-  const [openTopicModal, setOpenTopicModal] = useState(false);
-  const [openCategoryModal, setOpenCategoryModal] = useState(false);
-
-  // FORMS
-  const [newTopic, setNewTopic] = useState('');
-  const [selectedCategory, setSelectedCategory] = useState('');
-  const [newCategory, setNewCategory] = useState('');
 
   useEffect(() => {
     supabase.auth.getUser().then(({ data }) => {
@@ -53,7 +53,6 @@ export default function Base() {
     setTopics(topicsData || []);
     setCommentsByTopic(grouped);
 
-    // categorias dinâmicas
     const cats = [...new Set((topicsData || []).map(t => t.categoria))];
     setCategories(cats);
   }
@@ -64,10 +63,12 @@ export default function Base() {
 
     await supabase.from('topicos').insert({
       titulo: newTopic,
+      descricao: newDescription,
       categoria: selectedCategory
     });
 
     setNewTopic('');
+    setNewDescription('');
     setSelectedCategory('');
     setOpenTopicModal(false);
 
@@ -79,27 +80,24 @@ export default function Base() {
     load();
   }
 
-  async function deleteCategory(cat) {
-    await supabase.from('topicos').delete().eq('categoria', cat);
-    load();
-  }
-
-  // ---------------- COMMENTS ----------------
+  // ---------------- COMMENT ----------------
   async function addComment(topicId) {
     const text = commentInputs[topicId];
+    const parent = replyTo[topicId] || null;
 
     if (!text || !text.trim()) return;
 
-    const { error } = await supabase.from('comentarios').insert({
+    await supabase.from('comentarios').insert({
       topic_id: topicId,
+      parent_id: parent,
       texto: text,
       user_id: user?.id
     });
 
-    if (!error) {
-      setCommentInputs(prev => ({ ...prev, [topicId]: '' }));
-      load();
-    }
+    setCommentInputs(prev => ({ ...prev, [topicId]: '' }));
+    setReplyTo(prev => ({ ...prev, [topicId]: null }));
+
+    load();
   }
 
   async function deleteComment(id) {
@@ -107,9 +105,9 @@ export default function Base() {
     load();
   }
 
-  function startEdit(comment) {
-    setEditingId(comment.id);
-    setEditingText(comment.texto);
+  function startEdit(c) {
+    setEditingId(c.id);
+    setEditingText(c.texto);
   }
 
   async function saveEdit(id) {
@@ -123,6 +121,50 @@ export default function Base() {
     load();
   }
 
+  const renderComments = (topicId, parentId = null, level = 0) => {
+    return (commentsByTopic[topicId] || [])
+      .filter(c => (c.parent_id || null) === parentId)
+      .map(c => (
+        <div key={c.id} style={{ marginLeft: level * 20, marginTop: 8 }}>
+
+          {editingId === c.id ? (
+            <>
+              <input
+                value={editingText}
+                onChange={e => setEditingText(e.target.value)}
+              />
+              <button onClick={() => saveEdit(c.id)}>Salvar</button>
+            </>
+          ) : (
+            <>
+              <div style={{ color: '#aaa' }}>
+                💬 {c.texto}
+              </div>
+
+              <div style={{ display: 'flex', gap: 5 }}>
+                <button onClick={() => startEdit(c)}>✏️</button>
+                <button onClick={() => deleteComment(c.id)}>🗑</button>
+
+                <button
+                  onClick={() =>
+                    setReplyTo(prev => ({
+                      ...prev,
+                      [topicId]: c.id
+                    }))
+                  }
+                >
+                  responder
+                </button>
+              </div>
+
+              {renderComments(topicId, c.id, level + 1)}
+            </>
+          )}
+
+        </div>
+      ));
+  };
+
   const filtered = topics.filter(t =>
     (t.titulo || '').toLowerCase().includes(q.toLowerCase())
   );
@@ -130,83 +172,38 @@ export default function Base() {
   return (
     <Layout>
 
-      {/* HEADER */}
-      <div style={styles.header}>
-        <h1>Base de Conhecimento</h1>
-
-        <div style={styles.actions}>
-          <button onClick={() => setOpenCategoryModal(true)}>
-            + Categoria
-          </button>
-
-          <button onClick={() => setOpenTopicModal(true)}>
-            + Tópico
-          </button>
-        </div>
-      </div>
+      <h1>Base de Conhecimento</h1>
 
       {/* SEARCH */}
       <input
         placeholder="Buscar..."
         value={q}
         onChange={e => setQ(e.target.value)}
-        style={styles.search}
       />
-
-      {/* CATEGORIES */}
-      <div style={styles.categories}>
-        {categories.map((c, i) => (
-          <div key={i} style={styles.category}>
-            {c}
-            <button onClick={() => deleteCategory(c)}>✕</button>
-          </div>
-        ))}
-      </div>
 
       {/* TOPICS */}
       {filtered.map(topic => (
         <div key={topic.id} style={styles.card}>
 
-          <div style={styles.topRow}>
+          <div style={{ display: 'flex', justifyContent: 'space-between' }}>
             <h3>{topic.titulo}</h3>
-            <button onClick={() => deleteTopic(topic.id)}>
-              Excluir
-            </button>
+            <button onClick={() => deleteTopic(topic.id)}>Excluir</button>
           </div>
 
+          <p>{topic.descricao}</p>
           <p style={{ color: '#f5c400' }}>{topic.categoria}</p>
 
-          {/* COMMENTS */}
-          {(commentsByTopic[topic.id] || []).map(c => (
-            <div key={c.id} style={styles.comment}>
+          {/* COMMENTS TREE */}
+          {renderComments(topic.id)}
 
-              {editingId === c.id ? (
-                <>
-                  <input
-                    value={editingText}
-                    onChange={e => setEditingText(e.target.value)}
-                    style={styles.input}
-                  />
-                  <button onClick={() => saveEdit(c.id)}>Salvar</button>
-                </>
-              ) : (
-                <>
-                  <span>💬 {c.texto}</span>
-
-                  <div style={{ display: 'flex', gap: 5 }}>
-                    <button onClick={() => startEdit(c)}>✏️</button>
-                    <button onClick={() => deleteComment(c.id)}>🗑</button>
-                  </div>
-                </>
-              )}
-
-            </div>
-          ))}
-
-          {/* ADD COMMENT */}
-          <div style={styles.row}>
+          {/* INPUT */}
+          <div style={{ display: 'flex', gap: 10, marginTop: 10 }}>
             <input
-              placeholder="Comentar..."
+              placeholder={
+                replyTo[topic.id]
+                  ? 'Respondendo comentário...'
+                  : 'Comentar no tópico...'
+              }
               value={commentInputs[topic.id] || ''}
               onChange={e =>
                 setCommentInputs(prev => ({
@@ -214,8 +211,17 @@ export default function Base() {
                   [topic.id]: e.target.value
                 }))
               }
-              style={styles.input}
             />
+
+            {replyTo[topic.id] && (
+              <button
+                onClick={() =>
+                  setReplyTo(prev => ({ ...prev, [topic.id]: null }))
+                }
+              >
+                cancelar resposta
+              </button>
+            )}
 
             <button onClick={() => addComment(topic.id)}>
               enviar
@@ -229,12 +235,19 @@ export default function Base() {
       {openTopicModal && (
         <div style={styles.modal}>
           <div style={styles.modalBox}>
+
             <h3>Novo Tópico</h3>
 
             <input
               placeholder="Título"
               value={newTopic}
               onChange={e => setNewTopic(e.target.value)}
+            />
+
+            <textarea
+              placeholder="Descrição"
+              value={newDescription}
+              onChange={e => setNewDescription(e.target.value)}
             />
 
             <select
@@ -249,33 +262,7 @@ export default function Base() {
 
             <button onClick={createTopic}>Criar</button>
             <button onClick={() => setOpenTopicModal(false)}>Fechar</button>
-          </div>
-        </div>
-      )}
 
-      {/* MODAL CATEGORY */}
-      {openCategoryModal && (
-        <div style={styles.modal}>
-          <div style={styles.modalBox}>
-            <h3>Nova Categoria</h3>
-
-            <input
-              value={newCategory}
-              onChange={e => setNewCategory(e.target.value)}
-              placeholder="Nome categoria"
-            />
-
-            <button onClick={() => {
-              setCategories(prev => [...new Set([...prev, newCategory])]);
-              setNewCategory('');
-              setOpenCategoryModal(false);
-            }}>
-              Criar
-            </button>
-
-            <button onClick={() => setOpenCategoryModal(false)}>
-              Fechar
-            </button>
           </div>
         </div>
       )}
@@ -285,74 +272,11 @@ export default function Base() {
 }
 
 const styles = {
-  header: {
-    display: 'flex',
-    justifyContent: 'space-between',
-    marginBottom: 20
-  },
-
-  actions: {
-    display: 'flex',
-    gap: 10
-  },
-
-  search: {
-    width: '100%',
-    padding: 10,
-    marginBottom: 20,
-    background: '#111',
-    color: '#fff',
-    border: '1px solid #333'
-  },
-
-  categories: {
-    display: 'flex',
-    gap: 10,
-    marginBottom: 15,
-    flexWrap: 'wrap'
-  },
-
-  category: {
-    background: '#222',
-    padding: '5px 10px',
-    borderRadius: 20,
-    display: 'flex',
-    gap: 5,
-    alignItems: 'center',
-    color: '#fff'
-  },
-
   card: {
     background: '#111',
     padding: 15,
-    marginBottom: 10,
+    marginTop: 10,
     borderRadius: 10
-  },
-
-  topRow: {
-    display: 'flex',
-    justifyContent: 'space-between'
-  },
-
-  comment: {
-    display: 'flex',
-    justifyContent: 'space-between',
-    marginTop: 5,
-    color: '#aaa'
-  },
-
-  row: {
-    display: 'flex',
-    gap: 10,
-    marginTop: 10
-  },
-
-  input: {
-    flex: 1,
-    padding: 8,
-    background: '#000',
-    color: '#fff',
-    border: '1px solid #333'
   },
 
   modal: {
@@ -368,7 +292,7 @@ const styles = {
     background: '#111',
     padding: 20,
     borderRadius: 10,
-    width: 320,
+    width: 400,
     display: 'flex',
     flexDirection: 'column',
     gap: 10
