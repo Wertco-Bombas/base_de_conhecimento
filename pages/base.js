@@ -19,9 +19,9 @@ export default function Base() {
 
   // COMMENT
   const [commentInputs, setCommentInputs] = useState({});
-  const [replyTo, setReplyTo] = useState({}); // topicId -> parentId
+  const [replyTo, setReplyTo] = useState({});
 
-  // EDIT
+  // EDIT COMMENT
   const [editingId, setEditingId] = useState(null);
   const [editingText, setEditingText] = useState('');
 
@@ -64,7 +64,9 @@ export default function Base() {
     await supabase.from('topicos').insert({
       titulo: newTopic,
       descricao: newDescription,
-      categoria: selectedCategory
+      categoria: selectedCategory,
+      user_email: user?.email,
+      created_at: new Date()
     });
 
     setNewTopic('');
@@ -91,7 +93,9 @@ export default function Base() {
       topic_id: topicId,
       parent_id: parent,
       texto: text,
-      user_id: user?.id
+      user_id: user?.id,
+      user_email: user?.email,
+      created_at: new Date()
     });
 
     setCommentInputs(prev => ({ ...prev, [topicId]: '' }));
@@ -121,22 +125,32 @@ export default function Base() {
     load();
   }
 
+  // ---------------- RENDER COMMENTS TREE ----------------
   const renderComments = (topicId, parentId = null, level = 0) => {
     return (commentsByTopic[topicId] || [])
       .filter(c => (c.parent_id || null) === parentId)
       .map(c => (
-        <div key={c.id} style={{ marginLeft: level * 20, marginTop: 8 }}>
+        <div key={c.id} style={{ marginLeft: level * 20, marginTop: 10 }}>
 
           {editingId === c.id ? (
             <>
               <input
                 value={editingText}
                 onChange={e => setEditingText(e.target.value)}
+                style={styles.input}
               />
               <button onClick={() => saveEdit(c.id)}>Salvar</button>
             </>
           ) : (
             <>
+              {/* AUTHOR + DATE */}
+              <div style={{ fontSize: 11, color: '#777' }}>
+                👤 {c.user_email || 'anônimo'} •{' '}
+                {c.created_at
+                  ? new Date(c.created_at).toLocaleString('pt-BR')
+                  : ''}
+              </div>
+
               <div style={{ color: '#aaa' }}>
                 💬 {c.texto}
               </div>
@@ -179,6 +193,7 @@ export default function Base() {
         placeholder="Buscar..."
         value={q}
         onChange={e => setQ(e.target.value)}
+        style={styles.search}
       />
 
       {/* TOPICS */}
@@ -191,13 +206,23 @@ export default function Base() {
           </div>
 
           <p>{topic.descricao}</p>
+
+          {/* AUTHOR + DATE TOPIC */}
+          <p style={{ fontSize: 12, color: '#777' }}>
+            👤 {topic.user_email || 'anônimo'} •{' '}
+            {topic.created_at
+              ? new Date(topic.created_at).toLocaleString('pt-BR')
+              : ''}
+          </p>
+
           <p style={{ color: '#f5c400' }}>{topic.categoria}</p>
 
           {/* COMMENTS TREE */}
           {renderComments(topic.id)}
 
-          {/* INPUT */}
+          {/* ADD COMMENT */}
           <div style={{ display: 'flex', gap: 10, marginTop: 10 }}>
+
             <input
               placeholder={
                 replyTo[topic.id]
@@ -211,6 +236,7 @@ export default function Base() {
                   [topic.id]: e.target.value
                 }))
               }
+              style={styles.input}
             />
 
             {replyTo[topic.id] && (
@@ -279,6 +305,23 @@ const styles = {
     borderRadius: 10
   },
 
+  search: {
+    width: '100%',
+    padding: 10,
+    marginBottom: 20,
+    background: '#111',
+    color: '#fff',
+    border: '1px solid #333'
+  },
+
+  input: {
+    flex: 1,
+    padding: 8,
+    background: '#000',
+    color: '#fff',
+    border: '1px solid #333'
+  },
+
   modal: {
     position: 'fixed',
     inset: 0,
@@ -292,7 +335,7 @@ const styles = {
     background: '#111',
     padding: 20,
     borderRadius: 10,
-    width: 400,
+    width: 420,
     display: 'flex',
     flexDirection: 'column',
     gap: 10
