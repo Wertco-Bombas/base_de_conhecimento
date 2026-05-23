@@ -12,7 +12,6 @@ export default function Base() {
   const [q, setQ] = useState('');
   const [commentInput, setCommentInput] = useState({});
 
-  // ✅ resposta por comentário (corrigido)
   const [replyInput, setReplyInput] = useState({});
 
   const [showTopic, setShowTopic] = useState(false);
@@ -65,7 +64,7 @@ export default function Base() {
       return;
     }
 
-    const { error } = await supabase
+    const { data, error } = await supabase
       .from('topicos')
       .insert({
         titulo: newTopic,
@@ -73,19 +72,21 @@ export default function Base() {
         categoria_id: catData.id,
         user_email: user?.email,
         created_at: new Date().toISOString()
-      });
+      })
+      .select()
+      .single();
 
     if (error) {
       alert(error.message);
       return;
     }
 
+    setTopics(prev => [data, ...prev]);
+
     setNewTopic('');
     setNewDesc('');
     setNewCat('');
     setShowTopic(false);
-
-    load();
   }
 
   async function addComment(topicId, parentId = null, texto = null) {
@@ -94,7 +95,7 @@ export default function Base() {
 
     if (!text?.trim()) return;
 
-    const { error } = await supabase
+    const { data, error } = await supabase
       .from('comentarios')
       .insert({
         topic_id: topicId,
@@ -102,19 +103,21 @@ export default function Base() {
         texto: text,
         user_email: user?.email,
         created_at: new Date().toISOString()
-      });
+      })
+      .select()
+      .single();
 
     if (error) {
       alert(error.message);
       return;
     }
 
+    setComments(prev => [...prev, data]);
+
     setCommentInput(prev => ({
       ...prev,
       [topicId]: ''
     }));
-
-    load();
   }
 
   async function deleteTopic(id) {
@@ -127,7 +130,8 @@ export default function Base() {
       .delete()
       .eq('id', id);
 
-    load();
+    setTopics(prev => prev.filter(t => t.id !== id));
+    setComments(prev => prev.filter(c => c.topic_id !== id));
   }
 
   async function deleteComment(id) {
@@ -140,7 +144,7 @@ export default function Base() {
       .delete()
       .eq('id', id);
 
-    load();
+    setComments(prev => prev.filter(c => c.id !== id));
   }
 
   async function createCategory() {
@@ -281,7 +285,6 @@ export default function Base() {
 
         </div>
 
-        {/* ✅ INPUT SEM DESMONTAR (FIX DEFINITIVO) */}
         <div
           style={{
             marginTop: 10,
@@ -291,6 +294,7 @@ export default function Base() {
             gap: 8
           }}
         >
+
           <input
             style={styles.input}
             placeholder="Escreva sua resposta..."
@@ -320,6 +324,7 @@ export default function Base() {
           >
             enviar
           </button>
+
         </div>
 
         {comment.children?.length > 0 && (
