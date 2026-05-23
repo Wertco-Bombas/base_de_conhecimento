@@ -3,31 +3,57 @@ import { supabase } from '../lib/supabaseClient';
 
 export default function Layout({ children }) {
   const [user, setUser] = useState(null);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    let isMounted = true;
+
     loadUser();
-  }, []);
 
-  async function loadUser() {
-    const { data: auth } = await supabase.auth.getUser();
+    return () => {
+      isMounted = false;
+    };
 
-    if (!auth?.user) {
-      setUser(null);
-      return;
+    async function loadUser() {
+      setLoading(true);
+
+      try {
+        const { data: auth } = await supabase.auth.getUser();
+
+        if (!auth?.user) {
+          if (isMounted) {
+            setUser(null);
+            setLoading(false);
+          }
+          return;
+        }
+
+        const { data: profile } = await supabase
+          .from('profiles')
+          .select('role, email')
+          .eq('id', auth.user.id)
+          .maybeSingle(); // 🔥 evita crash no build
+
+        if (isMounted) {
+          setUser({
+            id: auth.user.id,
+            email: auth.user.email,
+            role: profile?.role || 'user'
+          });
+
+          setLoading(false);
+        }
+
+      } catch (err) {
+        console.error('Erro loadUser:', err);
+
+        if (isMounted) {
+          setUser(null);
+          setLoading(false);
+        }
+      }
     }
-
-    const { data: profile } = await supabase
-      .from('profiles')
-      .select('role, email')
-      .eq('id', auth.user.id)
-      .single();
-
-    setUser({
-      id: auth.user.id,
-      email: auth.user.email,
-      role: profile?.role || 'user'
-    });
-  }
+  }, []);
 
   async function logout() {
     await supabase.auth.signOut();
@@ -42,7 +68,7 @@ export default function Layout({ children }) {
         <div style={styles.brand}>WERTCO</div>
 
         {/* MENU DINÂMICO */}
-        {user && (
+        {!loading && user && (
           <div style={styles.menu}>
 
             <a style={styles.link} href="/base">
