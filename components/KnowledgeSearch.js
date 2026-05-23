@@ -1,24 +1,35 @@
 import { useState } from 'react';
-import { supabase } from '../lib/supabaseClient';
 
-export default function KnowledgeSearch() {
+export default function KnowledgeSearch({ topics, commentsByTopic, onFilter }) {
   const [q, setQ] = useState('');
-  const [results, setResults] = useState([]);
 
-  async function search(value) {
+  function handleSearch(value) {
     setQ(value);
 
-    if (!value) {
-      setResults([]);
+    const query = value.toLowerCase().trim();
+
+    if (!query) {
+      onFilter(topics);
       return;
     }
 
-    const { data } = await supabase
-      .from('topicos')
-      .select('*')
-      .ilike('titulo', `%${value}%`);
+    const filtered = topics.filter(topic => {
+      const title = (topic.titulo || '').toLowerCase();
+      const desc = (topic.descricao || '').toLowerCase();
 
-    setResults(data || []);
+      const topicMatch =
+        title.includes(query) || desc.includes(query);
+
+      const comments = commentsByTopic[topic.id] || [];
+
+      const commentMatch = comments.some(c =>
+        (c.texto || '').toLowerCase().includes(query)
+      );
+
+      return topicMatch || commentMatch;
+    });
+
+    onFilter(filtered);
   }
 
   return (
@@ -26,16 +37,10 @@ export default function KnowledgeSearch() {
 
       <input
         value={q}
-        onChange={(e) => search(e.target.value)}
+        onChange={(e) => handleSearch(e.target.value)}
         placeholder="Buscar na base de conhecimento..."
         style={styles.input}
       />
-
-      {results.map((item) => (
-        <div key={item.id} style={styles.result}>
-          {item.titulo}
-        </div>
-      ))}
 
     </div>
   );
@@ -53,13 +58,5 @@ const styles = {
     border: '1px solid #333',
     color: '#fff',
     borderRadius: 8
-  },
-
-  result: {
-    padding: 10,
-    marginTop: 5,
-    background: '#1a1a1a',
-    borderRadius: 8,
-    color: '#f5c400'
   }
 };
