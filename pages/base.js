@@ -12,7 +12,6 @@ export default function Base() {
   const [q, setQ] = useState('');
   const [commentInput, setCommentInput] = useState({});
 
-  // ⭐ FIX IMPORTANTE: reply precisa guardar contexto completo
   const [replyTo, setReplyTo] = useState({
     commentId: null,
     topicId: null
@@ -33,8 +32,11 @@ export default function Base() {
   }, []);
 
   async function load() {
-    const { data: t } = await supabase.from('topicos').select('*');
-    const { data: c } = await supabase.from('comentarios').select('*');
+    const { data: t, error: errT } = await supabase.from('topicos').select('*');
+    const { data: c, error: errC } = await supabase.from('comentarios').select('*');
+
+    console.log("TOPICOS:", t, errT);
+    console.log("COMMENTS:", c, errC);
 
     setTopics(t || []);
     setComments(c || []);
@@ -42,34 +44,58 @@ export default function Base() {
 
   // ---------------- TOPIC ----------------
   async function createTopic() {
-    await supabase.from('topicos').insert({
+    const { error } = await supabase.from('topicos').insert({
       titulo: newTopic,
       descricao: newDesc,
       categoria: newCat,
       user_email: user?.email,
-      created_at: new Date()
+      created_at: new Date().toISOString()
     });
+
+    if (error) {
+      alert("Erro ao criar tópico: " + error.message);
+      return;
+    }
 
     setShowTopic(false);
     load();
   }
 
-  // ---------------- COMMENT / REPLY ----------------
+  // ---------------- COMMENT / REPLY (DEBUG FORÇADO) ----------------
   async function addComment(topicId) {
     const text = commentInput[topicId];
 
-    if (!text || !text.trim()) return;
-
-    const { error } = await supabase.from('comentarios').insert({
-      topic_id: replyTo.topicId || topicId,   // ⭐ FIX
-      parent_id: replyTo.commentId || null,   // ⭐ FIX
-      texto: text,
-      user_email: user?.email,
-      created_at: new Date()
+    console.log("📌 ENVIANDO COMENTÁRIO:", {
+      topicId,
+      text,
+      replyTo,
+      user: user?.email
     });
 
+    if (!text || !text.trim()) {
+      alert("Comentário vazio");
+      return;
+    }
+
+    const payload = {
+      topic_id: topicId,
+      parent_id: replyTo?.commentId || null,
+      texto: text,
+      user_email: user?.email || "anon",
+      created_at: new Date().toISOString()
+    };
+
+    console.log("📦 PAYLOAD:", payload);
+
+    const { data, error } = await supabase
+      .from('comentarios')
+      .insert(payload)
+      .select();
+
+    console.log("🟢 RESPOSTA SUPABASE:", { data, error });
+
     if (error) {
-      alert(error.message);
+      alert("Erro ao salvar comentário: " + error.message);
       return;
     }
 
@@ -88,7 +114,7 @@ export default function Base() {
     load();
   }
 
-  // 🔍 BUSCA GLOBAL
+  // ---------------- SEARCH GLOBAL ----------------
   const filteredTopics = topics.filter(t => {
     const topicMatch =
       (t.titulo + t.descricao + t.categoria)
@@ -103,9 +129,9 @@ export default function Base() {
     return topicMatch || commentMatch;
   });
 
-  function formatDate(date) {
-    if (!date) return '';
-    return new Date(date).toLocaleString('pt-BR');
+  function formatDate(d) {
+    if (!d) return '';
+    return new Date(d).toLocaleString('pt-BR');
   }
 
   return (
@@ -131,9 +157,7 @@ export default function Base() {
           <div style={styles.header}>
             <div>
               <h3>{t.titulo}</h3>
-              <small style={{ color: '#f5c400' }}>
-                📂 {t.categoria}
-              </small>
+              <small>📂 {t.categoria}</small>
             </div>
 
             <button onClick={() => deleteTopic(t.id)}>
@@ -143,11 +167,11 @@ export default function Base() {
 
           <p>{t.descricao}</p>
 
-          <small style={{ color: '#777' }}>
+          <small>
             {t.user_email} • {formatDate(t.created_at)}
           </small>
 
-          {/* COMMENTS ROOT */}
+          {/* COMMENTS */}
           {comments
             .filter(c => c.topic_id === t.id && !c.parent_id)
             .map(c => (
@@ -161,14 +185,12 @@ export default function Base() {
                 </div>
 
                 <div style={styles.actions}>
-                  <button
-                    onClick={() =>
-                      setReplyTo({
-                        commentId: c.id,
-                        topicId: t.id
-                      })
-                    }
-                  >
+                  <button onClick={() =>
+                    setReplyTo({
+                      commentId: c.id,
+                      topicId: t.id
+                    })
+                  }>
                     responder
                   </button>
 
@@ -195,12 +217,10 @@ export default function Base() {
               </div>
             ))}
 
-          {/* INPUT COMMENT */}
+          {/* INPUT */}
           <div style={styles.row}>
             <input
-              placeholder={
-                replyTo.commentId ? "Respondendo comentário..." : "Comentar..."
-              }
+              placeholder={replyTo.commentId ? "Respondendo..." : "Comentar..."}
               value={commentInput[t.id] || ''}
               onChange={e =>
                 setCommentInput(prev => ({
@@ -212,7 +232,7 @@ export default function Base() {
 
             {replyTo.commentId && (
               <button onClick={() => setReplyTo({ commentId: null, topicId: null })}>
-                cancelar resposta
+                cancelar
               </button>
             )}
 
