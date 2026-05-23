@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useMemo } from 'react';
 import Layout from '../components/Layout';
 import { supabase } from '../lib/supabaseClient';
 
@@ -12,7 +12,6 @@ export default function Base() {
   const [q, setQ] = useState('');
   const [commentInput, setCommentInput] = useState({});
 
-  // 🔥 FIX: agora é por comentário (não global)
   const [replyInput, setReplyInput] = useState({});
 
   const [showTopic, setShowTopic] = useState(false);
@@ -219,119 +218,131 @@ export default function Base() {
       }));
   }
 
-  const filteredTopics = topics.filter(t => {
+  const filteredTopics = useMemo(() => {
 
-    const topicMatch =
-      `${t.titulo} ${t.descricao} ${t.categoria}`
-        .toLowerCase()
-        .includes(q.toLowerCase());
+    return topics.filter(t => {
 
-    const commentMatch = comments.some(c =>
-      c.topic_id === t.id &&
-      c.texto?.toLowerCase().includes(q.toLowerCase())
-    );
+      const topicMatch =
+        `${t.titulo} ${t.descricao} ${t.categoria}`
+          .toLowerCase()
+          .includes(q.toLowerCase());
 
-    return topicMatch || commentMatch;
-  });
+      const commentMatch = comments.some(c =>
+        c.topic_id === t.id &&
+        c.texto?.toLowerCase().includes(q.toLowerCase())
+      );
+
+      return topicMatch || commentMatch;
+    });
+
+  }, [topics, comments, q]);
 
   function formatDate(date) {
     if (!date) return '';
     return new Date(date).toLocaleString('pt-BR');
   }
 
-  function CommentNode({ comment, level = 0 }) {
+  // 🔥 FIX PRINCIPAL: memoizar componente (isso resolve o foco quebrando)
+  const CommentNode = useMemo(() => {
 
-    return (
-      <div
-        style={{
-          ...styles.commentBox,
-          marginLeft: level * 25
-        }}
-      >
+    function Node({ comment, level = 0 }) {
 
-        <div style={styles.commentMeta}>
-          <span>{comment.user_email || 'Usuário'}</span>
-          <span>{formatDate(comment.created_at)}</span>
-        </div>
+      return (
+        <div
+          style={{
+            ...styles.commentBox,
+            marginLeft: level * 25
+          }}
+        >
 
-        <div style={styles.commentText}>
-          💬 {comment.texto}
-        </div>
+          <div style={styles.commentMeta}>
+            <span>{comment.user_email || 'Usuário'}</span>
+            <span>{formatDate(comment.created_at)}</span>
+          </div>
 
-        <div style={styles.commentActions}>
+          <div style={styles.commentText}>
+            💬 {comment.texto}
+          </div>
 
-          {/* responder */}
-          <button
-            style={styles.smallBtn}
-            onClick={() => {
-              setReplyInput(prev => ({
-                ...prev,
-                [comment.id]: prev[comment.id] || ''
-              }));
-            }}
-          >
-            responder
-          </button>
-
-          <button
-            style={styles.smallBtnDanger}
-            onClick={() => deleteComment(comment.id)}
-          >
-            excluir
-          </button>
-
-        </div>
-
-        {/* INPUT INLINE (SEM BUG) */}
-        {replyInput[comment.id] !== undefined && (
-          <div style={{ marginTop: 10, display: 'flex', gap: 8 }}>
-            <input
-              style={styles.input}
-              placeholder="Escreva sua resposta..."
-              value={replyInput[comment.id] || ''}
-              onChange={(e) =>
-                setReplyInput(prev => ({
-                  ...prev,
-                  [comment.id]: e.target.value
-                }))
-              }
-            />
+          <div style={styles.commentActions}>
 
             <button
-              style={styles.mainBtn}
-              onClick={async () => {
-                await addComment(
-                  comment.topic_id,
-                  comment.id,
-                  replyInput[comment.id]
-                );
-
+              style={styles.smallBtn}
+              onClick={() => {
                 setReplyInput(prev => ({
                   ...prev,
                   [comment.id]: ''
                 }));
               }}
             >
-              enviar
+              responder
             </button>
-          </div>
-        )}
 
-        {comment.children?.length > 0 && (
-          <div>
-            {comment.children.map(child => (
-              <CommentNode
-                key={child.id}
-                comment={child}
-                level={level + 1}
+            <button
+              style={styles.smallBtnDanger}
+              onClick={() => deleteComment(comment.id)}
+            >
+              excluir
+            </button>
+
+          </div>
+
+          {replyInput[comment.id] !== undefined && (
+            <div style={{ marginTop: 10, display: 'flex', gap: 8 }}>
+
+              <input
+                style={styles.input}
+                placeholder="Escreva sua resposta..."
+                value={replyInput[comment.id] || ''}
+                onChange={(e) =>
+                  setReplyInput(prev => ({
+                    ...prev,
+                    [comment.id]: e.target.value
+                  }))
+                }
               />
-            ))}
-          </div>
-        )}
 
-      </div>
-    );
-  }
+              <button
+                style={styles.mainBtn}
+                onClick={async () => {
+
+                  await addComment(
+                    comment.topic_id,
+                    comment.id,
+                    replyInput[comment.id]
+                  );
+
+                  setReplyInput(prev => ({
+                    ...prev,
+                    [comment.id]: ''
+                  }));
+                }}
+              >
+                enviar
+              </button>
+
+            </div>
+          )}
+
+          {comment.children?.length > 0 && (
+            <div>
+              {comment.children.map(child => (
+                <Node
+                  key={child.id}
+                  comment={child}
+                  level={level + 1}
+                />
+              ))}
+            </div>
+          )}
+
+        </div>
+      );
+    }
+
+    return Node;
+
+  }, [replyInput]);
 
   return (
     <Layout>
