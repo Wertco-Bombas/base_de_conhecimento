@@ -12,7 +12,11 @@ export default function Base() {
   const [q, setQ] = useState('');
   const [commentInput, setCommentInput] = useState({});
 
-  const [replyTo, setReplyTo] = useState(null);
+  // ✅ FIX: reply agora é objeto estruturado
+  const [replyTo, setReplyTo] = useState({
+    commentId: null,
+    topicId: null
+  });
 
   const [showTopic, setShowTopic] = useState(false);
 
@@ -49,6 +53,9 @@ export default function Base() {
     load();
   }
 
+  // =========================
+  // COMENTÁRIOS + RESPOSTAS
+  // =========================
   async function addComment(topicId) {
     const text = commentInput[topicId];
 
@@ -57,7 +64,7 @@ export default function Base() {
     const { error } = await supabase.from('comentarios').insert([
       {
         topic_id: topicId,
-        parent_id: replyTo,
+        parent_id: replyTo.commentId || null, // ✅ FIX REAL
         texto: text,
         user_email: user?.email,
         created_at: new Date().toISOString()
@@ -70,7 +77,7 @@ export default function Base() {
     }
 
     setCommentInput(prev => ({ ...prev, [topicId]: '' }));
-    setReplyTo(null);
+    setReplyTo({ commentId: null, topicId: null });
     load();
   }
 
@@ -95,6 +102,7 @@ export default function Base() {
     });
   }
 
+  // 🔍 BUSCA GLOBAL
   const filteredTopics = topics.filter(t => {
     const topicMatch =
       (t.titulo + t.descricao + t.categoria)
@@ -135,11 +143,7 @@ export default function Base() {
           </div>
 
           <p>{t.descricao}</p>
-
-          {/* ✅ CATEGORIA DESTACADA (NOVO) */}
-          <div style={styles.categoryTag}>
-            📁 {t.categoria || 'Sem categoria'}
-          </div>
+          <small>{t.categoria}</small>
 
           {/* COMMENTS PRINCIPAIS */}
           {comments
@@ -154,7 +158,14 @@ export default function Base() {
                 </div>
 
                 <div style={{ marginTop: 4 }}>
-                  <button onClick={() => setReplyTo(c.id)}>
+                  <button
+                    onClick={() =>
+                      setReplyTo({
+                        commentId: c.id,
+                        topicId: t.id
+                      })
+                    }
+                  >
                     responder
                   </button>
 
@@ -187,7 +198,9 @@ export default function Base() {
           <div style={styles.row}>
             <input
               placeholder={
-                replyTo ? "Respondendo comentário..." : "Comentar..."
+                replyTo.commentId
+                  ? "Respondendo comentário..."
+                  : "Comentar..."
               }
               value={commentInput[t.id] || ''}
               onChange={e =>
@@ -198,8 +211,12 @@ export default function Base() {
               }
             />
 
-            {replyTo && (
-              <button onClick={() => setReplyTo(null)}>
+            {replyTo.commentId && (
+              <button
+                onClick={() =>
+                  setReplyTo({ commentId: null, topicId: null })
+                }
+              >
                 cancelar resposta
               </button>
             )}
@@ -325,17 +342,5 @@ const styles = {
     padding: 20,
     borderRadius: 10,
     width: 400
-  },
-
-  // ✅ NOVO ESTILO DA CATEGORIA
-  categoryTag: {
-    display: 'inline-block',
-    marginTop: 6,
-    padding: '4px 8px',
-    fontSize: 11,
-    borderRadius: 6,
-    background: '#1f1f1f',
-    color: '#f5c400',
-    border: '1px solid #333'
   }
 };
