@@ -36,6 +36,7 @@ export default function Base() {
     setComments(c || []);
   }
 
+  // ---------------- TOPIC ----------------
   async function createTopic() {
     await supabase.from('topicos').insert({
       titulo: newTopic,
@@ -54,6 +55,7 @@ export default function Base() {
     load();
   }
 
+  // ---------------- COMMENT ----------------
   async function addComment(topicId) {
     const text = commentInput[topicId];
     if (!text || !text.trim()) return;
@@ -76,6 +78,7 @@ export default function Base() {
     load();
   }
 
+  // ---------------- TREE ----------------
   function buildTree(list, parentId = null, topicId = null) {
     return list
       .filter(c =>
@@ -92,7 +95,7 @@ export default function Base() {
     d ? new Date(d).toLocaleString('pt-BR') : '';
 
   const filteredTopics = topics.filter(t => {
-    const match =
+    const topicMatch =
       (t.titulo + t.descricao + t.categoria)
         .toLowerCase()
         .includes(q.toLowerCase());
@@ -102,7 +105,7 @@ export default function Base() {
       c.texto?.toLowerCase().includes(q.toLowerCase())
     );
 
-    return match || commentMatch;
+    return topicMatch || commentMatch;
   });
 
   function CommentNode({ comment }) {
@@ -114,12 +117,12 @@ export default function Base() {
           <span>{formatDate(comment.created_at)}</span>
         </div>
 
-        <div style={{ color: '#ddd' }}>
+        <div style={{ color: '#fff' }}>
           💬 {comment.texto}
         </div>
 
         <div style={styles.actions}>
-          <button onClick={() =>
+          <button style={styles.buttonSmall} onClick={() =>
             setReplyTo({
               commentId: comment.id,
               topicId: comment.topic_id
@@ -128,7 +131,7 @@ export default function Base() {
             responder
           </button>
 
-          <button onClick={() => deleteComment(comment.id)}>
+          <button style={styles.buttonSmall} onClick={() => deleteComment(comment.id)}>
             excluir
           </button>
         </div>
@@ -140,6 +143,7 @@ export default function Base() {
             ))}
           </div>
         )}
+
       </div>
     );
   }
@@ -152,11 +156,11 @@ export default function Base() {
         placeholder="Buscar..."
         value={q}
         onChange={e => setQ(e.target.value)}
-        style={styles.search}
+        style={styles.input}
       />
 
-      {/* BUTTON */}
-      <button onClick={() => setShowTopic(true)} style={styles.btn}>
+      {/* ACTIONS */}
+      <button style={styles.button} onClick={() => setShowTopic(true)}>
         + Novo Tópico
       </button>
 
@@ -170,11 +174,11 @@ export default function Base() {
 
             <div style={styles.header}>
               <div>
-                <h3 style={{ margin: 0 }}>{t.titulo}</h3>
+                <h3 style={{ margin: 0, color: '#fff' }}>{t.titulo}</h3>
                 <small style={styles.category}>{t.categoria}</small>
               </div>
 
-              <button onClick={() => deleteTopic(t.id)}>
+              <button style={styles.buttonSmall} onClick={() => deleteTopic(t.id)}>
                 excluir
               </button>
             </div>
@@ -185,15 +189,15 @@ export default function Base() {
               {t.user_email} • {formatDate(t.created_at)}
             </small>
 
-            {/* COMMENTS */}
             <div style={{ marginTop: 15 }}>
               {tree.map(c => (
                 <CommentNode key={c.id} comment={c} />
               ))}
             </div>
 
-            {/* INPUT */}
+            {/* INPUT COMMENT */}
             <div style={styles.row}>
+
               <input
                 placeholder={replyTo ? "Respondendo..." : "Comentar..."}
                 value={commentInput[t.id] || ''}
@@ -207,14 +211,15 @@ export default function Base() {
               />
 
               {replyTo && (
-                <button onClick={() => setReplyTo(null)}>
+                <button style={styles.buttonSmall} onClick={() => setReplyTo(null)}>
                   cancelar
                 </button>
               )}
 
-              <button onClick={() => addComment(t.id)}>
+              <button style={styles.button} onClick={() => addComment(t.id)}>
                 enviar
               </button>
+
             </div>
 
           </div>
@@ -226,7 +231,7 @@ export default function Base() {
         <div style={styles.modal}>
           <div style={styles.modalBox}>
 
-            <h3>Novo Tópico</h3>
+            <h3 style={{ color: '#fff' }}>Novo Tópico</h3>
 
             <input
               placeholder="Título"
@@ -249,8 +254,13 @@ export default function Base() {
               style={styles.input}
             />
 
-            <button onClick={createTopic}>Salvar</button>
-            <button onClick={() => setShowTopic(false)}>Fechar</button>
+            <button style={styles.button} onClick={createTopic}>
+              Salvar
+            </button>
+
+            <button style={styles.buttonSmall} onClick={() => setShowTopic(false)}>
+              Fechar
+            </button>
 
           </div>
         </div>
@@ -260,26 +270,37 @@ export default function Base() {
   );
 }
 
+// ---------------- STYLES FORÇADOS ----------------
 const styles = {
 
-  search: {
+  input: {
     width: '100%',
-    padding: 12,
-    marginBottom: 20,
+    padding: 10,
     background: '#0b0b0c',
     border: '1px solid #2a2a2e',
     color: '#fff',
-    borderRadius: 10
+    borderRadius: 10,
+    outline: 'none',
+    marginBottom: 10
   },
 
-  btn: {
-    marginBottom: 20,
-    padding: '10px 14px',
+  button: {
     background: '#1a1a1d',
     color: '#fff',
     border: '1px solid #2a2a2e',
+    padding: '10px 14px',
     borderRadius: 10,
     cursor: 'pointer'
+  },
+
+  buttonSmall: {
+    background: '#111',
+    color: '#fff',
+    border: '1px solid #2a2a2e',
+    padding: '6px 10px',
+    borderRadius: 8,
+    cursor: 'pointer',
+    fontSize: 12
   },
 
   card: {
@@ -287,7 +308,8 @@ const styles = {
     border: '1px solid #1f1f22',
     padding: 18,
     marginBottom: 14,
-    borderRadius: 12
+    borderRadius: 12,
+    color: '#fff'
   },
 
   header: {
@@ -305,15 +327,6 @@ const styles = {
     display: 'flex',
     gap: 10,
     marginTop: 12
-  },
-
-  input: {
-    flex: 1,
-    padding: 10,
-    background: '#0b0b0c',
-    border: '1px solid #2a2a2e',
-    color: '#fff',
-    borderRadius: 10
   },
 
   commentBox: {
@@ -359,7 +372,6 @@ const styles = {
     width: 420,
     border: '1px solid #2a2a2e',
     display: 'flex',
-    flexDirection: 'column',
-    gap: 10
+    flexDirection: 'column'
   }
 };
