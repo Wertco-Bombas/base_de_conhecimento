@@ -9,10 +9,9 @@ export default function Base() {
   const [commentsByTopic, setCommentsByTopic] = useState({});
 
   const [q, setQ] = useState('');
-
   const [commentInputs, setCommentInputs] = useState({});
 
-  const [editingCommentId, setEditingCommentId] = useState(null);
+  const [editingId, setEditingId] = useState(null);
   const [editingText, setEditingText] = useState('');
 
   useEffect(() => {
@@ -20,24 +19,10 @@ export default function Base() {
       setUser(data?.user || null);
     });
 
-    loadTopics();
-
-    // 🔥 REALTIME
-    const channel = supabase
-      .channel('comments-realtime')
-      .on(
-        'postgres_changes',
-        { event: '*', schema: 'public', table: 'comentarios' },
-        () => loadTopics()
-      )
-      .subscribe();
-
-    return () => {
-      supabase.removeChannel(channel);
-    };
+    load();
   }, []);
 
-  async function loadTopics() {
+  async function load() {
     const { data: topicsData } = await supabase
       .from('topicos')
       .select('*')
@@ -50,42 +35,38 @@ export default function Base() {
     const grouped = {};
 
     (commentsData || []).forEach(c => {
-      const key = c.topic_id;
-      if (!grouped[key]) grouped[key] = [];
-      grouped[key].push(c);
+      if (!grouped[c.topic_id]) grouped[c.topic_id] = [];
+      grouped[c.topic_id].push(c);
     });
 
     setTopics(topicsData || []);
     setCommentsByTopic(grouped);
   }
 
-  // ---------------- TOPICS ----------------
-  async function deleteTopic(id) {
-    await supabase.from('topicos').delete().eq('id', id);
-    loadTopics();
-  }
-
-  // ---------------- COMMENTS ----------------
   async function addComment(topicId) {
     const text = commentInputs[topicId];
 
     if (!text || !text.trim()) return;
 
-    await supabase.from('comentarios').insert({
+    const { error } = await supabase.from('comentarios').insert({
       topic_id: topicId,
       texto: text,
       user_id: user?.id
     });
 
-    setCommentInputs(prev => ({ ...prev, [topicId]: '' }));
+    if (!error) {
+      setCommentInputs(prev => ({ ...prev, [topicId]: '' }));
+      load();
+    }
   }
 
   async function deleteComment(id) {
     await supabase.from('comentarios').delete().eq('id', id);
+    load();
   }
 
   function startEdit(comment) {
-    setEditingCommentId(comment.id);
+    setEditingId(comment.id);
     setEditingText(comment.texto);
   }
 
@@ -95,68 +76,10 @@ export default function Base() {
       .update({ texto: editingText })
       .eq('id', id);
 
-    setEditingCommentId(null);
+    setEditingId(null);
     setEditingText('');
+    load();
   }
-
-  // ---------------- THREAD RENDER ----------------
-  const renderComments = (topicId, parentId = null) => {
-    return (commentsByTopic[topicId] || [])
-      .filter(c => (c.parent_id || null) === parentId)
-      .map(c => (
-        <div key={c.id} style={styles.commentBox}>
-
-          {editingCommentId === c.id ? (
-            <>
-              <input
-                value={editingText}
-                onChange={e => setEditingText(e.target.value)}
-                style={styles.input}
-              />
-
-              <button onClick={() => saveEdit(c.id)}>Salvar</button>
-            </>
-          ) : (
-            <>
-              <div style={{ color: '#aaa' }}>
-                💬 {c.texto}
-              </div>
-
-              <small style={{ color: '#666' }}>
-                {c.user_id ? `user: ${c.user_id.slice(0, 6)}` : 'anon'}
-              </small>
-
-              <div style={{ display: 'flex', gap: 5 }}>
-                <button onClick={() => startEdit(c)}>✏️</button>
-                <button onClick={() => deleteComment(c.id)}>🗑</button>
-
-                <button
-                  onClick={() => {
-                    const text = prompt('Responder comentário:');
-                    if (!text) return;
-
-                    supabase.from('comentarios').insert({
-                      topic_id: topicId,
-                      parent_id: c.id,
-                      texto: text,
-                      user_id: user?.id
-                    }).then(() => loadTopics());
-                  }}
-                >
-                  ↳ responder
-                </button>
-              </div>
-
-              {/* RECURSIVO */}
-              <div style={{ marginLeft: 20 }}>
-                {renderComments(topicId, c.id)}
-              </div>
-            </>
-          )}
-
-        </div>
-      ));
-  };
 
   const filtered = topics.filter(t =>
     (t.titulo || '').toLowerCase().includes(q.toLowerCase())
@@ -169,35 +92,47 @@ export default function Base() {
 
       {/* SEARCH */}
       <input
-        style={styles.search}
         placeholder="Buscar..."
         value={q}
         onChange={e => setQ(e.target.value)}
+        style={styles.search}
       />
 
       {/* TOPICS */}
       {filtered.map(topic => (
         <div key={topic.id} style={styles.card}>
 
-          <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-            <h3>{topic.titulo}</h3>
-
-            <button onClick={() => deleteTopic(topic.id)}>
-              excluir
-            </button>
-          </div>
-
+          <h3>{topic.titulo}</h3>
           <p style={{ color: '#f5c400' }}>{topic.categoria}</p>
 
-          {/* COMMENTS TREE */}
-          <div>
-            {renderComments(topic.id)}
-          </div>
+          {/* COMMENTS */}
+          {(commentsByTopic[topic.id] || []).map(c => (
+            <div key={c.id} style={styles.comment}>
+
+              {editingId === c.id ? (
+                <>
+                  <input
+                    value={editingText}
+                    onChange={e => setEditingText(e.target.value)}
+                    style={styles.input}
+                  />
+                  <button onClick={() => saveEdit(c.id)}>Salvar</button>
+                </>
+              ) : (
+                <>
+                  <span>💬 {c.texto}</span>
+
+                  <button onClick={() => startEdit(c)}>✏️</button>
+                  <button onClick={() => deleteComment(c.id)}>🗑</button>
+                </>
+              )}
+
+            </div>
+          ))}
 
           {/* ADD COMMENT */}
-          <div style={{ display: 'flex', gap: 10, marginTop: 10 }}>
+          <div style={styles.row}>
             <input
-              style={styles.input}
               placeholder="Comentar..."
               value={commentInputs[topic.id] || ''}
               onChange={e =>
@@ -206,6 +141,7 @@ export default function Base() {
                   [topic.id]: e.target.value
                 }))
               }
+              style={styles.input}
             />
 
             <button onClick={() => addComment(topic.id)}>
@@ -236,11 +172,17 @@ const styles = {
     color: '#fff'
   },
 
-  commentBox: {
-    marginTop: 8,
-    padding: 8,
-    background: '#0a0a0a',
-    borderRadius: 6
+  comment: {
+    display: 'flex',
+    justifyContent: 'space-between',
+    marginTop: 5,
+    color: '#aaa'
+  },
+
+  row: {
+    display: 'flex',
+    gap: 10,
+    marginTop: 10
   },
 
   input: {
