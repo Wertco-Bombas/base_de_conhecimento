@@ -30,22 +30,38 @@ export default function Approval() {
   }
 
   async function approve(item, type) {
+    const { data: { user } } = await supabase.auth.getUser();
+
     await supabase
       .from(type === 'topic' ? 'topicos' : 'comentarios')
       .update({ status: 'approved' })
       .eq('id', item.id);
 
-    await log('APPROVE', null, type, item.id);
+    await logAction({
+      user,
+      action: 'APPROVE',
+      entity: type,
+      entity_id: item.id
+    });
+
     load();
   }
 
   async function reject(item, type) {
+    const { data: { user } } = await supabase.auth.getUser();
+
     await supabase
       .from(type === 'topic' ? 'topicos' : 'comentarios')
       .update({ status: 'rejected' })
       .eq('id', item.id);
 
-    await log('REJECT', null, type, item.id);
+    await logAction({
+      user,
+      action: 'REJECT',
+      entity: type,
+      entity_id: item.id
+    });
+
     load();
   }
 
