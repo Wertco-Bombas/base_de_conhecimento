@@ -29,29 +29,21 @@ export default function Base() {
   }, []);
 
   async function load() {
-    const { data: t, error: errT } = await supabase.from('topicos').select('*');
-    const { data: c, error: errC } = await supabase.from('comentarios').select('*');
-
-    console.log("TOPICOS:", t, errT);
-    console.log("COMMENTS:", c, errC);
+    const { data: t } = await supabase.from('topicos').select('*');
+    const { data: c } = await supabase.from('comentarios').select('*');
 
     setTopics(t || []);
     setComments(c || []);
   }
 
   async function createTopic() {
-    const { error } = await supabase.from('topicos').insert({
+    await supabase.from('topicos').insert({
       titulo: newTopic,
       descricao: newDesc,
       categoria: newCat,
       user_email: user?.email,
-      created_at: new Date()
+      created_at: new Date().toISOString()
     });
-
-    if (error) {
-      alert("Erro ao criar tópico: " + error.message);
-      return;
-    }
 
     setShowTopic(false);
     load();
@@ -62,20 +54,18 @@ export default function Base() {
 
     if (!text || !text.trim()) return;
 
-    const { error } = await supabase
-      .from('comentarios')
-      .insert([
-        {
-          topic_id: topicId,
-          parent_id: replyTo,
-          texto: text,
-          user_email: user?.email,
-          created_at: new Date()
-        }
-      ]);
+    const { error } = await supabase.from('comentarios').insert([
+      {
+        topic_id: topicId,
+        parent_id: replyTo,
+        texto: text,
+        user_email: user?.email,
+        created_at: new Date().toISOString()
+      }
+    ]);
 
     if (error) {
-      alert("Erro ao salvar comentário: " + error.message);
+      alert(error.message);
       return;
     }
 
@@ -94,42 +84,17 @@ export default function Base() {
     load();
   }
 
-  // 🔥 FUNÇÃO RECURSIVA (THREAD INFINITA)
-  function renderComments(parentId, topicId, level = 0) {
-    return comments
-      .filter(c => c.topic_id === topicId && c.parent_id === parentId)
-      .map(c => (
-        <div
-          key={c.id}
-          style={{
-            marginLeft: level * 20,
-            marginTop: 8,
-            fontSize: level === 0 ? 12 : 11,
-            color: level === 0 ? '#aaa' : '#777'
-          }}
-        >
-
-          💬 {c.texto} <br />
-          <small>{c.user_email}</small>
-
-          <div style={{ marginTop: 4 }}>
-            <button onClick={() => setReplyTo(c.id)}>
-              responder
-            </button>
-
-            <button onClick={() => deleteComment(c.id)}>
-              x
-            </button>
-          </div>
-
-          {/* 🔥 RECURSÃO INFINITA */}
-          {renderComments(c.id, topicId, level + 1)}
-
-        </div>
-      ));
+  function formatDate(date) {
+    if (!date) return '';
+    return new Date(date).toLocaleString('pt-BR', {
+      day: '2-digit',
+      month: '2-digit',
+      year: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit'
+    });
   }
 
-  // 🔍 BUSCA GLOBAL
   const filteredTopics = topics.filter(t => {
     const topicMatch =
       (t.titulo + t.descricao + t.categoria)
@@ -172,8 +137,47 @@ export default function Base() {
           <p>{t.descricao}</p>
           <small>{t.categoria}</small>
 
-          {/* 🔥 THREAD INFINITA AQUI */}
-          {renderComments(null, t.id)}
+          {/* COMMENTS PRINCIPAIS */}
+          {comments
+            .filter(c => c.topic_id === t.id && !c.parent_id)
+            .map(c => (
+              <div key={c.id} style={styles.comment}>
+
+                💬 {c.texto}
+
+                <div style={styles.meta}>
+                  👤 {c.user_email || 'anônimo'} • 📅 {formatDate(c.created_at)}
+                </div>
+
+                <div style={{ marginTop: 4 }}>
+                  <button onClick={() => setReplyTo(c.id)}>
+                    responder
+                  </button>
+
+                  <button onClick={() => deleteComment(c.id)}>
+                    x
+                  </button>
+                </div>
+
+                {/* RESPOSTAS */}
+                <div style={styles.replyBox}>
+                  {comments
+                    .filter(r => r.parent_id === c.id)
+                    .map(r => (
+                      <div key={r.id} style={styles.reply}>
+
+                        ↳ {r.texto}
+
+                        <div style={styles.metaReply}>
+                          👤 {r.user_email || 'anônimo'} • 📅 {formatDate(r.created_at)}
+                        </div>
+
+                      </div>
+                    ))}
+                </div>
+
+              </div>
+            ))}
 
           {/* ADD COMMENT */}
           <div style={styles.row}>
@@ -245,7 +249,32 @@ const styles = {
   btn: { marginBottom: 20, padding: 10, background: '#222', color: '#fff' },
   card: { background: '#111', padding: 15, marginBottom: 10, borderRadius: 8 },
   header: { display: 'flex', justifyContent: 'space-between' },
+  comment: { marginTop: 8, fontSize: 12, color: '#aaa' },
+
+  meta: {
+    fontSize: 10,
+    color: '#666',
+    marginTop: 2
+  },
+
+  metaReply: {
+    fontSize: 10,
+    color: '#555',
+    marginTop: 2
+  },
+
   row: { display: 'flex', gap: 10, marginTop: 10 },
+
+  replyBox: {
+    marginLeft: 20,
+    marginTop: 5
+  },
+
+  reply: {
+    fontSize: 11,
+    color: '#777',
+    marginBottom: 6
+  },
 
   modal: {
     position: 'fixed',
