@@ -12,7 +12,6 @@ export default function Base() {
   const [q, setQ] = useState('');
   const [commentInput, setCommentInput] = useState({});
 
-  const [replyTo, setReplyTo] = useState(null);
   const [showTopic, setShowTopic] = useState(false);
 
   const [newTopic, setNewTopic] = useState('');
@@ -20,112 +19,218 @@ export default function Base() {
   const [newCat, setNewCat] = useState('');
 
   useEffect(() => {
+
     supabase.auth.getUser().then(({ data }) => {
       setUser(data?.user || null);
     });
 
     load();
+
   }, []);
 
   async function load() {
-    const { data: t } = await supabase.from('topicos').select('*');
-    const { data: c } = await supabase.from('comentarios').select('*');
+
+    const { data: t } = await supabase
+      .from('topicos')
+      .select('*')
+      .order('id', { ascending: false });
+
+    const { data: c } = await supabase
+      .from('comentarios')
+      .select('*')
+      .order('id', { ascending: true });
 
     setTopics(t || []);
     setComments(c || []);
   }
 
   async function createTopic() {
-    await supabase.from('topicos').insert({
-      titulo: newTopic,
-      descricao: newDesc,
-      categoria: newCat,
-      user_email: user?.email,
-      created_at: new Date().toISOString()
-    });
+
+    if (!newTopic || !newCat) {
+      alert('Preencha título e categoria');
+      return;
+    }
+
+    const { error } = await supabase
+      .from('topicos')
+      .insert({
+        titulo: newTopic,
+        descricao: newDesc,
+        categoria: newCat,
+        user_email: user?.email,
+        created_at: new Date().toISOString()
+      });
+
+    if (error) {
+      alert(error.message);
+      return;
+    }
+
+    setNewTopic('');
+    setNewDesc('');
+    setNewCat('');
 
     setShowTopic(false);
+
     load();
   }
 
-  async function addComment(topicId) {
-    const text = commentInput[topicId];
+  async function addComment(topicId, parentId = null, texto = null) {
+
+    const text = texto || commentInput[topicId];
+
     if (!text?.trim()) return;
 
-    await supabase.from('comentarios').insert({
-      topic_id: topicId,
-      parent_id: replyTo?.commentId || null,
-      texto: text,
-      user_email: user?.email,
-      created_at: new Date().toISOString()
-    });
+    const { error } = await supabase
+      .from('comentarios')
+      .insert({
+        topic_id: topicId,
+        parent_id: parentId,
+        texto: text,
+        user_email: user?.email,
+        created_at: new Date().toISOString()
+      });
 
-    setCommentInput(prev => ({ ...prev, [topicId]: '' }));
-    setReplyTo(null);
+    if (error) {
+      alert(error.message);
+      return;
+    }
+
+    setCommentInput(prev => ({
+      ...prev,
+      [topicId]: ''
+    }));
+
     load();
   }
 
   async function deleteTopic(id) {
-    await supabase.from('topicos').delete().eq('id', id);
+
+    await supabase
+      .from('topicos')
+      .delete()
+      .eq('id', id);
+
     load();
   }
 
   async function deleteComment(id) {
-    await supabase.from('comentarios').delete().eq('id', id);
+
+    await supabase
+      .from('comentarios')
+      .delete()
+      .eq('id', id);
+
     load();
   }
 
   function buildTree(list, parentId = null, topicId = null) {
+
     return list
-      .filter(c => c.parent_id === parentId && c.topic_id === topicId)
+      .filter(c =>
+        c.parent_id === parentId &&
+        c.topic_id === topicId
+      )
       .map(c => ({
         ...c,
         children: buildTree(list, c.id, topicId)
       }));
   }
 
-  const filteredTopics = topics.filter(t =>
-    (t.titulo + t.descricao + t.categoria)
-      .toLowerCase()
-      .includes(q.toLowerCase())
-  );
+  const filteredTopics = topics.filter(t => {
 
-  const formatDate = (d) =>
-    d ? new Date(d).toLocaleString('pt-BR') : '';
+    const topicMatch =
+      `${t.titulo} ${t.descricao} ${t.categoria}`
+        .toLowerCase()
+        .includes(q.toLowerCase());
 
-  function CommentNode({ comment }) {
+    const commentMatch = comments.some(c =>
+      c.topic_id === t.id &&
+      c.texto?.toLowerCase().includes(q.toLowerCase())
+    );
+
+    return topicMatch || commentMatch;
+  });
+
+  function formatDate(date) {
+
+    if (!date) return '';
+
+    return new Date(date).toLocaleString('pt-BR');
+  }
+
+  function CommentNode({ comment, level = 0 }) {
+
     return (
-      <div style={styles.commentBox}>
 
-        <div style={styles.meta}>
-          <span>{comment.user_email}</span>
-          <span>{formatDate(comment.created_at)}</span>
+      <div
+        style={{
+          ...styles.commentBox,
+          marginLeft: level * 25
+        }}
+      >
+
+        <div style={styles.commentMeta}>
+
+          <span>
+            {comment.user_email || 'Usuário'}
+          </span>
+
+          <span>
+            {formatDate(comment.created_at)}
+          </span>
+
         </div>
 
         <div style={styles.commentText}>
           💬 {comment.texto}
         </div>
 
-        <div style={styles.actions}>
-          <button style={styles.smallBtn}
-            onClick={() => setReplyTo({ commentId: comment.id })}
+        <div style={styles.commentActions}>
+
+          <button
+            style={styles.smallBtn}
+            onClick={async () => {
+
+              const resposta = prompt('Responder comentário');
+
+              if (!resposta?.trim()) return;
+
+              await addComment(
+                comment.topic_id,
+                comment.id,
+                resposta
+              );
+            }}
           >
             responder
           </button>
 
-          <button style={styles.smallBtn}
+          <button
+            style={styles.smallBtnDanger}
             onClick={() => deleteComment(comment.id)}
           >
             excluir
           </button>
+
         </div>
 
         {comment.children?.length > 0 && (
-          <div style={styles.children}>
-            {comment.children.map(c => (
-              <CommentNode key={c.id} comment={c} />
+
+          <div>
+
+            {comment.children.map(child => (
+
+              <CommentNode
+                key={child.id}
+                comment={child}
+                level={level + 1}
+              />
+
             ))}
+
           </div>
+
         )}
 
       </div>
@@ -143,100 +248,161 @@ export default function Base() {
         style={styles.search}
       />
 
-      {/* NEW TOPIC BTN */}
-      <button style={styles.mainBtn} onClick={() => setShowTopic(true)}>
-        + Novo Tópico
-      </button>
+      {/* BUTTON */}
+      <div style={styles.topBar}>
+
+        <button
+          style={styles.mainBtn}
+          onClick={() => setShowTopic(true)}
+        >
+          + Novo Tópico
+        </button>
+
+      </div>
 
       {/* TOPICS */}
-      {filteredTopics.map(t => {
+      {filteredTopics.map(topic => {
 
-        const tree = buildTree(comments, null, t.id);
+        const tree = buildTree(
+          comments,
+          null,
+          topic.id
+        );
 
         return (
-          <div key={t.id} style={styles.card}>
+
+          <div key={topic.id} style={styles.card}>
 
             <div style={styles.header}>
+
               <div>
-                <h3 style={styles.title}>{t.titulo}</h3>
-                <div style={styles.category}>{t.categoria}</div>
+
+                <h2 style={styles.title}>
+                  {topic.titulo}
+                </h2>
+
+                <div style={styles.category}>
+                  {topic.categoria}
+                </div>
+
               </div>
 
-              <button style={styles.smallBtn} onClick={() => deleteTopic(t.id)}>
+              <button
+                style={styles.smallBtnDanger}
+                onClick={() => deleteTopic(topic.id)}
+              >
                 excluir
               </button>
+
             </div>
 
-            <p style={styles.desc}>{t.descricao}</p>
+            <p style={styles.desc}>
+              {topic.descricao}
+            </p>
 
             <div style={styles.meta}>
-              <span>{t.user_email}</span>
-              <span>{formatDate(t.created_at)}</span>
+
+              <span>
+                {topic.user_email}
+              </span>
+
+              <span>
+                {formatDate(topic.created_at)}
+              </span>
+
             </div>
 
-            <div style={{ marginTop: 15 }}>
-              {tree.map(c => (
-                <CommentNode key={c.id} comment={c} />
+            {/* COMMENTS */}
+            <div style={{ marginTop: 20 }}>
+
+              {tree.map(comment => (
+
+                <CommentNode
+                  key={comment.id}
+                  comment={comment}
+                />
+
               ))}
+
             </div>
 
-            {/* COMMENT INPUT */}
+            {/* COMMENT */}
             <div style={styles.row}>
+
               <input
                 placeholder="Escreva um comentário..."
-                value={commentInput[t.id] || ''}
+                value={commentInput[topic.id] || ''}
                 onChange={e =>
                   setCommentInput(prev => ({
                     ...prev,
-                    [t.id]: e.target.value
+                    [topic.id]: e.target.value
                   }))
                 }
                 style={styles.input}
               />
 
-              <button style={styles.mainBtn} onClick={() => addComment(t.id)}>
+              <button
+                style={styles.mainBtn}
+                onClick={() => addComment(topic.id)}
+              >
                 enviar
               </button>
+
             </div>
 
           </div>
+
         );
       })}
 
       {/* MODAL */}
       {showTopic && (
+
         <div style={styles.modal}>
+
           <div style={styles.modalBox}>
 
-            <h3 style={{ color: '#FFD000' }}>Novo Tópico</h3>
+            <h2 style={{ color: '#FFD600' }}>
+              Novo Tópico
+            </h2>
 
-            <input style={styles.input}
+            <input
+              style={styles.input}
               placeholder="Título"
               value={newTopic}
               onChange={e => setNewTopic(e.target.value)}
             />
 
-            <textarea style={styles.input}
+            <textarea
+              style={styles.input}
               placeholder="Descrição"
               value={newDesc}
               onChange={e => setNewDesc(e.target.value)}
             />
 
-            <input style={styles.input}
+            <input
+              style={styles.input}
               placeholder="Categoria"
               value={newCat}
               onChange={e => setNewCat(e.target.value)}
             />
 
-            <button style={styles.mainBtn} onClick={createTopic}>
+            <button
+              style={styles.mainBtn}
+              onClick={createTopic}
+            >
               salvar
             </button>
 
-            <button style={styles.smallBtn} onClick={() => setShowTopic(false)}>
+            <button
+              style={styles.smallBtn}
+              onClick={() => setShowTopic(false)}
+            >
               fechar
             </button>
 
           </div>
+
         </div>
       )}
 
@@ -244,116 +410,139 @@ export default function Base() {
   );
 }
 
-/* ---------------- WERTCO STYLE ---------------- */
-
 const styles = {
+
+  topBar: {
+    display: 'flex',
+    marginBottom: 20
+  },
 
   search: {
     width: '100%',
-    padding: 12,
-    marginBottom: 20,
-    background: '#0b0b0c',
-    border: '1px solid #2a2a2e',
+    padding: 14,
+    borderRadius: 14,
+    border: '1px solid #2a2a2a',
+    background: '#0b0b0b',
     color: '#fff',
-    borderRadius: 10,
-    fontFamily: 'Inter, system-ui, sans-serif'
+    marginBottom: 20,
+    fontSize: 15,
+    outline: 'none'
   },
 
   card: {
-    background: '#0c0c0d',
-    border: '1px solid #1f1f22',
-    padding: 18,
-    marginBottom: 14,
-    borderRadius: 14,
-    fontFamily: 'Inter, system-ui, sans-serif',
-    color: '#fff'
+    background: '#111',
+    border: '1px solid #222',
+    borderRadius: 18,
+    padding: 20,
+    marginBottom: 18,
+    color: '#fff',
+    boxShadow: '0 0 20px rgba(0,0,0,0.4)'
   },
 
   header: {
     display: 'flex',
-    justifyContent: 'space-between'
+    justifyContent: 'space-between',
+    alignItems: 'center'
   },
 
   title: {
     margin: 0,
-    color: '#fff',
-    fontSize: 18
+    fontSize: 24
   },
 
   category: {
-    color: '#FFD000',
+    display: 'inline-block',
+    marginTop: 8,
+    background: '#FFD600',
+    color: '#000',
+    padding: '5px 10px',
+    borderRadius: 999,
     fontSize: 12,
-    marginTop: 4
+    fontWeight: 'bold'
   },
 
   desc: {
     color: '#bbb',
-    marginTop: 10
+    marginTop: 16,
+    lineHeight: 1.6
   },
 
   meta: {
     display: 'flex',
     justifyContent: 'space-between',
-    fontSize: 11,
+    marginTop: 16,
     color: '#777',
-    marginTop: 8
+    fontSize: 12
   },
 
   row: {
     display: 'flex',
     gap: 10,
-    marginTop: 12
+    marginTop: 20
   },
 
   input: {
-    width: '100%',
-    padding: 10,
-    background: '#0b0b0c',
-    border: '1px solid #2a2a2e',
+    flex: 1,
+    background: '#0b0b0b',
+    border: '1px solid #2a2a2a',
+    borderRadius: 12,
+    padding: 12,
     color: '#fff',
-    borderRadius: 10,
-    fontFamily: 'Inter, system-ui, sans-serif'
+    outline: 'none'
   },
 
   mainBtn: {
-    background: '#FFD000',
+    background: '#FFD600',
     color: '#000',
     border: 'none',
-    padding: '10px 14px',
-    borderRadius: 10,
-    cursor: 'pointer',
-    fontWeight: 'bold'
+    borderRadius: 12,
+    padding: '12px 18px',
+    fontWeight: 'bold',
+    cursor: 'pointer'
   },
 
   smallBtn: {
     background: 'transparent',
-    color: '#FFD000',
-    border: '1px solid #FFD000',
+    border: '1px solid #FFD600',
+    color: '#FFD600',
     padding: '6px 10px',
-    borderRadius: 8,
-    cursor: 'pointer',
-    fontSize: 12
+    borderRadius: 10,
+    cursor: 'pointer'
+  },
+
+  smallBtnDanger: {
+    background: 'transparent',
+    border: '1px solid #ff4d4d',
+    color: '#ff4d4d',
+    padding: '6px 10px',
+    borderRadius: 10,
+    cursor: 'pointer'
   },
 
   commentBox: {
-    marginLeft: 16,
-    marginTop: 10,
-    padding: 10,
-    borderLeft: '2px solid #FFD000'
+    marginTop: 16,
+    padding: 12,
+    borderLeft: '2px solid #FFD600',
+    background: '#0d0d0d',
+    borderRadius: 10
+  },
+
+  commentMeta: {
+    display: 'flex',
+    justifyContent: 'space-between',
+    color: '#888',
+    fontSize: 11
   },
 
   commentText: {
-    color: '#ddd',
-    marginTop: 4
+    marginTop: 8,
+    color: '#eee',
+    lineHeight: 1.5
   },
 
-  actions: {
+  commentActions: {
     display: 'flex',
     gap: 8,
-    marginTop: 6
-  },
-
-  children: {
     marginTop: 10
   },
 
@@ -363,18 +552,19 @@ const styles = {
     background: 'rgba(0,0,0,0.85)',
     display: 'flex',
     justifyContent: 'center',
-    alignItems: 'center'
+    alignItems: 'center',
+    zIndex: 999
   },
 
   modalBox: {
-    width: 420,
-    background: '#0c0c0d',
-    padding: 20,
-    borderRadius: 14,
-    border: '1px solid #FFD000',
+    width: 450,
+    background: '#111',
+    border: '1px solid #FFD600',
+    borderRadius: 18,
+    padding: 24,
     display: 'flex',
     flexDirection: 'column',
-    gap: 10,
-    fontFamily: 'Inter, system-ui, sans-serif'
+    gap: 14
   }
+
 };
