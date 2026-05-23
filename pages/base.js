@@ -4,25 +4,37 @@ import { supabase } from '../lib/supabaseClient';
 
 export default function Base() {
   const [topics, setTopics] = useState([]);
+  const [commentsByTopic, setCommentsByTopic] = useState({});
+
   const [q, setQ] = useState('');
   const [category, setCategory] = useState('');
 
   const [newTopic, setNewTopic] = useState('');
   const [newCategory, setNewCategory] = useState('');
 
-  const [comment, setComment] = useState('');
-
   useEffect(() => {
     loadTopics();
   }, []);
 
   async function loadTopics() {
-    const { data } = await supabase
+    const { data: topics } = await supabase
       .from('topicos')
       .select('*')
       .order('created_at', { ascending: false });
 
-    setTopics(data || []);
+    const { data: comments } = await supabase
+      .from('comentarios')
+      .select('*');
+
+    const grouped = {};
+
+    (comments || []).forEach(c => {
+      if (!grouped[c.topic_id]) grouped[c.topic_id] = [];
+      grouped[c.topic_id].push(c);
+    });
+
+    setTopics(topics || []);
+    setCommentsByTopic(grouped);
   }
 
   async function createTopic() {
@@ -46,19 +58,21 @@ export default function Base() {
     loadTopics();
   }
 
-  async function addComment(topicId) {
+  async function addComment(topicId, text) {
+    if (!text) return;
+
     await supabase.from('comentarios').insert({
       topic_id: topicId,
-      texto: comment,
+      texto: text,
       status: 'approved'
     });
 
-    setComment('');
+    loadTopics();
   }
 
   const filtered = topics
     .filter(t =>
-      t.titulo.toLowerCase().includes(q.toLowerCase())
+      (t.titulo || '').toLowerCase().includes(q.toLowerCase())
     )
     .filter(t =>
       category ? t.categoria === category : true
@@ -99,8 +113,10 @@ export default function Base() {
           onChange={e => setCategory(e.target.value)}
         >
           <option value="">Todas categorias</option>
-          {[...new Set(topics.map(t => t.categoria))].map(c => (
-            <option key={c} value={c}>{c}</option>
+          {[...new Set(topics.map(t => t.categoria))].map((c, i) => (
+            <option key={i} value={c}>
+              {c}
+            </option>
           ))}
         </select>
       </div>
@@ -116,15 +132,34 @@ export default function Base() {
             Excluir
           </button>
 
-          {/* COMMENTS */}
+          {/* COMMENTS LIST */}
+          <div style={{ marginTop: 10 }}>
+            {(commentsByTopic[topic.id] || []).map(c => (
+              <div key={c.id} style={{ color: '#aaa', fontSize: 12 }}>
+                💬 {c.texto}
+              </div>
+            ))}
+          </div>
+
+          {/* ADD COMMENT */}
           <div style={{ marginTop: 10 }}>
             <input
               placeholder="Comentar..."
-              value={comment}
-              onChange={e => setComment(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') {
+                  addComment(topic.id, e.target.value);
+                  e.target.value = '';
+                }
+              }}
             />
 
-            <button onClick={() => addComment(topic.id)}>
+            <button
+              onClick={(e) => {
+                const input = e.target.parentNode.querySelector('input');
+                addComment(topic.id, input.value);
+                input.value = '';
+              }}
+            >
               Enviar
             </button>
           </div>
