@@ -36,7 +36,6 @@ export default function Base() {
     setComments(c || []);
   }
 
-  // ---------------- TOPIC ----------------
   async function createTopic() {
     await supabase.from('topicos').insert({
       titulo: newTopic,
@@ -55,10 +54,8 @@ export default function Base() {
     load();
   }
 
-  // ---------------- COMMENT ----------------
   async function addComment(topicId) {
     const text = commentInput[topicId];
-
     if (!text || !text.trim()) return;
 
     await supabase.from('comentarios').insert({
@@ -79,7 +76,6 @@ export default function Base() {
     load();
   }
 
-  // ---------------- TREE BUILDER ----------------
   function buildTree(list, parentId = null, topicId = null) {
     return list
       .filter(c =>
@@ -95,11 +91,8 @@ export default function Base() {
   const formatDate = (d) =>
     d ? new Date(d).toLocaleString('pt-BR') : '';
 
-  const commentTree = buildTree(comments);
-
-  // ---------------- SEARCH ----------------
   const filteredTopics = topics.filter(t => {
-    const topicMatch =
+    const match =
       (t.titulo + t.descricao + t.categoria)
         .toLowerCase()
         .includes(q.toLowerCase());
@@ -109,19 +102,21 @@ export default function Base() {
       c.texto?.toLowerCase().includes(q.toLowerCase())
     );
 
-    return topicMatch || commentMatch;
+    return match || commentMatch;
   });
 
-  // ---------------- COMMENT NODE (RECURSIVO) ----------------
   function CommentNode({ comment }) {
     return (
       <div style={styles.commentBox}>
 
         <div style={styles.meta}>
-          {comment.user_email} • {formatDate(comment.created_at)}
+          <span>{comment.user_email}</span>
+          <span>{formatDate(comment.created_at)}</span>
         </div>
 
-        <div>💬 {comment.texto}</div>
+        <div style={{ color: '#ddd' }}>
+          💬 {comment.texto}
+        </div>
 
         <div style={styles.actions}>
           <button onClick={() =>
@@ -138,12 +133,13 @@ export default function Base() {
           </button>
         </div>
 
-        <div style={styles.children}>
-          {comment.children?.map(child => (
-            <CommentNode key={child.id} comment={child} />
-          ))}
-        </div>
-
+        {comment.children?.length > 0 && (
+          <div style={styles.children}>
+            {comment.children.map(c => (
+              <CommentNode key={c.id} comment={c} />
+            ))}
+          </div>
+        )}
       </div>
     );
   }
@@ -159,7 +155,7 @@ export default function Base() {
         style={styles.search}
       />
 
-      {/* ACTIONS */}
+      {/* BUTTON */}
       <button onClick={() => setShowTopic(true)} style={styles.btn}>
         + Novo Tópico
       </button>
@@ -174,8 +170,8 @@ export default function Base() {
 
             <div style={styles.header}>
               <div>
-                <h3>{t.titulo}</h3>
-                <small>{t.categoria}</small>
+                <h3 style={{ margin: 0 }}>{t.titulo}</h3>
+                <small style={styles.category}>{t.categoria}</small>
               </div>
 
               <button onClick={() => deleteTopic(t.id)}>
@@ -183,16 +179,18 @@ export default function Base() {
               </button>
             </div>
 
-            <p>{t.descricao}</p>
+            <p style={{ color: '#ccc' }}>{t.descricao}</p>
 
-            <small>
+            <small style={{ color: '#777' }}>
               {t.user_email} • {formatDate(t.created_at)}
             </small>
 
-            {/* COMMENTS TREE */}
-            {tree.map(c => (
-              <CommentNode key={c.id} comment={c} />
-            ))}
+            {/* COMMENTS */}
+            <div style={{ marginTop: 15 }}>
+              {tree.map(c => (
+                <CommentNode key={c.id} comment={c} />
+              ))}
+            </div>
 
             {/* INPUT */}
             <div style={styles.row}>
@@ -205,6 +203,7 @@ export default function Base() {
                     [t.id]: e.target.value
                   }))
                 }
+                style={styles.input}
               />
 
               {replyTo && (
@@ -222,7 +221,7 @@ export default function Base() {
         );
       })}
 
-      {/* MODAL TOPIC */}
+      {/* MODAL */}
       {showTopic && (
         <div style={styles.modal}>
           <div style={styles.modalBox}>
@@ -233,18 +232,21 @@ export default function Base() {
               placeholder="Título"
               value={newTopic}
               onChange={e => setNewTopic(e.target.value)}
+              style={styles.input}
             />
 
             <textarea
               placeholder="Descrição"
               value={newDesc}
               onChange={e => setNewDesc(e.target.value)}
+              style={styles.input}
             />
 
             <input
               placeholder="Categoria"
               value={newCat}
               onChange={e => setNewCat(e.target.value)}
+              style={styles.input}
             />
 
             <button onClick={createTopic}>Salvar</button>
@@ -260,39 +262,18 @@ export default function Base() {
 
 const styles = {
 
-  // fundo geral do card de tópico
-  card: {
-    background: '#0f0f10',
-    border: '1px solid #1f1f22',
-    padding: 18,
-    marginBottom: 14,
-    borderRadius: 12,
-    boxShadow: '0 0 0 1px rgba(255,255,255,0.02)'
-  },
-
-  // título do header do tópico
-  header: {
-    display: 'flex',
-    justifyContent: 'space-between',
-    alignItems: 'flex-start',
-    marginBottom: 10
-  },
-
-  // input de busca
   search: {
     width: '100%',
     padding: 12,
-    marginBottom: 18,
+    marginBottom: 20,
     background: '#0b0b0c',
     border: '1px solid #2a2a2e',
     color: '#fff',
-    borderRadius: 10,
-    outline: 'none'
+    borderRadius: 10
   },
 
-  // botão padrão
   btn: {
-    marginBottom: 18,
+    marginBottom: 20,
     padding: '10px 14px',
     background: '#1a1a1d',
     color: '#fff',
@@ -301,27 +282,42 @@ const styles = {
     cursor: 'pointer'
   },
 
-  // linha de input comentário
+  card: {
+    background: '#0f0f10',
+    border: '1px solid #1f1f22',
+    padding: 18,
+    marginBottom: 14,
+    borderRadius: 12
+  },
+
+  header: {
+    display: 'flex',
+    justifyContent: 'space-between',
+    marginBottom: 10
+  },
+
+  category: {
+    fontSize: 12,
+    color: '#f5c400'
+  },
+
   row: {
     display: 'flex',
     gap: 10,
     marginTop: 12
   },
 
-  // input comentário
   input: {
     flex: 1,
     padding: 10,
     background: '#0b0b0c',
     border: '1px solid #2a2a2e',
     color: '#fff',
-    borderRadius: 10,
-    outline: 'none'
+    borderRadius: 10
   },
 
-  // comentário principal
   commentBox: {
-    marginLeft: 14,
+    marginLeft: 15,
     marginTop: 10,
     padding: 10,
     borderLeft: '2px solid #2a2a2e',
@@ -329,28 +325,24 @@ const styles = {
     borderRadius: 10
   },
 
-  // metadata (user + data)
   meta: {
     fontSize: 11,
     color: '#8a8a8a',
-    marginBottom: 6,
     display: 'flex',
-    justifyContent: 'space-between'
+    justifyContent: 'space-between',
+    marginBottom: 6
   },
 
-  // botões de ação
   actions: {
     display: 'flex',
     gap: 8,
-    marginTop: 8
+    marginTop: 6
   },
 
-  // replies
   children: {
     marginTop: 10
   },
 
-  // modal overlay
   modal: {
     position: 'fixed',
     inset: 0,
@@ -360,7 +352,6 @@ const styles = {
     alignItems: 'center'
   },
 
-  // modal box
   modalBox: {
     background: '#0f0f10',
     padding: 20,
@@ -370,12 +361,5 @@ const styles = {
     display: 'flex',
     flexDirection: 'column',
     gap: 10
-  },
-
-  // categoria pequena
-  category: {
-    fontSize: 12,
-    color: '#f5c400',
-    marginTop: 4
   }
 };
