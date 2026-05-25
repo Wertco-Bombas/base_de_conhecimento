@@ -224,14 +224,47 @@ export default function Base() {
         </div>
 
         <div style={styles.commentActions}>
+          replyInput.hasOwnProperty(comment.id) && (
+  <div style={{ marginTop: 10, display: 'flex', gap: 8 }}>
+    <input
+      style={styles.input}
+      placeholder="Responder comentário..."
+      value={replyInput[comment.id] || ''}
+      onChange={(e) =>
+        setReplyInput(prev => ({
+          ...prev,
+          [comment.id]: e.target.value
+        }))
+      }
+    />
+
+    <button
+      style={styles.mainBtn}
+      onClick={async () => {
+        await addComment(
+          comment.topic_id,
+          comment.id,
+          replyInput[comment.id]
+        );
+
+        setReplyInput(prev => ({
+          ...prev,
+          [comment.id]: ''
+        }));
+      }}
+    >
+      enviar
+    </button>
+  </div>
+)}
           <button
             style={styles.smallBtn}
             onClick={() =>
-              setReplyInput(prev => ({
-                ...prev,
-                [comment.id]: prev[comment.id] ?? ''
-              }))
-            }
+  setReplyInput(prev => ({
+    ...prev,
+    [comment.id]: prev[comment.id] ?? ''
+  }))
+}
           >
             responder
           </button>
