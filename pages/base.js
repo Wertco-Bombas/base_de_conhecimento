@@ -13,6 +13,11 @@ export default function Base() {
   const [commentInput, setCommentInput] = useState({});
   const [replyInput, setReplyInput] = useState({});
 
+  const [showCategoryModal, setShowCategoryModal] = useState(false);
+const [newCategoryName, setNewCategoryName] = useState('');
+
+const [showCategorySelector, setShowCategorySelector] = useState(false);
+
   const [showTopic, setShowTopic] = useState(false);
 
   const [showDeleteCategory, setShowDeleteCategory] = useState(false);
@@ -123,20 +128,20 @@ export default function Base() {
   }
 
 async function createCategory() {
-  if (!newCat?.trim()) {
+  if (!newCategoryName?.trim()) {
     return alert('Digite uma categoria');
   }
 
   const { error } = await supabase
     .from('categorias')
-    .insert({ nome: newCat });
+    .insert({
+      nome: newCategoryName
+    });
 
   if (error) return alert(error.message);
 
-  setNewCat('');
-  setShowTopic(false);
-
-  alert('Categoria criada');
+  setNewCategoryName('');
+  setShowCategoryModal(false);
 
   load();
 }
@@ -246,13 +251,56 @@ async function createCategory() {
           flexWrap: 'wrap'
         }}
       >
-        <input
-          className="mobileInput"
-          style={styles.input}
-          placeholder="Responder comentário..."
-          value={localText}
-          onChange={(e) => setLocalText(e.target.value)}
-        />
+        <div style={{ position: 'relative' }}>
+  <button
+    type="button"
+    style={{
+      ...styles.input,
+      textAlign: 'left',
+      cursor: 'pointer',
+      width: '100%'
+    }}
+    onClick={() =>
+      setShowCategorySelector(prev => !prev)
+    }
+  >
+    {newCat || 'Selecionar categoria'}
+  </button>
+
+  {showCategorySelector && (
+    <div
+      style={{
+        position: 'absolute',
+        top: '105%',
+        left: 0,
+        right: 0,
+        background: '#111',
+        border: '1px solid #333',
+        borderRadius: 12,
+        zIndex: 999,
+        maxHeight: 220,
+        overflowY: 'auto'
+      }}
+    >
+      {categories.map(cat => (
+        <div
+          key={cat.id}
+          onClick={() => {
+            setNewCat(cat.nome);
+            setShowCategorySelector(false);
+          }}
+          style={{
+            padding: 12,
+            cursor: 'pointer',
+            borderBottom: '1px solid #222'
+          }}
+        >
+          {cat.nome}
+        </div>
+      ))}
+    </div>
+  )}
+</div>
 
         <button
           style={styles.mainBtn}
@@ -347,12 +395,11 @@ async function createCategory() {
           + Novo Tópico
         </button>
 
-        <button
-          style={styles.mainBtn}
-          onClick={createCategory}
-        >
-          + Nova Categoria
-        </button>
+       <button
+  style={styles.mainBtn}
+  onClick={() => setShowCategoryModal(true)}
+>
+  + Nova Categoria
 
         <button
           style={styles.smallBtnDanger}
@@ -580,6 +627,54 @@ async function createCategory() {
           </div>
         </div>
       )}
+        {showCategoryModal && (
+  <div style={styles.modal}>
+    <div
+      style={{
+        ...styles.modalBox,
+        width: '90%',
+        maxWidth: 450,
+        display: 'flex',
+        flexDirection: 'column',
+        gap: 14
+      }}
+    >
+      <h2 style={{ color: '#FFD600' }}>
+        Nova Categoria
+      </h2>
+
+      <input
+        className="mobileInput"
+        style={styles.input}
+        placeholder="Nome da categoria"
+        value={newCategoryName}
+        onChange={e => setNewCategoryName(e.target.value)}
+      />
+
+      <div
+        style={{
+          display: 'flex',
+          gap: 10,
+          flexWrap: 'wrap'
+        }}
+      >
+        <button
+          style={styles.mainBtn}
+          onClick={createCategory}
+        >
+          salvar
+        </button>
+
+        <button
+          style={styles.smallBtn}
+          onClick={() => setShowCategoryModal(false)}
+        >
+          fechar
+        </button>
+      </div>
+    </div>
+  </div>
+)}
     </Layout>
   );
 }
