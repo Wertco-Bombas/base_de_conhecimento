@@ -231,7 +231,7 @@ const tFinal = (t || []).map(topic => ({
     alert('Categorias excluídas com sucesso');
   }
 
-function buildTree(list, parentId = null, topicId = null) {
+
 
   parentId = parentId ? String(parentId) : null;
 
@@ -387,43 +387,30 @@ function buildTree(list, parentId = null, topicId = null) {
         style={styles.search}
       />
 
-      <div style={styles.topBar}>
+    <div style={styles.topBar}>
+  <button
+    style={styles.mainBtn}
+    onClick={() => setShowTopic(true)}
+  >
+    + Novo Tópico
+  </button>
 
-        <button
-          style={styles.mainBtn}
-          onClick={() => setShowTopic(true)}
-        >
-          + Novo Tópico
-        </button>
+  <button
+    style={styles.mainBtn}
+    onClick={createCategory}
+  >
+    + Nova Categoria
+  </button>
 
-        <button
-          style={styles.mainBtn}
-          onClick={createCategory}
-        >
-          + Nova Categoria
-        </button>
+  <button
+    style={styles.smallBtnDanger}
+    onClick={deleteCategory}
+  >
+    Excluir Categoria
+  </button>
+</div>
 
-        <button
-          style={styles.smallBtnDanger}
-          onClick={deleteCategory}
-        >
-          Excluir Categoria
-        </button>
-
-      </div>
-
-     function buildTree(list, parentId = null, topicId = null) {
-  return list
-    .filter(c =>
-      String(c.parent_id ?? null) === String(parentId ?? null) &&
-      String(c.topic_id ?? null) === String(topicId ?? null)
-    )
-    .map(c => ({
-      ...c,
-      children: buildTree(list, c.id, topicId)
-    }));
-}
-
+  
               <button
                 style={styles.smallBtnDanger}
                 onClick={() => deleteTopic(topic.id)}
