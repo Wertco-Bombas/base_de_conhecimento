@@ -251,56 +251,6 @@ async function createCategory() {
           flexWrap: 'wrap'
         }}
       >
-        <div style={{ position: 'relative' }}>
-  <button
-    type="button"
-    style={{
-      ...styles.input,
-      textAlign: 'left',
-      cursor: 'pointer',
-      width: '100%'
-    }}
-    onClick={() =>
-      setShowCategorySelector(prev => !prev)
-    }
-  >
-    {newCat || 'Selecionar categoria'}
-  </button>
-
-  {showCategorySelector && (
-    <div
-      style={{
-        position: 'absolute',
-        top: '105%',
-        left: 0,
-        right: 0,
-        background: '#111',
-        border: '1px solid #333',
-        borderRadius: 12,
-        zIndex: 999,
-        maxHeight: 220,
-        overflowY: 'auto'
-      }}
-    >
-      {categories.map(cat => (
-        <div
-          key={cat.id}
-          onClick={() => {
-            setNewCat(cat.nome);
-            setShowCategorySelector(false);
-          }}
-          style={{
-            padding: 12,
-            cursor: 'pointer',
-            borderBottom: '1px solid #222'
-          }}
-        >
-          {cat.nome}
-        </div>
-      ))}
-    </div>
-  )}
-</div>
 
         <button
           style={styles.mainBtn}
@@ -395,11 +345,19 @@ async function createCategory() {
           + Novo Tópico
         </button>
 
-       <button
+<button
   style={styles.mainBtn}
   onClick={() => setShowCategoryModal(true)}
 >
   + Nova Categoria
+</button>
+
+<button
+  style={styles.smallBtnDanger}
+  onClick={deleteCategory}
+>
+  Excluir Categoria
+</button>
 
         <button
           style={styles.smallBtnDanger}
@@ -522,13 +480,56 @@ async function createCategory() {
         onChange={e => setNewDesc(e.target.value)}
       />
 
-      <input
-        className="mobileInput"
-        style={styles.input}
-        placeholder="Categoria"
-        value={newCat}
-        onChange={e => setNewCat(e.target.value)}
-      />
+     <div style={{ position: 'relative' }}>
+  <button
+    type="button"
+    style={{
+      ...styles.input,
+      textAlign: 'left',
+      cursor: 'pointer',
+      width: '100%'
+    }}
+    onClick={() =>
+      setShowCategorySelector(prev => !prev)
+    }
+  >
+    {newCat || 'Selecionar categoria'}
+  </button>
+
+  {showCategorySelector && (
+    <div
+      style={{
+        position: 'absolute',
+        top: '105%',
+        left: 0,
+        right: 0,
+        background: '#111',
+        border: '1px solid #333',
+        borderRadius: 12,
+        zIndex: 999,
+        maxHeight: 220,
+        overflowY: 'auto'
+      }}
+    >
+      {categories.map(cat => (
+        <div
+          key={cat.id}
+          onClick={() => {
+            setNewCat(cat.nome);
+            setShowCategorySelector(false);
+          }}
+          style={{
+            padding: 12,
+            cursor: 'pointer',
+            borderBottom: '1px solid #222'
+          }}
+        >
+          {cat.nome}
+        </div>
+      ))}
+    </div>
+  )}
+</div>
 
       <div
         style={{
