@@ -219,52 +219,17 @@ export default function Base() {
           <span>{formatDate(comment.created_at)}</span>
         </div>
 
-        <div style={styles.commentText}>
-          💬 {comment.texto}
-        </div>
+        <div style={styles.commentText}>💬 {comment.texto}</div>
 
         <div style={styles.commentActions}>
-          replyInput.hasOwnProperty(comment.id) && (
-  <div style={{ marginTop: 10, display: 'flex', gap: 8 }}>
-    <input
-      style={styles.input}
-      placeholder="Responder comentário..."
-      value={replyInput[comment.id] || ''}
-      onChange={(e) =>
-        setReplyInput(prev => ({
-          ...prev,
-          [comment.id]: e.target.value
-        }))
-      }
-    />
-
-    <button
-      style={styles.mainBtn}
-      onClick={async () => {
-        await addComment(
-          comment.topic_id,
-          comment.id,
-          replyInput[comment.id]
-        );
-
-        setReplyInput(prev => ({
-          ...prev,
-          [comment.id]: ''
-        }));
-      }}
-    >
-      enviar
-    </button>
-  </div>
-)}
           <button
             style={styles.smallBtn}
             onClick={() =>
-  setReplyInput(prev => ({
-    ...prev,
-    [comment.id]: prev[comment.id] ?? ''
-  }))
-}
+              setReplyInput(prev => ({
+                ...prev,
+                [comment.id]: prev[comment.id] ?? ''
+              }))
+            }
           >
             responder
           </button>
@@ -277,13 +242,44 @@ export default function Base() {
           </button>
         </div>
 
-        {comment.children?.length > 0 && (
-          <div>
-            {comment.children.map(child => (
-              <CommentNode key={child.id} comment={child} level={level + 1} />
-            ))}
+        {replyInput[comment.id] !== undefined && (
+          <div style={{ marginTop: 10, display: 'flex', gap: 8 }}>
+            <input
+              style={styles.input}
+              placeholder="Responder comentário..."
+              value={replyInput[comment.id] || ''}
+              onChange={(e) =>
+                setReplyInput(prev => ({
+                  ...prev,
+                  [comment.id]: e.target.value
+                }))
+              }
+            />
+
+            <button
+              style={styles.mainBtn}
+              onClick={async () => {
+                await addComment(
+                  comment.topic_id,
+                  comment.id,
+                  replyInput[comment.id]
+                );
+
+                setReplyInput(prev => ({
+                  ...prev,
+                  [comment.id]: ''
+                }));
+              }}
+            >
+              enviar
+            </button>
           </div>
         )}
+
+        {comment.children?.length > 0 &&
+          comment.children.map(child => (
+            <CommentNode key={child.id} comment={child} level={level + 1} />
+          ))}
       </div>
     );
   }
@@ -419,7 +415,7 @@ const styles = {
   row: { display: 'flex', gap: 10, marginTop: 20 },
   input: { flex: 1, background: '#0b0b0b', border: '1px solid #2a2a2a', borderRadius: 12, padding: 12, color: '#fff' },
   mainBtn: { background: '#FFD600', color: '#000', border: 'none', borderRadius: 12, padding: '12px 18px' },
-  smallBtn: { background: 'transparent', border: '1px solid #FFD600', color: '#FFD600', padding: '6px 10px' },
+  smallBtn: { background: 'transparent', border: '1px solid '#FFD600', color: '#FFD600', padding: '6px 10px' },
   smallBtnDanger: { background: 'transparent', border: '1px solid #ff4d4d', color: '#ff4d4d', padding: '6px 10px' },
   commentBox: { marginTop: 16, padding: 12, borderLeft: '2px solid #FFD600', background: '#0d0d0d', borderRadius: 10 },
   commentMeta: { display: 'flex', justifyContent: 'space-between', color: '#888', fontSize: 11 },
