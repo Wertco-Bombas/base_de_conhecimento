@@ -443,59 +443,70 @@ async function createCategory() {
       })}
 
       {showTopic && (
-        <div
-  style={{
-    ...styles.modalBox,
-    width: '90%',
-    maxWidth: 450,
-    display: 'flex',
-    flexDirection: 'column',
-    gap: 14
-  }}
->
-            <h2 style={{ color: '#FFD600' }}>
-              Novo Tópico
-            </h2>
+  <div style={styles.modal}>
+    <div
+      style={{
+        ...styles.modalBox,
+        width: '90%',
+        maxWidth: 450,
+        display: 'flex',
+        flexDirection: 'column',
+        gap: 14
+      }}
+    >
+      <h2 style={{ color: '#FFD600' }}>
+        Novo Tópico
+      </h2>
 
-            <input
-              className="mobileInput"
-              style={styles.input}
-              placeholder="Título"
-              value={newTopic}
-              onChange={e => setNewTopic(e.target.value)}
-            />
+      <input
+        className="mobileInput"
+        style={styles.input}
+        placeholder="Título"
+        value={newTopic}
+        onChange={e => setNewTopic(e.target.value)}
+      />
 
-            <textarea
-              className="mobileInput"
-              style={styles.input}
-              placeholder="Descrição"
-              value={newDesc}
-              onChange={e => setNewDesc(e.target.value)}
-            />
+      <textarea
+        className="mobileInput"
+        style={styles.input}
+        placeholder="Descrição"
+        rows={5}
+        value={newDesc}
+        onChange={e => setNewDesc(e.target.value)}
+      />
 
-            <input
-              className="mobileInput"
-              style={styles.input}
-              placeholder="Categoria"
-              value={newCat}
-              onChange={e => setNewCat(e.target.value)}
-            />
+      <input
+        className="mobileInput"
+        style={styles.input}
+        placeholder="Categoria"
+        value={newCat}
+        onChange={e => setNewCat(e.target.value)}
+      />
 
-            <button
-              style={styles.mainBtn}
-              onClick={createTopic}
-            >
-              salvar
-            </button>
+      <div
+        style={{
+          display: 'flex',
+          gap: 10,
+          flexWrap: 'wrap'
+        }}
+      >
+        <button
+          style={styles.mainBtn}
+          onClick={createTopic}
+        >
+          salvar
+        </button>
 
-            <button
-              style={styles.smallBtn}
-              onClick={() => setShowTopic(false)}
-            >
-              fechar
-            </button>
-          </div>
-        </div>
+        <button
+          style={styles.smallBtn}
+          onClick={() => setShowTopic(false)}
+        >
+          fechar
+        </button>
+      </div>
+    </div>
+  </div>
+
       )}
 
       {showDeleteCategory && (
