@@ -15,12 +15,7 @@ export default function Base() {
 
   const [replyInput, setReplyInput] = useState({});
 
-  const [showTopic, setShowTopic] = useState(false);.select(`
-  *,
-  categorias:categorias_id (
-    nome
-  )
-`)
+const [showTopic, setShowTopic] = useState(false);
 
   const [newTopic, setNewTopic] = useState('');
   const [newDesc, setNewDesc] = useState('');
