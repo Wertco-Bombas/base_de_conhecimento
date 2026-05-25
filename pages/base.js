@@ -56,7 +56,7 @@ const tFinal = (t || []).map(topic => ({
   console.log('COMMENTS:', c);
   console.log('COMMENTS ERROR:', cError);
 
-  setTopics(t || []);
+  setTopics(tFinal || []);
   setComments(c || []);
 }
 
