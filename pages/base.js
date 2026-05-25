@@ -13,10 +13,15 @@ export default function Base() {
   const [replyInput, setReplyInput] = useState({});
 
   const [showTopic, setShowTopic] = useState(false);
+  
+  const [showDeleteCategory, setShowDeleteCategory] = useState(false);
+const [selectedCategories, setSelectedCategories] = useState([]);
+const [categories, setCategories] = useState([]);
 
   const [newTopic, setNewTopic] = useState('');
   const [newDesc, setNewDesc] = useState('');
   const [newCat, setNewCat] = useState('');
+
 
   useEffect(() => {
     supabase.auth.getUser().then(({ data }) => {
@@ -67,6 +72,8 @@ export default function Base() {
     setNewDesc('');
     setNewCat('');
     setShowTopic(false);
+
+    setCategories(cats || []);
 
     load();
   }
@@ -123,10 +130,37 @@ export default function Base() {
   }
 
   async function deleteCategory() {
-    const { data, error } = await supabase
-      .from('categorias')
-      .select('*')
-      .order('nome');
+  setShowDeleteCategory(true);
+
+    async function confirmDeleteCategories() {
+  if (!selectedCategories.length) return alert('Selecione categorias');
+
+  const confirmar = confirm(
+    `Excluir categorias:\n\n${selectedCategories.join('\n')}`
+  );
+
+  if (!confirmar) return;
+
+  const { error } = await supabase
+    .from('categorias')
+    .delete()
+    .in('nome', selectedCategories);
+
+  if (error) return alert(error.message);
+
+  setSelectedCategories([]);
+  setShowDeleteCategory(false);
+  load();
+
+      function toggleCategory(nome) {
+  setSelectedCategories(prev =>
+    prev.includes(nome)
+      ? prev.filter(n => n !== nome)
+      : [...prev, nome]
+  );
+}
+}
+}
 
     if (error) return alert(error.message);
     if (!data?.length) return alert('Nenhuma categoria cadastrada');
