@@ -225,19 +225,19 @@ export default function Base() {
     alert('Categorias excluídas com sucesso');
   }
 
-  function buildTree(list, parentId = null, topicId = null) {
+function buildTree(list, parentId = null, topicId = null) {
 
-    return list
-      .filter(c =>
-        c.parent_id === parentId &&
-        c.topic_id === topicId &&
-        (c.status === 'approved' || canApprove(user))
-      )
-      .map(c => ({
-        ...c,
-        children: buildTree(list, c.id, topicId)
-      }));
-  }
+  return list
+    .filter(c =>
+      c.parent_id === parentId &&
+      String(c.topic_id) === String(topicId) &&
+      (c.status === 'approved' || canApprove(user))
+    )
+    .map(c => ({
+      ...c,
+      children: buildTree(list, c.id, topicId)
+    }));
+}
 
   const filteredTopics = useMemo(() => {
 
