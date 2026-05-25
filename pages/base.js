@@ -604,6 +604,8 @@ const styles = {
     padding: 12,
     color: '#fff',
     outline: 'none'
+     boxShadow: 'none',
+  resize: 'vertical'
   },
 
   mainBtn: {
