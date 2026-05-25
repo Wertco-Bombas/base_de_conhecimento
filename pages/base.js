@@ -81,7 +81,7 @@ async function load() {
   setTopics(tFinal || []);
   setComments(c || []);
   setCategories(cats || []);
-}
+} 
 
     const tFinal = (t || []).map(topic => ({
       ...topic,
