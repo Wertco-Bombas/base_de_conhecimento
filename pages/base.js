@@ -1,4 +1,4 @@
-import { useEffect, useState, useMemo } from 'react';
+import { useEffect, useState, useMemo, memo } from 'react';
 import Layout from '../components/Layout';
 import { supabase } from '../lib/supabaseClient';
 import { canApprove } from '../lib/permissions';
@@ -211,7 +211,7 @@ export default function Base() {
     return new Date(date).toLocaleString('pt-BR');
   }
 
-  function CommentNode({ comment, level = 0 }) {
+  const CommentNode = memo(function CommentNode({ comment, level = 0 }) {
     return (
       <div style={{ ...styles.commentBox, marginLeft: level * 25 }}>
         <div style={styles.commentMeta}>
@@ -229,7 +229,7 @@ export default function Base() {
                 ...prev,
                 [comment.id]: prev[comment.id] ?? ''
               }))
-            }
+            });
           >
             responder
           </button>
