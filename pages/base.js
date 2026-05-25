@@ -122,21 +122,24 @@ export default function Base() {
     load();
   }
 
-  async function createCategory() {
-    const nome = prompt('Nome da categoria');
-
-    if (!nome) return;
-
-    const { error } = await supabase
-      .from('categorias')
-      .insert({ nome });
-
-    if (error) return alert(error.message);
-
-    alert('Categoria criada');
-
-    load();
+async function createCategory() {
+  if (!newCat?.trim()) {
+    return alert('Digite uma categoria');
   }
+
+  const { error } = await supabase
+    .from('categorias')
+    .insert({ nome: newCat });
+
+  if (error) return alert(error.message);
+
+  setNewCat('');
+  setShowTopic(false);
+
+  alert('Categoria criada');
+
+  load();
+}
 
   async function deleteCategory() {
     setShowDeleteCategory(true);
@@ -440,14 +443,16 @@ export default function Base() {
       })}
 
       {showTopic && (
-        <div style={styles.modal}>
-          <div
-            style={{
-              ...styles.modalBox,
-              width: '90%',
-              maxWidth: 450
-            }}
-          >
+        <div
+  style={{
+    ...styles.modalBox,
+    width: '90%',
+    maxWidth: 450,
+    display: 'flex',
+    flexDirection: 'column',
+    gap: 14
+  }}
+>
             <h2 style={{ color: '#FFD600' }}>
               Novo Tópico
             </h2>
