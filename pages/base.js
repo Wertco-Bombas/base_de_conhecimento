@@ -27,10 +27,35 @@ const [showCategorySelector, setShowCategorySelector] = useState(false);
   const [newDesc, setNewDesc] = useState('');
   const [newCat, setNewCat] = useState('');
 
-  useEffect(() => {
-    supabase.auth.getUser().then(({ data }) => {
-      setUser(data?.user || null);
-    });
+ useEffect(() => {
+  async function init() {
+    const { data } = await supabase.auth.getUser();
+    const currentUser = data?.user || null;
+
+    setUser(currentUser);
+
+    if (!currentUser) return;
+
+    // 🔥 garante que existe profile
+    const { data: existing } = await supabase
+      .from('profiles')
+      .select('*')
+      .eq('id', currentUser.id)
+      .single();
+
+    if (!existing) {
+      await supabase.from('profiles').insert({
+        id: currentUser.id,
+        email: currentUser.email,
+        role: 'usuario'
+      });
+    }
+
+    load();
+  }
+
+  init();
+}, []);
 
     load();
   }, []);
