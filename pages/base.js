@@ -404,87 +404,66 @@ async function createCategory() {
       </div>
 
      {visibleTopics?.map(topic => {
-
   const tree = commentTrees[topic.id] || [];
 
   return (
-    <div key={topic.id}>
-          <div
-            key={topic.id}
-            style={styles.card}
-            className="mobileCard"
-          >
-            <div
-              style={styles.header}
-              className="mobileHeader"
-            >
-              <div>
-                <h2 style={styles.title}>
-                  {topic.titulo}
-                </h2>
+    <div key={topic.id} style={styles.card} className="mobileCard">
 
-                <div style={styles.category}>
-                  {topic.categorias?.nome}
-                </div>
-              </div>
+      <div style={styles.header} className="mobileHeader">
+        <div>
+          <h2 style={styles.title}>{topic.titulo}</h2>
 
-              <button
-                style={styles.smallBtnDanger}
-                onClick={() => deleteTopic(topic.id)}
-              >
-                excluir tópico
-              </button>
-            </div>
-
-            <p style={styles.desc}>
-              {topic.descricao}
-            </p>
-
-            <div style={styles.meta}>
-              <span>{topic.user_email}</span>
-
-              <span>
-                {formatDate(topic.created_at)}
-              </span>
-            </div>
-
-            <div style={{ marginTop: 20 }}>
-              {tree?.map(comment => (
-                <CommentNode
-                  key={comment.id}
-                  comment={comment}
-                />
-              ))}
-            </div>
-
-            <div
-              style={styles.row}
-              className="mobileRow"
-            >
-              <input
-                className="mobileInput"
-                placeholder="Escreva um comentário..."
-                value={commentInput[topic.id] || ''}
-                onChange={e =>
-                  setCommentInput(prev => ({
-                    ...prev,
-                    [topic.id]: e.target.value
-                  }))
-                }
-                style={styles.input}
-              />
-
-              <button
-                style={styles.mainBtn}
-                onClick={() => addComment(topic.id)}
-              >
-                enviar
-              </button>
-            </div>
+          <div style={styles.category}>
+            {topic.categorias?.nome}
           </div>
-        );
-      })}
+        </div>
 
+        <button
+          style={styles.smallBtnDanger}
+          onClick={() => deleteTopic(topic.id)}
+        >
+          excluir tópico
+        </button>
+      </div>
+
+      <p style={styles.desc}>{topic.descricao}</p>
+
+      <div style={styles.meta}>
+        <span>{topic.user_email}</span>
+        <span>{formatDate(topic.created_at)}</span>
+      </div>
+
+      <div style={{ marginTop: 20 }}>
+        {tree?.map(comment => (
+          <CommentNode key={comment.id} comment={comment} />
+        ))}
+      </div>
+
+      <div style={styles.row} className="mobileRow">
+        <input
+          className="mobileInput"
+          placeholder="Escreva um comentário..."
+          value={commentInput[topic.id] || ''}
+          onChange={e =>
+            setCommentInput(prev => ({
+              ...prev,
+              [topic.id]: e.target.value
+            }))
+          }
+          style={styles.input}
+        />
+
+        <button
+          style={styles.mainBtn}
+          onClick={() => addComment(topic.id)}
+        >
+          enviar
+        </button>
+      </div>
+
+    </div>
+  );
+})}
       {showTopic && (
   <div style={styles.modal}>
     <div
