@@ -229,11 +229,11 @@ function buildTree(list, parentId = null, topicId = null) {
   parentId = parentId ? String(parentId) : null;
 
   return list
-    .filter(c =>
-      String(c.parent_id) === String(parentId) &&
-      String(c.topic_id) === String(topicId) &&
-      (c.status === 'approved' || canApprove(user || {}))
-    )
+  .filter(c =>
+  String(c.parent_id ?? null) === String(parentId ?? null) &&
+  String(c.topic_id ?? null) === String(topicId ?? null) &&
+  (c.status === 'approved' || canApprove(user))
+)
     .map(c => ({
       ...c,
       children: buildTree(list, c.id, topicId)
