@@ -34,13 +34,17 @@ const [showTopic, setShowTopic] = useState(false);
 async function load() {
 
   const { data: t, error: tError } = await supabase
-    .from('topicos')
-    .select(`
-      *,
-      categorias:categoria_id (
-        nome
-      )
-    `);
+  .from('topicos')
+  .select('*');
+
+const { data: cats } = await supabase
+  .from('categorias')
+  .select('*');
+
+const tFinal = (t || []).map(topic => ({
+  ...topic,
+  categorias: cats?.find(c => c.id === topic.categoria_id) || null
+}));
 
   const { data: c, error: cError } = await supabase
     .from('comentarios')
