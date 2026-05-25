@@ -404,7 +404,7 @@ async function createCategory() {
         </button>
       </div>
 
-      {visibleTopics.map(topic => {
+      {visibleTopics?.map(topic => (
         const tree = commentTrees[topic.id] || [];
 
         return (
@@ -448,7 +448,7 @@ async function createCategory() {
             </div>
 
             <div style={{ marginTop: 20 }}>
-              {tree.map(comment => (
+              {tree?.map(comment => (
                 <CommentNode
                   key={comment.id}
                   comment={comment}
@@ -548,7 +548,7 @@ async function createCategory() {
         overflowY: 'auto'
       }}
     >
-      {categories.map(cat => (
+      {categories?.map(cat => (
         <div
           key={cat.id}
           onClick={() => {
