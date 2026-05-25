@@ -44,11 +44,10 @@ export default function Base() {
   .eq('status', 'approved')
   .order('id', { ascending: false });
 
-    const { data: c } = await supabase
-  .from('comentarios')
-  .select('*')
-  .eq('status', 'approved')
-  .order('id', { ascending: true });
+const { data: c } = await supabase
+.from('comentarios')
+.select('*')
+.order('id', { ascending: true });
 
     setTopics(t || []);
     setComments(c || []);
@@ -231,7 +230,7 @@ function buildTree(list, parentId = null, topicId = null) {
     .filter(c =>
       c.parent_id === parentId &&
       String(c.topic_id) === String(topicId) &&
-      (c.status === 'approved' || canApprove(user))
+     (c.status === 'approved' || canApprove(user || {}))
     )
     .map(c => ({
       ...c,
