@@ -360,7 +360,7 @@ function buildTree(list, parentId = null, topicId = null) {
           {comment.children?.length > 0 && (
             <div>
               {comment.children.map(child => (
-                <Node
+                <CommentNode
                   key={child.id}
                   comment={child}
                   level={level + 1}
@@ -412,23 +412,17 @@ function buildTree(list, parentId = null, topicId = null) {
 
       </div>
 
-      {visibleTopics.map(topic => {
-
-        const tree = useMemo(() => {
-  return buildTree(comments, null, topic.id);
-}, [comments, topic.id]);
-
-        return (
-          <div key={topic.id} style={styles.card}>
-
-            <div style={styles.header}>
-              <div>
-                <h2 style={styles.title}>{topic.titulo}</h2>
-
-                <div style={styles.category}>
-                  {topic.categorias?.nome}
-                </div>
-              </div>
+     function buildTree(list, parentId = null, topicId = null) {
+  return list
+    .filter(c =>
+      String(c.parent_id ?? null) === String(parentId ?? null) &&
+      String(c.topic_id ?? null) === String(topicId ?? null)
+    )
+    .map(c => ({
+      ...c,
+      children: buildTree(list, c.id, topicId)
+    }));
+}
 
               <button
                 style={styles.smallBtnDanger}
