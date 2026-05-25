@@ -278,17 +278,14 @@ function buildTree(list, parentId = null, topicId = null) {
     return new Date(date).toLocaleString('pt-BR');
   }
 
-  const CommentNode = useMemo(() => {
-
-    function Node({ comment, level = 0 }) {
-
-      return (
-        <div
-          style={{
-            ...styles.commentBox,
-            marginLeft: level * 25
-          }}
-        >
+   function CommentNode({ comment, level = 0 }) {
+  return (
+    <div
+      style={{
+        ...styles.commentBox,
+        marginLeft: level * 25
+      }}
+    >
 
           <div style={styles.commentMeta}>
             <span>{comment.user_email || 'Usuário'}</span>
