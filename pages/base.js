@@ -352,13 +352,6 @@ async function createCategory() {
   + Nova Categoria
 </button>
 
-<button
-  style={styles.smallBtnDanger}
-  onClick={deleteCategory}
->
-  Excluir Categoria
-</button>
-
         <button
           style={styles.smallBtnDanger}
           onClick={deleteCategory}
