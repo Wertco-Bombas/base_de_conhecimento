@@ -56,8 +56,7 @@ useEffect(() => {
   load();
 }, []);
 
-  async function load() {
-   async function load() {
+async function load() {
   const { data: t, error: e1 } = await supabase
     .from('topicos')
     .select('*');
