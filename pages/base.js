@@ -35,7 +35,12 @@ export default function Base() {
 
     const { data: t } = await supabase
       .from('topicos')
-      .select('*')
+      .select(`
+        *,
+        categorias (
+          nome
+        )
+      `)
       .order('id', { ascending: false });
 
     const { data: c } = await supabase
@@ -48,6 +53,11 @@ export default function Base() {
   }
 
   async function createTopic() {
+
+    if (!user) {
+      alert('Faça login');
+      return;
+    }
 
     if (!newTopic || !newCat) {
       alert('Preencha título e categoria');
@@ -90,6 +100,11 @@ export default function Base() {
   }
 
   async function addComment(topicId, parentId = null, texto = null) {
+
+    if (!user) {
+      alert('Faça login');
+      return;
+    }
 
     const text = texto || commentInput[topicId];
 
@@ -213,7 +228,8 @@ export default function Base() {
     return list
       .filter(c =>
         c.parent_id === parentId &&
-        c.topic_id === topicId
+        c.topic_id === topicId &&
+        (c.status === 'approved' || canApprove(user))
       )
       .map(c => ({
         ...c,
@@ -226,7 +242,7 @@ export default function Base() {
     return topics.filter(t => {
 
       const topicMatch =
-        `${t.titulo} ${t.descricao} ${t.categoria}`
+        `${t.titulo} ${t.descricao} ${t.categorias?.nome || ''}`
           .toLowerCase()
           .includes(q.toLowerCase());
 
@@ -352,7 +368,7 @@ export default function Base() {
 
     return Node;
 
-  }, [replyInput]);
+  }, [replyInput, user]);
 
   return (
     <Layout>
@@ -399,7 +415,10 @@ export default function Base() {
             <div style={styles.header}>
               <div>
                 <h2 style={styles.title}>{topic.titulo}</h2>
-                <div style={styles.category}>{topic.categoria}</div>
+
+                <div style={styles.category}>
+                  {topic.categorias?.nome}
+                </div>
               </div>
 
               <button
@@ -454,7 +473,10 @@ export default function Base() {
       {showTopic && (
         <div style={styles.modal}>
           <div style={styles.modalBox}>
-            <h2 style={{ color: '#FFD600' }}>Novo Tópico</h2>
+
+            <h2 style={{ color: '#FFD600' }}>
+              Novo Tópico
+            </h2>
 
             <input
               style={styles.input}
@@ -500,23 +522,161 @@ export default function Base() {
 }
 
 const styles = {
-  topBar: { display: 'flex', gap: 10, marginBottom: 20, flexWrap: 'wrap' },
-  search: { width: '100%', padding: 14, borderRadius: 14, border: '1px solid #2a2a2a', background: '#0b0b0b', color: '#fff', marginBottom: 20, fontSize: 15, outline: 'none' },
-  card: { background: '#111', border: '1px solid #222', borderRadius: 18, padding: 20, marginBottom: 18, color: '#fff', boxShadow: '0 0 20px rgba(0,0,0,0.4)' },
-  header: { display: 'flex', justifyContent: 'space-between', alignItems: 'center' },
-  title: { margin: 0, fontSize: 24 },
-  category: { display: 'inline-block', marginTop: 8, background: '#FFD600', color: '#000', padding: '5px 10px', borderRadius: 999, fontSize: 12, fontWeight: 'bold' },
-  desc: { color: '#bbb', marginTop: 16, lineHeight: 1.6 },
-  meta: { display: 'flex', justifyContent: 'space-between', marginTop: 16, color: '#777', fontSize: 12 },
-  row: { display: 'flex', gap: 10, marginTop: 20 },
-  input: { flex: 1, background: '#0b0b0b', border: '1px solid #2a2a2a', borderRadius: 12, padding: 12, color: '#fff', outline: 'none' },
-  mainBtn: { background: '#FFD600', color: '#000', border: 'none', borderRadius: 12, padding: '12px 18px', fontWeight: 'bold', cursor: 'pointer' },
-  smallBtn: { background: 'transparent', border: '1px solid #FFD600', color: '#FFD600', padding: '6px 10px', borderRadius: 10, cursor: 'pointer' },
-  smallBtnDanger: { background: 'transparent', border: '1px solid #ff4d4d', color: '#ff4d4d', padding: '6px 10px', borderRadius: 10, cursor: 'pointer' },
-  commentBox: { marginTop: 16, padding: 12, borderLeft: '2px solid #FFD600', background: '#0d0d0d', borderRadius: 10 },
-  commentMeta: { display: 'flex', justifyContent: 'space-between', color: '#888', fontSize: 11 },
-  commentText: { marginTop: 8, color: '#eee', lineHeight: 1.5 },
-  commentActions: { display: 'flex', gap: 8, marginTop: 10 },
-  modal: { position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.85)', display: 'flex', justifyContent: 'center', alignItems: 'center', zIndex: 999 },
-  modalBox: { width: 450, background: '#111', border: '1px solid '#FFD600', borderRadius: 18, padding: 24, display: 'flex', flexDirection: 'column', gap: 14 }
+
+  topBar: {
+    display: 'flex',
+    gap: 10,
+    marginBottom: 20,
+    flexWrap: 'wrap'
+  },
+
+  search: {
+    width: '100%',
+    padding: 14,
+    borderRadius: 14,
+    border: '1px solid #2a2a2a',
+    background: '#0b0b0b',
+    color: '#fff',
+    marginBottom: 20,
+    fontSize: 15,
+    outline: 'none'
+  },
+
+  card: {
+    background: '#111',
+    border: '1px solid #222',
+    borderRadius: 18,
+    padding: 20,
+    marginBottom: 18,
+    color: '#fff',
+    boxShadow: '0 0 20px rgba(0,0,0,0.4)'
+  },
+
+  header: {
+    display: 'flex',
+    justifyContent: 'space-between',
+    alignItems: 'center'
+  },
+
+  title: {
+    margin: 0,
+    fontSize: 24
+  },
+
+  category: {
+    display: 'inline-block',
+    marginTop: 8,
+    background: '#FFD600',
+    color: '#000',
+    padding: '5px 10px',
+    borderRadius: 999,
+    fontSize: 12,
+    fontWeight: 'bold'
+  },
+
+  desc: {
+    color: '#bbb',
+    marginTop: 16,
+    lineHeight: 1.6
+  },
+
+  meta: {
+    display: 'flex',
+    justifyContent: 'space-between',
+    marginTop: 16,
+    color: '#777',
+    fontSize: 12
+  },
+
+  row: {
+    display: 'flex',
+    gap: 10,
+    marginTop: 20
+  },
+
+  input: {
+    flex: 1,
+    background: '#0b0b0b',
+    border: '1px solid #2a2a2a',
+    borderRadius: 12,
+    padding: 12,
+    color: '#fff',
+    outline: 'none'
+  },
+
+  mainBtn: {
+    background: '#FFD600',
+    color: '#000',
+    border: 'none',
+    borderRadius: 12,
+    padding: '12px 18px',
+    fontWeight: 'bold',
+    cursor: 'pointer'
+  },
+
+  smallBtn: {
+    background: 'transparent',
+    border: '1px solid #FFD600',
+    color: '#FFD600',
+    padding: '6px 10px',
+    borderRadius: 10,
+    cursor: 'pointer'
+  },
+
+  smallBtnDanger: {
+    background: 'transparent',
+    border: '1px solid #ff4d4d',
+    color: '#ff4d4d',
+    padding: '6px 10px',
+    borderRadius: 10,
+    cursor: 'pointer'
+  },
+
+  commentBox: {
+    marginTop: 16,
+    padding: 12,
+    borderLeft: '2px solid #FFD600',
+    background: '#0d0d0d',
+    borderRadius: 10
+  },
+
+  commentMeta: {
+    display: 'flex',
+    justifyContent: 'space-between',
+    color: '#888',
+    fontSize: 11
+  },
+
+  commentText: {
+    marginTop: 8,
+    color: '#eee',
+    lineHeight: 1.5
+  },
+
+  commentActions: {
+    display: 'flex',
+    gap: 8,
+    marginTop: 10
+  },
+
+  modal: {
+    position: 'fixed',
+    inset: 0,
+    background: 'rgba(0,0,0,0.85)',
+    display: 'flex',
+    justifyContent: 'center',
+    alignItems: 'center',
+    zIndex: 999
+  },
+
+  modalBox: {
+    width: 450,
+    background: '#111',
+    border: '1px solid #FFD600',
+    borderRadius: 18,
+    padding: 24,
+    display: 'flex',
+    flexDirection: 'column',
+    gap: 14
+  }
 };
