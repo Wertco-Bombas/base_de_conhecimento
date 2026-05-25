@@ -226,18 +226,19 @@ const { data: c } = await supabase
 
 function buildTree(list, parentId = null, topicId = null) {
 
+  parentId = parentId ? String(parentId) : null;
+
   return list
     .filter(c =>
-      c.parent_id === parentId &&
+      String(c.parent_id) === String(parentId) &&
       String(c.topic_id) === String(topicId) &&
-     (c.status === 'approved' || canApprove(user || {}))
+      (c.status === 'approved' || canApprove(user || {}))
     )
     .map(c => ({
       ...c,
       children: buildTree(list, c.id, topicId)
     }));
 }
-
   const filteredTopics = useMemo(() => {
 
     return topics.filter(t => {
