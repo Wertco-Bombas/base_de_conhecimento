@@ -73,16 +73,6 @@ async function load() {
     console.error(e1 || e2 || e3);
   }
 
-  const tFinal = (t || []).map(topic => ({
-    ...topic,
-    categorias: cats?.find(c => c.id === topic.categoria_id) || null
-  }));
-
-  setTopics(tFinal || []);
-  setComments(c || []);
-  setCategories(cats || []);
-} 
-
     const tFinal = (t || []).map(topic => ({
       ...topic,
       categorias: cats?.find(c => c.id === topic.categoria_id) || null
