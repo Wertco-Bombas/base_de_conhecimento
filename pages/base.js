@@ -5,7 +5,6 @@ import { canApprove } from '../lib/permissions';
 
 export default function Base() {
   const [user, setUser] = useState(null);
-
   const [topics, setTopics] = useState([]);
   const [comments, setComments] = useState([]);
 
@@ -28,22 +27,14 @@ export default function Base() {
   }, []);
 
   async function load() {
-    const { data: t, error: tError } = await supabase
-      .from('topicos')
-      .select('*');
-
-    const { data: cats } = await supabase
-      .from('categorias')
-      .select('*');
+    const { data: t } = await supabase.from('topicos').select('*');
+    const { data: cats } = await supabase.from('categorias').select('*');
+    const { data: c } = await supabase.from('comentarios').select('*');
 
     const tFinal = (t || []).map(topic => ({
       ...topic,
       categorias: cats?.find(c => c.id === topic.categoria_id) || null
     }));
-
-    const { data: c, error: cError } = await supabase
-      .from('comentarios')
-      .select('*');
 
     setTopics(tFinal || []);
     setComments(c || []);
@@ -188,9 +179,9 @@ export default function Base() {
         (c.status === 'approved' || canApprove(user))
       )
       .map(c => ({
-  ...c,
-  children: buildTree(list, c.id, topicId) || []
-}));
+        ...c,
+        children: buildTree(list, c.id, topicId) || []
+      }));
   }
 
   const filteredTopics = useMemo(() => {
@@ -221,52 +212,28 @@ export default function Base() {
   }
 
   function CommentNode({ comment, level = 0 }) {
-  return (
-    <div style={{ ...styles.commentBox, marginLeft: level * 25 }}>
-      <div style={styles.commentMeta}>
-        <span>{comment.user_email || 'Usuário'}</span>
-        <span>{formatDate(comment.created_at)}</span>
-      </div>
-
-      <div style={styles.commentText}>
-        💬 {comment.texto}
-      </div>
-
-      <div style={styles.commentActions}>
-        <button
-          style={styles.smallBtn}
-          onClick={() =>
-            setReplyInput(prev => ({
-              ...prev,
-              [comment.id]: prev[comment.id] ?? ''
-            }))
-          }
-        >
-          responder
-        </button>
-
-        <button
-          style={styles.smallBtnDanger}
-          onClick={() => deleteComment(comment.id)}
-        >
-          excluir
-        </button>
-      </div>
-
-      {comment.children?.length > 0 && (
-        <div>
-          {comment.children.map(child => (
-            <CommentNode
-              key={child.id}
-              comment={child}
-              level={level + 1}
-            />
-          ))}
+    return (
+      <div style={{ ...styles.commentBox, marginLeft: level * 25 }}>
+        <div style={styles.commentMeta}>
+          <span>{comment.user_email || 'Usuário'}</span>
+          <span>{formatDate(comment.created_at)}</span>
         </div>
-      )}
-    </div>
-  );
-}
+
+        <div style={styles.commentText}>
+          💬 {comment.texto}
+        </div>
+
+        <div style={styles.commentActions}>
+          <button
+            style={styles.smallBtn}
+            onClick={() =>
+              setReplyInput(prev => ({
+                ...prev,
+                [comment.id]: prev[comment.id] ?? ''
+              }))
+            }
+          >
+            responder
           </button>
 
           <button
@@ -280,11 +247,7 @@ export default function Base() {
         {comment.children?.length > 0 && (
           <div>
             {comment.children.map(child => (
-              <CommentNode
-                key={child.id}
-                comment={child}
-                level={level + 1}
-              />
+              <CommentNode key={child.id} comment={child} level={level + 1} />
             ))}
           </div>
         )}
@@ -412,135 +375,23 @@ export default function Base() {
 }
 
 const styles = {
-  topBar: {
-    display: 'flex',
-    gap: 10,
-    marginBottom: 20,
-    flexWrap: 'wrap'
-  },
-  search: {
-    width: '100%',
-    padding: 14,
-    borderRadius: 14,
-    border: '1px solid #2a2a2a',
-    background: '#0b0b0b',
-    color: '#fff',
-    marginBottom: 20,
-    fontSize: 15,
-    outline: 'none'
-  },
-  card: {
-    background: '#111',
-    border: '1px solid #222',
-    borderRadius: 18,
-    padding: 20,
-    marginBottom: 18,
-    color: '#fff',
-    boxShadow: '0 0 20px rgba(0,0,0,0.4)'
-  },
-  header: {
-    display: 'flex',
-    justifyContent: 'space-between',
-    alignItems: 'center'
-  },
+  topBar: { display: 'flex', gap: 10, marginBottom: 20, flexWrap: 'wrap' },
+  search: { width: '100%', padding: 14, borderRadius: 14, border: '1px solid #2a2a2a', background: '#0b0b0b', color: '#fff', marginBottom: 20 },
+  card: { background: '#111', border: '1px solid #222', borderRadius: 18, padding: 20, marginBottom: 18, color: '#fff' },
+  header: { display: 'flex', justifyContent: 'space-between', alignItems: 'center' },
   title: { margin: 0, fontSize: 24 },
-  category: {
-    display: 'inline-block',
-    marginTop: 8,
-    background: '#FFD600',
-    color: '#000',
-    padding: '5px 10px',
-    borderRadius: 999,
-    fontSize: 12,
-    fontWeight: 'bold'
-  },
-  desc: { color: '#bbb', marginTop: 16, lineHeight: 1.6 },
-  meta: {
-    display: 'flex',
-    justifyContent: 'space-between',
-    marginTop: 16,
-    color: '#777',
-    fontSize: 12
-  },
-  row: {
-    display: 'flex',
-    gap: 10,
-    marginTop: 20
-  },
-  input: {
-    flex: 1,
-    background: '#0b0b0b',
-    border: '1px solid #2a2a2a',
-    borderRadius: 12,
-    padding: 12,
-    color: '#fff',
-    outline: 'none'
-  },
-  mainBtn: {
-    background: '#FFD600',
-    color: '#000',
-    border: 'none',
-    borderRadius: 12,
-    padding: '12px 18px',
-    fontWeight: 'bold',
-    cursor: 'pointer'
-  },
-  smallBtn: {
-    background: 'transparent',
-    border: '1px solid #FFD600',
-    color: '#FFD600',
-    padding: '6px 10px',
-    borderRadius: 10,
-    cursor: 'pointer'
-  },
-  smallBtnDanger: {
-    background: 'transparent',
-    border: '1px solid #ff4d4d',
-    color: '#ff4d4d',
-    padding: '6px 10px',
-    borderRadius: 10,
-    cursor: 'pointer'
-  },
-  commentBox: {
-    marginTop: 16,
-    padding: 12,
-    borderLeft: '2px solid #FFD600',
-    background: '#0d0d0d',
-    borderRadius: 10
-  },
-  commentMeta: {
-    display: 'flex',
-    justifyContent: 'space-between',
-    color: '#888',
-    fontSize: 11
-  },
-  commentText: {
-    marginTop: 8,
-    color: '#eee',
-    lineHeight: 1.5
-  },
-  commentActions: {
-    display: 'flex',
-    gap: 8,
-    marginTop: 10
-  },
-  modal: {
-    position: 'fixed',
-    inset: 0,
-    background: 'rgba(0,0,0,0.85)',
-    display: 'flex',
-    justifyContent: 'center',
-    alignItems: 'center',
-    zIndex: 999
-  },
-  modalBox: {
-    width: 450,
-    background: '#111',
-    border: '1px solid #FFD600',
-    borderRadius: 18,
-    padding: 24,
-    display: 'flex',
-    flexDirection: 'column',
-    gap: 14
-  }
+  category: { display: 'inline-block', marginTop: 8, background: '#FFD600', color: '#000', padding: '5px 10px', borderRadius: 999 },
+  desc: { color: '#bbb', marginTop: 16 },
+  meta: { display: 'flex', justifyContent: 'space-between', marginTop: 16, color: '#777' },
+  row: { display: 'flex', gap: 10, marginTop: 20 },
+  input: { flex: 1, background: '#0b0b0b', border: '1px solid #2a2a2a', borderRadius: 12, padding: 12, color: '#fff' },
+  mainBtn: { background: '#FFD600', color: '#000', border: 'none', borderRadius: 12, padding: '12px 18px' },
+  smallBtn: { background: 'transparent', border: '1px solid #FFD600', color: '#FFD600', padding: '6px 10px' },
+  smallBtnDanger: { background: 'transparent', border: '1px solid #ff4d4d', color: '#ff4d4d', padding: '6px 10px' },
+  commentBox: { marginTop: 16, padding: 12, borderLeft: '2px solid #FFD600', background: '#0d0d0d', borderRadius: 10 },
+  commentMeta: { display: 'flex', justifyContent: 'space-between', color: '#888', fontSize: 11 },
+  commentText: { marginTop: 8, color: '#eee' },
+  commentActions: { display: 'flex', gap: 8, marginTop: 10 },
+  modal: { position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.85)', display: 'flex', justifyContent: 'center', alignItems: 'center' },
+  modalBox: { width: 450, background: '#111', border: '1px solid #FFD600', borderRadius: 18, padding: 24 }
 };
