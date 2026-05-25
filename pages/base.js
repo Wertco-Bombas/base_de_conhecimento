@@ -45,9 +45,9 @@ export default function Base() {
   .order('id', { ascending: false });
 
 const { data: c } = await supabase
-.from('comentarios')
-.select('*')
-.order('id', { ascending: true });
+  .from('comentarios')
+  .select('*')
+  .order('id', { ascending: true });
 
     setTopics(t || []);
     setComments(c || []);
