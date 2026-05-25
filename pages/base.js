@@ -31,27 +31,27 @@ export default function Base() {
 
   }, []);
 
-  async function load() {
+async function load() {
 
   const { data: t } = await supabase
-  .from('topicos')
-  .select(`
-    *,
-    categorias (
-      nome
-    )
-  `)
-  .eq('status', 'approved')
-  .order('id', { ascending: false });
+    .from('topicos')
+    .select(`
+      *,
+      categorias (
+        nome
+      )
+    `);
 
-const { data: c } = await supabase
-  .from('comentarios')
-  .select('*')
-  .order('id', { ascending: true });
+  const { data: c } = await supabase
+    .from('comentarios')
+    .select('*');
 
-    setTopics(t || []);
-    setComments(c || []);
-  }
+  console.log('TOPICS:', t);
+  console.log('COMMENTS:', c);
+
+  setTopics(t || []);
+  setComments(c || []);
+}
 
   async function createTopic() {
 
