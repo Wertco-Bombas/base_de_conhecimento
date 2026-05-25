@@ -33,7 +33,7 @@ export default function Base() {
 
 async function load() {
 
-  const { data: t } = await supabase
+  const { data: t, error: tError } = await supabase
     .from('topicos')
     .select(`
       *,
@@ -42,12 +42,15 @@ async function load() {
       )
     `);
 
-  const { data: c } = await supabase
+  const { data: c, error: cError } = await supabase
     .from('comentarios')
     .select('*');
 
   console.log('TOPICS:', t);
+  console.log('TOPICS ERROR:', tError);
+
   console.log('COMMENTS:', c);
+  console.log('COMMENTS ERROR:', cError);
 
   setTopics(t || []);
   setComments(c || []);
