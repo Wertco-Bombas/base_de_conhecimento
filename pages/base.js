@@ -27,16 +27,16 @@ const [showCategorySelector, setShowCategorySelector] = useState(false);
   const [newDesc, setNewDesc] = useState('');
   const [newCat, setNewCat] = useState('');
 
- useEffect(() => {
+useEffect(() => {
   async function init() {
     const { data } = await supabase.auth.getUser();
-    const currentUser = data?.user || null;
+    const currentUser = data?.user;
 
-    setUser(currentUser);
+    setUser(currentUser || null);
 
     if (!currentUser) return;
 
-    // 🔥 garante que existe profile
+    // 👇 AQUI entra o seu código de profiles
     const { data: existing } = await supabase
       .from('profiles')
       .select('*')
@@ -50,15 +50,11 @@ const [showCategorySelector, setShowCategorySelector] = useState(false);
         role: 'usuario'
       });
     }
-
-    load();
   }
 
   init();
+  load();
 }, []);
-
-    load();
-  }, []);
 
   async function load() {
     const { data: t } = await supabase.from('topicos').select('*');
