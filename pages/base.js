@@ -329,12 +329,13 @@ function buildTree(list, parentId = null, topicId = null) {
                 style={styles.input}
                 placeholder="Escreva sua resposta..."
                 value={replyInput[comment.id] || ''}
-                onChange={(e) =>
-                  setReplyInput(prev => ({
-                    ...prev,
-                    [comment.id]: e.target.value
-                  }))
-                }
+               onChange={(e) => {
+  const value = e.target.value;
+  setReplyInput(prev => ({
+    ...prev,
+    [comment.id]: value
+  }));
+}}
               />
 
               <button
@@ -377,7 +378,7 @@ function buildTree(list, parentId = null, topicId = null) {
 
     return Node;
 
-  }, [replyInput, user]);
+  }, [user]);
 
   return (
     <Layout>
@@ -416,7 +417,9 @@ function buildTree(list, parentId = null, topicId = null) {
 
       {visibleTopics.map(topic => {
 
-        const tree = buildTree(comments, null, topic.id);
+        const tree = useMemo(() => {
+  return buildTree(comments, null, topic.id);
+}, [comments, topic.id]);
 
         return (
           <div key={topic.id} style={styles.card}>
