@@ -596,17 +596,17 @@ const styles = {
     marginTop: 20
   },
 
-  input: {
-    flex: 1,
-    background: '#0b0b0b',
-    border: '1px solid #2a2a2a',
-    borderRadius: 12,
-    padding: 12,
-    color: '#fff',
-    outline: 'none'
-     boxShadow: 'none',
+ input: {
+  flex: 1,
+  background: '#0b0b0b',
+  border: '1px solid #2a2a2a',
+  borderRadius: 12,
+  padding: 12,
+  color: '#fff',
+  outline: 'none',
+  boxShadow: 'none',
   resize: 'vertical'
-  },
+},
 
   mainBtn: {
     background: '#FFD600',
