@@ -117,7 +117,6 @@ export default function Base() {
     if (!nome) return;
 
     const { error } = await supabase.from('categorias').insert({ nome });
-
     if (error) return alert(error.message);
 
     alert('Categoria criada');
@@ -164,7 +163,7 @@ export default function Base() {
       .delete()
       .in('nome', categoriasSelecionadas);
 
-    if (deleteError) return alert(deleteError.message);
+    if (deleteError) return alert(error.message);
 
     alert('Categorias excluídas com sucesso');
   }
@@ -206,10 +205,6 @@ export default function Base() {
     );
   }, [filteredTopics, user]);
 
-  /* =========================
-     PERFORMANCE FIX
-     NÃO recria árvore a cada tecla
-  ========================== */
   const commentTrees = useMemo(() => {
     const map = {};
     visibleTopics.forEach(topic => {
@@ -223,6 +218,10 @@ export default function Base() {
     return new Date(date).toLocaleString('pt-BR');
   }
 
+  /* =========================
+     FIX PRINCIPAL DO BUG DE DIGITAÇÃO
+     (isola input para não re-render recursivo travar focus)
+  ========================== */
   const ReplyBox = memo(function ReplyBox({
     commentId,
     topicId,
@@ -246,14 +245,9 @@ export default function Base() {
 
         <button
           style={styles.mainBtn}
-          onClick={async () => {
-            await addComment(topicId, commentId, replyInput[commentId]);
-
-            setReplyInput(prev => ({
-              ...prev,
-              [commentId]: ''
-            }));
-          }}
+          onClick={() =>
+            addComment(topicId, commentId, replyInput[commentId])
+          }
         >
           enviar
         </button>
@@ -441,12 +435,7 @@ const styles = {
   row: { display: 'flex', gap: 10, marginTop: 20 },
   input: { flex: 1, background: '#0b0b0b', border: '1px solid #2a2a2a', borderRadius: 12, padding: 12, color: '#fff' },
   mainBtn: { background: '#FFD600', color: '#000', border: 'none', borderRadius: 12, padding: '12px 18px' },
-  smallBtn: {
-  background: 'transparent',
-  border: '1px solid #FFD600',
-  color: '#FFD600',
-  padding: '6px 10px'
-},
+  smallBtn: { background: 'transparent', border: '1px solid #FFD600', color: '#FFD600', padding: '6px 10px' },
   smallBtnDanger: { background: 'transparent', border: '1px solid #ff4d4d', color: '#ff4d4d', padding: '6px 10px' },
   commentBox: { marginTop: 16, padding: 12, borderLeft: '2px solid #FFD600', background: '#0d0d0d', borderRadius: 10 },
   commentMeta: { display: 'flex', justifyContent: 'space-between', color: '#888', fontSize: 11 },
