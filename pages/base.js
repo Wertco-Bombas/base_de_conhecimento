@@ -222,39 +222,34 @@ export default function Base() {
      FIX PRINCIPAL DO BUG DE DIGITAÇÃO
      (isola input para não re-render recursivo travar focus)
   ========================== */
-  const ReplyBox = memo(function ReplyBox({
-    commentId,
-    topicId,
-    replyInput,
-    setReplyInput,
-    addComment
-  }) {
-    return (
-      <div style={{ marginTop: 10, display: 'flex', gap: 8 }}>
-        <input
-          style={styles.input}
-          placeholder="Responder comentário..."
-          value={replyInput[commentId] || ''}
-          onChange={(e) =>
-            setReplyInput(prev => ({
-              ...prev,
-              [commentId]: e.target.value
-            }))
-          }
-        />
+ const ReplyBox = memo(function ReplyBox({
+  commentId,
+  topicId,
+  addComment
+}) {
+  const [localText, setLocalText] = useState('');
 
-        <button
-          style={styles.mainBtn}
-          onClick={() =>
-            addComment(topicId, commentId, replyInput[commentId])
-          }
-        >
-          enviar
-        </button>
-      </div>
-    );
-  });
+  return (
+    <div style={{ marginTop: 10, display: 'flex', gap: 8 }}>
+      <input
+        style={styles.input}
+        placeholder="Responder comentário..."
+        value={localText}
+        onChange={(e) => setLocalText(e.target.value)}
+      />
 
+      <button
+        style={styles.mainBtn}
+        onClick={async () => {
+          await addComment(topicId, commentId, localText);
+          setLocalText('');
+        }}
+      >
+        enviar
+      </button>
+    </div>
+  );
+});
   const CommentNode = memo(function CommentNode({ comment, level = 0 }) {
     return (
       <div style={{ ...styles.commentBox, marginLeft: level * 25 }}>
