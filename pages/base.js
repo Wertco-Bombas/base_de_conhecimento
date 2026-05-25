@@ -404,10 +404,12 @@ async function createCategory() {
         </button>
       </div>
 
-      {visibleTopics?.map(topic => (
-        const tree = commentTrees[topic.id] || [];
+     {visibleTopics?.map(topic => {
 
-        return (
+  const tree = commentTrees[topic.id] || [];
+
+  return (
+    <div key={topic.id}>
           <div
             key={topic.id}
             style={styles.card}
