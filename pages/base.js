@@ -33,20 +33,22 @@ export default function Base() {
 
   async function load() {
 
-    const { data: t } = await supabase
-      .from('topicos')
-      .select(`
-        *,
-        categorias (
-          nome
-        )
-      `)
-      .order('id', { ascending: false });
+  const { data: t } = await supabase
+  .from('topicos')
+  .select(`
+    *,
+    categorias (
+      nome
+    )
+  `)
+  .eq('status', 'approved')
+  .order('id', { ascending: false });
 
     const { data: c } = await supabase
-      .from('comentarios')
-      .select('*')
-      .order('id', { ascending: true });
+  .from('comentarios')
+  .select('*')
+  .eq('status', 'approved')
+  .order('id', { ascending: true });
 
     setTopics(t || []);
     setComments(c || []);
