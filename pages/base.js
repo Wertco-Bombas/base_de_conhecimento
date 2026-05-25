@@ -57,9 +57,32 @@ useEffect(() => {
 }, []);
 
   async function load() {
-    const { data: t } = await supabase.from('topicos').select('*');
-    const { data: cats } = await supabase.from('categorias').select('*');
-    const { data: c } = await supabase.from('comentarios').select('*');
+   async function load() {
+  const { data: t, error: e1 } = await supabase
+    .from('topicos')
+    .select('*');
+
+  const { data: cats, error: e2 } = await supabase
+    .from('categorias')
+    .select('*');
+
+  const { data: c, error: e3 } = await supabase
+    .from('comentarios')
+    .select('*');
+
+  if (e1 || e2 || e3) {
+    console.error(e1 || e2 || e3);
+  }
+
+  const tFinal = (t || []).map(topic => ({
+    ...topic,
+    categorias: cats?.find(c => c.id === topic.categoria_id) || null
+  }));
+
+  setTopics(tFinal || []);
+  setComments(c || []);
+  setCategories(cats || []);
+}
 
     const tFinal = (t || []).map(topic => ({
       ...topic,
