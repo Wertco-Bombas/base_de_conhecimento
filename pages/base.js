@@ -229,7 +229,7 @@ export default function Base() {
                 ...prev,
                 [comment.id]: prev[comment.id] ?? ''
               }))
-            });
+            }
           >
             responder
           </button>
@@ -282,7 +282,7 @@ export default function Base() {
           ))}
       </div>
     );
-  }
+  });
 
   return (
     <Layout>
