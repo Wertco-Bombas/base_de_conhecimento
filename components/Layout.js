@@ -196,55 +196,5 @@ const styles = {
     borderRadius: 8
   }
 
-  {showDeleteCategory && (
-  <div style={styles.modal}>
-    <div style={{ ...styles.modalBox, width: '90%', maxWidth: 500 }}>
-      <h2 style={{ color: '#FFD600' }}>Excluir Categorias</h2>
 
-      <div
-        style={{
-          maxHeight: 300,
-          overflowY: 'auto',
-          display: 'flex',
-          flexDirection: 'column',
-          gap: 8
-        }}
-      >
-        {categories.map(cat => (
-          <div
-            key={cat.id}
-            onClick={() => toggleCategory(cat.nome)}
-            style={{
-              padding: 12,
-              borderRadius: 10,
-              cursor: 'pointer',
-              border: '1px solid #333',
-              background: selectedCategories.includes(cat.nome)
-                ? '#FFD600'
-                : '#111',
-              color: selectedCategories.includes(cat.nome)
-                ? '#000'
-                : '#fff'
-            }}
-          >
-            {cat.nome}
-          </div>
-        ))}
-      </div>
-
-      <div style={{ display: 'flex', gap: 10, marginTop: 15 }}>
-        <button style={styles.mainBtn} onClick={confirmDeleteCategories}>
-          excluir selecionadas
-        </button>
-
-        <button
-          style={styles.smallBtn}
-          onClick={() => setShowDeleteCategory(false)}
-        >
-          fechar
-        </button>
-      </div>
-    </div>
-  </div>
-)}
 };
