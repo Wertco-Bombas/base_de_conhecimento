@@ -1,4 +1,4 @@
-import { useEffect, useState, useMemo, memo } from 'react';
+import { useEffect, useState, useMemo, useCallback, memo } from 'react';
 import Layout from '../components/Layout';
 import { supabase } from '../lib/supabaseClient';
 import { canApprove } from '../lib/permissions';
@@ -40,37 +40,6 @@ export default function Base() {
     setComments(c || []);
   }
 
-  async function createTopic() {
-    if (!user) return alert('Faça login');
-    if (!newTopic || !newCat) return alert('Preencha título e categoria');
-
-    const { data: catData, error: catError } = await supabase
-      .from('categorias')
-      .select('id')
-      .eq('nome', newCat)
-      .single();
-
-    if (catError || !catData) return alert('Categoria não encontrada');
-
-    const { error } = await supabase.from('topicos').insert({
-      titulo: newTopic,
-      descricao: newDesc,
-      categoria_id: catData.id,
-      user_email: user?.email,
-      created_at: new Date().toISOString(),
-      status: canApprove(user) ? 'approved' : 'pending'
-    });
-
-    if (error) return alert(error.message);
-
-    setNewTopic('');
-    setNewDesc('');
-    setNewCat('');
-    setShowTopic(false);
-
-    load();
-  }
-
   async function addComment(topicId, parentId = null, texto = null) {
     if (!user) return alert('Faça login');
 
@@ -94,79 +63,6 @@ export default function Base() {
     }));
 
     load();
-  }
-
-  async function deleteTopic(id) {
-    const confirmar = confirm('Excluir tópico?');
-    if (!confirmar) return;
-
-    await supabase.from('topicos').delete().eq('id', id);
-    load();
-  }
-
-  async function deleteComment(id) {
-    const confirmar = confirm('Excluir comentário?');
-    if (!confirmar) return;
-
-    await supabase.from('comentarios').delete().eq('id', id);
-    load();
-  }
-
-  async function createCategory() {
-    const nome = prompt('Nome da categoria');
-    if (!nome) return;
-
-    const { error } = await supabase.from('categorias').insert({ nome });
-
-    if (error) return alert(error.message);
-
-    alert('Categoria criada');
-  }
-
-  async function deleteCategory() {
-    const { data, error } = await supabase
-      .from('categorias')
-      .select('*')
-      .order('nome');
-
-    if (error) return alert(error.message);
-    if (!data?.length) return alert('Nenhuma categoria cadastrada');
-
-    const lista = data.map((c, i) => `${i + 1} - ${c.nome}`).join('\n');
-
-    const resposta = prompt(
-      `Categorias disponíveis:\n\n${lista}\n\nDigite os números separados por vírgula.`
-    );
-
-    if (!resposta) return;
-
-    const indexes = resposta
-      .split(',')
-      .map(v => parseInt(v.trim()) - 1)
-      .filter(v => v >= 0);
-
-    const categoriasSelecionadas = indexes
-      .map(i => data[i]?.nome)
-      .filter(Boolean);
-
-    if (!categoriasSelecionadas.length) {
-      return alert('Nenhuma categoria válida selecionada');
-    }
-
-    const confirmar = confirm(
-      `Excluir categorias:\n\n${categoriasSelecionadas.join('\n')} ?`
-    );
-
-    if (!confirmar) return;
-
-    const { error: deleteError } = await supabase
-      .from('categorias')
-      .delete()
-      .in('nome', categoriasSelecionadas);
-
-    if (deleteError) return alert(deleteError.message);
-
-    alert('Categorias excluídas com sucesso');
   }
 
   function buildTree(list, parentId = null, topicId = null) {
@@ -206,62 +102,29 @@ export default function Base() {
     );
   }, [filteredTopics, user]);
 
-  /* =========================
-     PERFORMANCE FIX
-     NÃO recria árvore a cada tecla
-  ========================== */
-  const commentTrees = useMemo(() => {
-    const map = {};
-    visibleTopics.forEach(topic => {
-      map[topic.id] = buildTree(comments, null, topic.id);
-    });
-    return map;
-  }, [comments, visibleTopics]);
+  const openReply = useCallback((id) => {
+    setReplyInput(prev => ({
+      ...prev,
+      [id]: prev[id] ?? ''
+    }));
+  }, []);
+
+  const setReplyValue = useCallback((id, value) => {
+    setReplyInput(prev => ({
+      ...prev,
+      [id]: value
+    }));
+  }, []);
 
   function formatDate(date) {
     if (!date) return '';
     return new Date(date).toLocaleString('pt-BR');
   }
 
-  const ReplyBox = memo(function ReplyBox({
-    commentId,
-    topicId,
-    replyInput,
-    setReplyInput,
-    addComment
+  const CommentNode = memo(function CommentNode({
+    comment,
+    level = 0
   }) {
-    return (
-      <div style={{ marginTop: 10, display: 'flex', gap: 8 }}>
-        <input
-          style={styles.input}
-          placeholder="Responder comentário..."
-          value={replyInput[commentId] || ''}
-          onChange={(e) =>
-            setReplyInput(prev => ({
-              ...prev,
-              [commentId]: e.target.value
-            }))
-          }
-        />
-
-        <button
-          style={styles.mainBtn}
-          onClick={async () => {
-            await addComment(topicId, commentId, replyInput[commentId]);
-
-            setReplyInput(prev => ({
-              ...prev,
-              [commentId]: ''
-            }));
-          }}
-        >
-          enviar
-        </button>
-      </div>
-    );
-  });
-
-  const CommentNode = memo(function CommentNode({ comment, level = 0 }) {
     return (
       <div style={{ ...styles.commentBox, marginLeft: level * 25 }}>
         <div style={styles.commentMeta}>
@@ -274,38 +137,52 @@ export default function Base() {
         <div style={styles.commentActions}>
           <button
             style={styles.smallBtn}
-            onClick={() =>
-              setReplyInput(prev => ({
-                ...prev,
-                [comment.id]: prev[comment.id] ?? ''
-              }))
-            }
+            onClick={() => openReply(comment.id)}
           >
             responder
           </button>
 
           <button
             style={styles.smallBtnDanger}
-            onClick={() => deleteComment(comment.id)}
+            onClick={() =>
+              supabase.from('comentarios').delete().eq('id', comment.id).then(load)
+            }
           >
             excluir
           </button>
         </div>
 
         {replyInput[comment.id] !== undefined && (
-          <ReplyBox
-            commentId={comment.id}
-            topicId={comment.topic_id}
-            replyInput={replyInput}
-            setReplyInput={setReplyInput}
-            addComment={addComment}
-          />
+          <div style={{ marginTop: 10, display: 'flex', gap: 8 }}>
+            <input
+              style={styles.input}
+              value={replyInput[comment.id]}
+              onChange={(e) => setReplyValue(comment.id, e.target.value)}
+            />
+
+            <button
+              style={styles.mainBtn}
+              onClick={() => {
+                addComment(comment.topic_id, comment.id, replyInput[comment.id]);
+
+                setReplyInput(prev => ({
+                  ...prev,
+                  [comment.id]: ''
+                }));
+              }}
+            >
+              enviar
+            </button>
+          </div>
         )}
 
-        {comment.children?.length > 0 &&
-          comment.children.map(child => (
-            <CommentNode key={child.id} comment={child} level={level + 1} />
-          ))}
+        {comment.children?.map(child => (
+          <CommentNode
+            key={child.id}
+            comment={child}
+            level={level + 1}
+          />
+        ))}
       </div>
     );
   });
@@ -313,145 +190,51 @@ export default function Base() {
   return (
     <Layout>
       <input
-        placeholder="Buscar tópicos e comentários..."
         value={q}
         onChange={e => setQ(e.target.value)}
         style={styles.search}
       />
 
-      <div style={styles.topBar}>
-        <button style={styles.mainBtn} onClick={() => setShowTopic(true)}>
-          + Novo Tópico
-        </button>
-
-        <button style={styles.mainBtn} onClick={createCategory}>
-          + Nova Categoria
-        </button>
-
-        <button style={styles.smallBtnDanger} onClick={deleteCategory}>
-          Excluir Categoria
-        </button>
-      </div>
-
       {visibleTopics.map(topic => {
-        const tree = commentTrees[topic.id] || [];
+        const tree = buildTree(comments, null, topic.id);
 
         return (
           <div key={topic.id} style={styles.card}>
-            <div style={styles.header}>
-              <div>
-                <h2 style={styles.title}>{topic.titulo}</h2>
-                <div style={styles.category}>{topic.categorias?.nome}</div>
-              </div>
+            <h2>{topic.titulo}</h2>
 
-              <button
-                style={styles.smallBtnDanger}
-                onClick={() => deleteTopic(topic.id)}
-              >
-                excluir tópico
-              </button>
-            </div>
+            {tree.map(comment => (
+              <CommentNode key={comment.id} comment={comment} />
+            ))}
 
-            <p style={styles.desc}>{topic.descricao}</p>
+            <input
+              value={commentInput[topic.id] || ''}
+              onChange={e =>
+                setCommentInput(prev => ({
+                  ...prev,
+                  [topic.id]: e.target.value
+                }))
+              }
+              style={styles.input}
+            />
 
-            <div style={styles.meta}>
-              <span>{topic.user_email}</span>
-              <span>{formatDate(topic.created_at)}</span>
-            </div>
-
-            <div style={{ marginTop: 20 }}>
-              {tree.map(comment => (
-                <CommentNode key={comment.id} comment={comment} />
-              ))}
-            </div>
-
-            <div style={styles.row}>
-              <input
-                placeholder="Escreva um comentário..."
-                value={commentInput[topic.id] || ''}
-                onChange={e =>
-                  setCommentInput(prev => ({
-                    ...prev,
-                    [topic.id]: e.target.value
-                  }))
-                }
-                style={styles.input}
-              />
-
-              <button
-                style={styles.mainBtn}
-                onClick={() => addComment(topic.id)}
-              >
-                enviar
-              </button>
-            </div>
+            <button onClick={() => addComment(topic.id)}>
+              enviar
+            </button>
           </div>
         );
       })}
-
-      {showTopic && (
-        <div style={styles.modal}>
-          <div style={styles.modalBox}>
-            <h2 style={{ color: '#FFD600' }}>Novo Tópico</h2>
-
-            <input
-              style={styles.input}
-              placeholder="Título"
-              value={newTopic}
-              onChange={e => setNewTopic(e.target.value)}
-            />
-
-            <textarea
-              style={styles.input}
-              placeholder="Descrição"
-              value={newDesc}
-              onChange={e => setNewDesc(e.target.value)}
-            />
-
-            <input
-              style={styles.input}
-              placeholder="Categoria"
-              value={newCat}
-              onChange={e => setNewCat(e.target.value)}
-            />
-
-            <button style={styles.mainBtn} onClick={createTopic}>
-              salvar
-            </button>
-
-            <button style={styles.smallBtn} onClick={() => setShowTopic(false)}>
-              fechar
-            </button>
-          </div>
-        </div>
-      )}
     </Layout>
   );
 }
 
 const styles = {
-  topBar: { display: 'flex', gap: 10, marginBottom: 20, flexWrap: 'wrap' },
-  search: { width: '100%', padding: 14, borderRadius: 14, border: '1px solid #2a2a2a', background: '#0b0b0b', color: '#fff', marginBottom: 20 },
-  card: { background: '#111', border: '1px solid #222', borderRadius: 18, padding: 20, marginBottom: 18, color: '#fff' },
-  header: { display: 'flex', justifyContent: 'space-between', alignItems: 'center' },
-  title: { margin: 0, fontSize: 24 },
-  category: { display: 'inline-block', marginTop: 8, background: '#FFD600', color: '#000', padding: '5px 10px', borderRadius: 999 },
-  desc: { color: '#bbb', marginTop: 16 },
-  meta: { display: 'flex', justifyContent: 'space-between', marginTop: 16, color: '#777' },
-  row: { display: 'flex', gap: 10, marginTop: 20 },
-  input: { flex: 1, background: '#0b0b0b', border: '1px solid #2a2a2a', borderRadius: 12, padding: 12, color: '#fff' },
-  mainBtn: { background: '#FFD600', color: '#000', border: 'none', borderRadius: 12, padding: '12px 18px' },
-  smallBtn: {
-  background: 'transparent',
-  border: '1px solid #FFD600',
-  color: '#FFD600',
-  padding: '6px 10px'
-},
-  smallBtnDanger: { background: 'transparent', border: '1px solid #ff4d4d', color: '#ff4d4d', padding: '6px 10px' },
-  commentBox: { marginTop: 16, padding: 12, borderLeft: '2px solid #FFD600', background: '#0d0d0d', borderRadius: 10 },
-  commentMeta: { display: 'flex', justifyContent: 'space-between', color: '#888', fontSize: 11 },
-  commentText: { marginTop: 8, color: '#eee' },
-  commentActions: { display: 'flex', gap: 8, marginTop: 10 },
-  modal: { position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.85)', display: 'flex', justifyContent: 'center', alignItems: 'center' },
-  modalBox: { width: 450, background: '#111', border: '1px solid #FFD600', borderRadius: 18, padding: 24 }
+  search: { padding: 12 },
+  card: { padding: 20, border: '1px solid #333', marginBottom: 20 },
+  input: { padding: 10, width: '100%' },
+  smallBtn: { marginRight: 8 },
+  smallBtnDanger: { color: 'red' },
+  commentBox: { marginTop: 16 },
+  commentMeta: { fontSize: 12 },
+  commentText: { marginTop: 5 },
+  commentActions: { display: 'flex', gap: 8 }
 };
