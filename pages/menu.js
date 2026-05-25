@@ -48,11 +48,7 @@ export default function Menu() {
               </Link>
             )}
 
-            {(user?.role === 'admin' || user?.role === 'supervisor') && (
-              <Link href="/approval" style={styles.card}>
-                📥 Aprovações
-              </Link>
-            )}
+           
 
           </div>
 
