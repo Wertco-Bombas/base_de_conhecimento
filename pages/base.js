@@ -206,10 +206,60 @@ export default function Base() {
     );
   }, [filteredTopics, user]);
 
+  /* =========================
+     PERFORMANCE FIX
+     NÃO recria árvore a cada tecla
+  ========================== */
+  const commentTrees = useMemo(() => {
+    const map = {};
+    visibleTopics.forEach(topic => {
+      map[topic.id] = buildTree(comments, null, topic.id);
+    });
+    return map;
+  }, [comments, visibleTopics]);
+
   function formatDate(date) {
     if (!date) return '';
     return new Date(date).toLocaleString('pt-BR');
   }
+
+  const ReplyBox = memo(function ReplyBox({
+    commentId,
+    topicId,
+    replyInput,
+    setReplyInput,
+    addComment
+  }) {
+    return (
+      <div style={{ marginTop: 10, display: 'flex', gap: 8 }}>
+        <input
+          style={styles.input}
+          placeholder="Responder comentário..."
+          value={replyInput[commentId] || ''}
+          onChange={(e) =>
+            setReplyInput(prev => ({
+              ...prev,
+              [commentId]: e.target.value
+            }))
+          }
+        />
+
+        <button
+          style={styles.mainBtn}
+          onClick={async () => {
+            await addComment(topicId, commentId, replyInput[commentId]);
+
+            setReplyInput(prev => ({
+              ...prev,
+              [commentId]: ''
+            }));
+          }}
+        >
+          enviar
+        </button>
+      </div>
+    );
+  });
 
   const CommentNode = memo(function CommentNode({ comment, level = 0 }) {
     return (
@@ -243,37 +293,13 @@ export default function Base() {
         </div>
 
         {replyInput[comment.id] !== undefined && (
-          <div style={{ marginTop: 10, display: 'flex', gap: 8 }}>
-            <input
-              style={styles.input}
-              placeholder="Responder comentário..."
-              value={replyInput[comment.id] || ''}
-              onChange={(e) =>
-                setReplyInput(prev => ({
-                  ...prev,
-                  [comment.id]: e.target.value
-                }))
-              }
-            />
-
-            <button
-              style={styles.mainBtn}
-              onClick={async () => {
-                await addComment(
-                  comment.topic_id,
-                  comment.id,
-                  replyInput[comment.id]
-                );
-
-                setReplyInput(prev => ({
-                  ...prev,
-                  [comment.id]: ''
-                }));
-              }}
-            >
-              enviar
-            </button>
-          </div>
+          <ReplyBox
+            commentId={comment.id}
+            topicId={comment.topic_id}
+            replyInput={replyInput}
+            setReplyInput={setReplyInput}
+            addComment={addComment}
+          />
         )}
 
         {comment.children?.length > 0 &&
@@ -308,7 +334,7 @@ export default function Base() {
       </div>
 
       {visibleTopics.map(topic => {
-        const tree = buildTree(comments, null, topic.id);
+        const tree = commentTrees[topic.id] || [];
 
         return (
           <div key={topic.id} style={styles.card}>
@@ -415,7 +441,7 @@ const styles = {
   row: { display: 'flex', gap: 10, marginTop: 20 },
   input: { flex: 1, background: '#0b0b0b', border: '1px solid #2a2a2a', borderRadius: 12, padding: 12, color: '#fff' },
   mainBtn: { background: '#FFD600', color: '#000', border: 'none', borderRadius: 12, padding: '12px 18px' },
-  smallBtn: { background: 'transparent', border: '1px solid #FFD600', color: '#FFD600', padding: '6px 10px' },
+  smallBtn: { background: 'transparent', border: '1px solid '#FFD600', color: '#FFD600', padding: '6px 10px' },
   smallBtnDanger: { background: 'transparent', border: '1px solid #ff4d4d', color: '#ff4d4d', padding: '6px 10px' },
   commentBox: { marginTop: 16, padding: 12, borderLeft: '2px solid #FFD600', background: '#0d0d0d', borderRadius: 10 },
   commentMeta: { display: 'flex', justifyContent: 'space-between', color: '#888', fontSize: 11 },
