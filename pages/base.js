@@ -14,9 +14,9 @@ export default function Base() {
   const [replyInput, setReplyInput] = useState({});
 
   const [showCategoryModal, setShowCategoryModal] = useState(false);
-const [newCategoryName, setNewCategoryName] = useState('');
+  const [newCategoryName, setNewCategoryName] = useState('');
 
-const [showCategorySelector, setShowCategorySelector] = useState(false);
+  const [showCategorySelector, setShowCategorySelector] = useState(false);
 
   const [showTopic, setShowTopic] = useState(false);
 
@@ -52,7 +52,10 @@ const [showCategorySelector, setShowCategorySelector] = useState(false);
 
   async function createTopic() {
     if (!user) return alert('Faça login');
-    if (!newTopic || !newCat) return alert('Preencha título e categoria');
+
+    if (!newTopic || !newCat) {
+      return alert('Preencha título e categoria');
+    }
 
     const { data: catData, error: catError } = await supabase
       .from('categorias')
@@ -60,7 +63,9 @@ const [showCategorySelector, setShowCategorySelector] = useState(false);
       .eq('nome', newCat)
       .single();
 
-    if (catError || !catData) return alert('Categoria não encontrada');
+    if (catError || !catData) {
+      return alert('Categoria não encontrada');
+    }
 
     const { error } = await supabase.from('topicos').insert({
       titulo: newTopic,
@@ -127,24 +132,24 @@ const [showCategorySelector, setShowCategorySelector] = useState(false);
     load();
   }
 
-async function createCategory() {
-  if (!newCategoryName?.trim()) {
-    return alert('Digite uma categoria');
+  async function createCategory() {
+    if (!newCategoryName?.trim()) {
+      return alert('Digite uma categoria');
+    }
+
+    const { error } = await supabase
+      .from('categorias')
+      .insert({
+        nome: newCategoryName
+      });
+
+    if (error) return alert(error.message);
+
+    setNewCategoryName('');
+    setShowCategoryModal(false);
+
+    load();
   }
-
-  const { error } = await supabase
-    .from('categorias')
-    .insert({
-      nome: newCategoryName
-    });
-
-  if (error) return alert(error.message);
-
-  setNewCategoryName('');
-  setShowCategoryModal(false);
-
-  load();
-}
 
   async function deleteCategory() {
     setShowDeleteCategory(true);
@@ -251,56 +256,12 @@ async function createCategory() {
           flexWrap: 'wrap'
         }}
       >
-        <div style={{ position: 'relative' }}>
-  <button
-    type="button"
-    style={{
-      ...styles.input,
-      textAlign: 'left',
-      cursor: 'pointer',
-      width: '100%'
-    }}
-    onClick={() =>
-      setShowCategorySelector(prev => !prev)
-    }
-  >
-    {newCat || 'Selecionar categoria'}
-  </button>
-
-  {showCategorySelector && (
-    <div
-      style={{
-        position: 'absolute',
-        top: '105%',
-        left: 0,
-        right: 0,
-        background: '#111',
-        border: '1px solid #333',
-        borderRadius: 12,
-        zIndex: 999,
-        maxHeight: 220,
-        overflowY: 'auto'
-      }}
-    >
-      {categories.map(cat => (
-        <div
-          key={cat.id}
-          onClick={() => {
-            setNewCat(cat.nome);
-            setShowCategorySelector(false);
-          }}
-          style={{
-            padding: 12,
-            cursor: 'pointer',
-            borderBottom: '1px solid #222'
-          }}
-        >
-          {cat.nome}
-        </div>
-      ))}
-    </div>
-  )}
-</div>
+        <input
+          style={styles.input}
+          placeholder="Responder comentário..."
+          value={localText}
+          onChange={(e) => setLocalText(e.target.value)}
+        />
 
         <button
           style={styles.mainBtn}
@@ -329,6 +290,7 @@ async function createCategory() {
       >
         <div style={styles.commentMeta}>
           <span>{comment.user_email || 'Usuário'}</span>
+
           <span>{formatDate(comment.created_at)}</span>
         </div>
 
@@ -395,11 +357,12 @@ async function createCategory() {
           + Novo Tópico
         </button>
 
-       <button
-  style={styles.mainBtn}
-  onClick={() => setShowCategoryModal(true)}
->
-  + Nova Categoria
+        <button
+          style={styles.mainBtn}
+          onClick={() => setShowCategoryModal(true)}
+        >
+          + Nova Categoria
+        </button>
 
         <button
           style={styles.smallBtnDanger}
@@ -408,273 +371,6 @@ async function createCategory() {
           Excluir Categoria
         </button>
       </div>
-
-      {visibleTopics.map(topic => {
-        const tree = commentTrees[topic.id] || [];
-
-        return (
-          <div
-            key={topic.id}
-            style={styles.card}
-            className="mobileCard"
-          >
-            <div
-              style={styles.header}
-              className="mobileHeader"
-            >
-              <div>
-                <h2 style={styles.title}>
-                  {topic.titulo}
-                </h2>
-
-                <div style={styles.category}>
-                  {topic.categorias?.nome}
-                </div>
-              </div>
-
-              <button
-                style={styles.smallBtnDanger}
-                onClick={() => deleteTopic(topic.id)}
-              >
-                excluir tópico
-              </button>
-            </div>
-
-            <p style={styles.desc}>
-              {topic.descricao}
-            </p>
-
-            <div style={styles.meta}>
-              <span>{topic.user_email}</span>
-
-              <span>
-                {formatDate(topic.created_at)}
-              </span>
-            </div>
-
-            <div style={{ marginTop: 20 }}>
-              {tree.map(comment => (
-                <CommentNode
-                  key={comment.id}
-                  comment={comment}
-                />
-              ))}
-            </div>
-
-            <div
-              style={styles.row}
-              className="mobileRow"
-            >
-              <input
-                className="mobileInput"
-                placeholder="Escreva um comentário..."
-                value={commentInput[topic.id] || ''}
-                onChange={e =>
-                  setCommentInput(prev => ({
-                    ...prev,
-                    [topic.id]: e.target.value
-                  }))
-                }
-                style={styles.input}
-              />
-
-              <button
-                style={styles.mainBtn}
-                onClick={() => addComment(topic.id)}
-              >
-                enviar
-              </button>
-            </div>
-          </div>
-        );
-      })}
-
-      {showTopic && (
-  <div style={styles.modal}>
-    <div
-      style={{
-        ...styles.modalBox,
-        width: '90%',
-        maxWidth: 450,
-        display: 'flex',
-        flexDirection: 'column',
-        gap: 14
-      }}
-    >
-      <h2 style={{ color: '#FFD600' }}>
-        Novo Tópico
-      </h2>
-
-      <input
-        className="mobileInput"
-        style={styles.input}
-        placeholder="Título"
-        value={newTopic}
-        onChange={e => setNewTopic(e.target.value)}
-      />
-
-      <textarea
-        className="mobileInput"
-        style={styles.input}
-        placeholder="Descrição"
-        rows={5}
-        value={newDesc}
-        onChange={e => setNewDesc(e.target.value)}
-      />
-
-      <input
-        className="mobileInput"
-        style={styles.input}
-        placeholder="Categoria"
-        value={newCat}
-        onChange={e => setNewCat(e.target.value)}
-      />
-
-      <div
-        style={{
-          display: 'flex',
-          gap: 10,
-          flexWrap: 'wrap'
-        }}
-      >
-        <button
-          style={styles.mainBtn}
-          onClick={createTopic}
-        >
-          salvar
-        </button>
-
-        <button
-          style={styles.smallBtn}
-          onClick={() => setShowTopic(false)}
-        >
-          fechar
-        </button>
-      </div>
-    </div>
-  </div>
-
-      )}
-
-      {showDeleteCategory && (
-        <div style={styles.modal}>
-          <div
-            style={{
-              ...styles.modalBox,
-              width: '90%',
-              maxWidth: 500
-            }}
-          >
-            <h2 style={{ color: '#FFD600' }}>
-              Excluir Categorias
-            </h2>
-
-            <div
-              style={{
-                maxHeight: 300,
-                overflowY: 'auto',
-                display: 'flex',
-                flexDirection: 'column',
-                gap: 8
-              }}
-            >
-              {categories.map(cat => (
-                <div
-                  key={cat.id}
-                  onClick={() => toggleCategory(cat.nome)}
-                  style={{
-                    padding: 12,
-                    borderRadius: 10,
-                    cursor: 'pointer',
-                    border: '1px solid #333',
-                    background:
-                      selectedCategories.includes(cat.nome)
-                        ? '#FFD600'
-                        : '#111',
-                    color:
-                      selectedCategories.includes(cat.nome)
-                        ? '#000'
-                        : '#fff'
-                  }}
-                >
-                  {cat.nome}
-                </div>
-              ))}
-            </div>
-
-            <div
-              style={{
-                display: 'flex',
-                gap: 10,
-                marginTop: 15,
-                flexWrap: 'wrap'
-              }}
-            >
-              <button
-                style={styles.mainBtn}
-                onClick={confirmDeleteCategories}
-              >
-                excluir selecionadas
-              </button>
-
-              <button
-                style={styles.smallBtn}
-                onClick={() => setShowDeleteCategory(false)}
-              >
-                fechar
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-        {showCategoryModal && (
-  <div style={styles.modal}>
-    <div
-      style={{
-        ...styles.modalBox,
-        width: '90%',
-        maxWidth: 450,
-        display: 'flex',
-        flexDirection: 'column',
-        gap: 14
-      }}
-    >
-      <h2 style={{ color: '#FFD600' }}>
-        Nova Categoria
-      </h2>
-
-      <input
-        className="mobileInput"
-        style={styles.input}
-        placeholder="Nome da categoria"
-        value={newCategoryName}
-        onChange={e => setNewCategoryName(e.target.value)}
-      />
-
-      <div
-        style={{
-          display: 'flex',
-          gap: 10,
-          flexWrap: 'wrap'
-        }}
-      >
-        <button
-          style={styles.mainBtn}
-          onClick={createCategory}
-        >
-          salvar
-        </button>
-
-        <button
-          style={styles.smallBtn}
-          onClick={() => setShowCategoryModal(false)}
-        >
-          fechar
-        </button>
-      </div>
-    </div>
-  </div>
-)}
     </Layout>
   );
 }
@@ -695,58 +391,6 @@ const styles = {
     background: '#0b0b0b',
     color: '#fff',
     marginBottom: 20
-  },
-
-  card: {
-    background: '#111',
-    border: '1px solid #222',
-    borderRadius: 18,
-    padding: 20,
-    marginBottom: 18,
-    color: '#fff'
-  },
-
-  header: {
-    display: 'flex',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    gap: 10,
-    flexWrap: 'wrap'
-  },
-
-  title: {
-    margin: 0,
-    fontSize: 24
-  },
-
-  category: {
-    display: 'inline-block',
-    marginTop: 8,
-    background: '#FFD600',
-    color: '#000',
-    padding: '5px 10px',
-    borderRadius: 999
-  },
-
-  desc: {
-    color: '#bbb',
-    marginTop: 16
-  },
-
-  meta: {
-    display: 'flex',
-    justifyContent: 'space-between',
-    marginTop: 16,
-    color: '#777',
-    gap: 10,
-    flexWrap: 'wrap'
-  },
-
-  row: {
-    display: 'flex',
-    gap: 10,
-    marginTop: 20,
-    flexWrap: 'wrap'
   },
 
   input: {
@@ -812,25 +456,5 @@ const styles = {
     gap: 8,
     marginTop: 10,
     flexWrap: 'wrap'
-  },
-
-  modal: {
-    position: 'fixed',
-    inset: 0,
-    background: 'rgba(0,0,0,0.85)',
-    display: 'flex',
-    justifyContent: 'center',
-    alignItems: 'center',
-    padding: 20,
-    zIndex: 999
-  },
-
-  modalBox: {
-    background: '#111',
-    border: '1px solid #FFD600',
-    borderRadius: 18,
-    padding: 24,
-    width: '100%',
-    color: '#fff'
   }
 };
