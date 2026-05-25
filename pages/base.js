@@ -42,7 +42,7 @@ async function load() {
     .from('topicos')
     .select(`
       *,
-      categorias (
+      categorias:categoria_id (
         nome
       )
     `);
