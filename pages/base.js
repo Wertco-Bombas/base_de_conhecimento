@@ -188,9 +188,9 @@ export default function Base() {
         (c.status === 'approved' || canApprove(user))
       )
       .map(c => ({
-        ...c,
-        children: buildTree(list, c.id, topicId)
-      }));
+  ...c,
+  children: buildTree(list, c.id, topicId) || []
+}));
   }
 
   const filteredTopics = useMemo(() => {
@@ -221,33 +221,52 @@ export default function Base() {
   }
 
   function CommentNode({ comment, level = 0 }) {
-    return (
-      <div
-        style={{
-          ...styles.commentBox,
-          marginLeft: level * 25
-        }}
-      >
-        <div style={styles.commentMeta}>
-          <span>{comment.user_email || 'Usuário'}</span>
-          <span>{formatDate(comment.created_at)}</span>
-        </div>
+  return (
+    <div style={{ ...styles.commentBox, marginLeft: level * 25 }}>
+      <div style={styles.commentMeta}>
+        <span>{comment.user_email || 'Usuário'}</span>
+        <span>{formatDate(comment.created_at)}</span>
+      </div>
 
-        <div style={styles.commentText}>
-          💬 {comment.texto}
-        </div>
+      <div style={styles.commentText}>
+        💬 {comment.texto}
+      </div>
 
-        <div style={styles.commentActions}>
-          <button
-            style={styles.smallBtn}
-            onClick={() =>
-              setReplyInput(prev => ({
-                ...prev,
-                [comment.id]: ''
-              }))
-            }
-          >
-            responder
+      <div style={styles.commentActions}>
+        <button
+          style={styles.smallBtn}
+          onClick={() =>
+            setReplyInput(prev => ({
+              ...prev,
+              [comment.id]: prev[comment.id] ?? ''
+            }))
+          }
+        >
+          responder
+        </button>
+
+        <button
+          style={styles.smallBtnDanger}
+          onClick={() => deleteComment(comment.id)}
+        >
+          excluir
+        </button>
+      </div>
+
+      {comment.children?.length > 0 && (
+        <div>
+          {comment.children.map(child => (
+            <CommentNode
+              key={child.id}
+              comment={child}
+              level={level + 1}
+            />
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
           </button>
 
           <button
