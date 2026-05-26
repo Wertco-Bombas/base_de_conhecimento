@@ -4,97 +4,56 @@ import { useRouter } from 'next/router';
 
 export default function Layout({ children }) {
   const [user, setUser] = useState(null);
-  const [loading, setLoading] = useState(true);
   const router = useRouter();
 
   useEffect(() => {
-    let mounted = true;
-
-    async function loadUser() {
-      setLoading(true);
-
+    async function load() {
       const { data } = await supabase.auth.getUser();
 
-      const authUser = data?.user;
-
-      if (!authUser) {
-        if (mounted) {
-          setUser(null);
-          setLoading(false);
-        }
+      if (!data?.user) {
+        router.replace('/');
         return;
       }
 
       const { data: profile } = await supabase
         .from('profiles')
-        .select('role, email')
-        .eq('id', authUser.id)
+        .select('*')
+        .eq('id', data.user.id)
         .maybeSingle();
 
-      if (mounted) {
-        setUser({
-          id: authUser.id,
-          email: authUser.email,
-          role: profile?.role || 'user'
-        });
-
-        setLoading(false);
-      }
+      setUser({
+        id: data.user.id,
+        email: data.user.email,
+        role: profile?.role || 'user'
+      });
     }
 
-    loadUser();
-
-    return () => {
-      mounted = false;
-    };
+    load();
   }, []);
 
   async function logout() {
-    try {
-      setLoading(true);
-
-      await supabase.auth.signOut();
-
-      setUser(null);
-
-      // 🔥 EVITA LOOP TOTAL
-      await new Promise(r => setTimeout(r, 100));
-
-      router.replace('/');
-    } catch (err) {
-      console.error(err);
-      setLoading(false);
-    }
+    await supabase.auth.signOut();
+    router.replace('/');
   }
+
+  if (!user) return null;
 
   return (
     <div style={styles.wrapper}>
-
       <div style={styles.sidebar}>
-        <div style={styles.brand}>WERTCO</div>
+        <h2>WERTCO</h2>
 
-        {!loading && user && (
-          <div style={styles.menu}>
-            <a style={styles.link} href="/base">📚 Base de Conhecimento</a>
+        <a href="/base">Base</a>
 
-            {(user.role === 'supervisor' || user.role === 'admin') && (
-              <a style={styles.link} href="/approval">✅ Aprovação</a>
-            )}
-
-            {user.role === 'admin' && (
-              <a style={styles.link} href="/usuarios">👥 Usuários</a>
-            )}
-          </div>
+        {(user.role === 'admin' || user.role === 'supervisor') && (
+          <a href="/approval">Aprovação</a>
         )}
 
-        <div style={styles.bottom}>
-          <div style={styles.user}>👤 {user?.email || 'Não logado'}</div>
-          <div style={styles.role}>{user?.role ? `(${user.role})` : ''}</div>
+        {user.role === 'admin' && (
+          <a href="/usuarios">Usuários</a>
+        )}
 
-          <button onClick={logout} style={styles.logout}>
-            Sair
-          </button>
-        </div>
+        <button onClick={logout}>Sair</button>
       </div>
 
       <div style={styles.content}>{children}</div>
@@ -106,75 +65,19 @@ const styles = {
   wrapper: {
     display: 'flex',
     minHeight: '100vh',
-    width: '100%',
     background: '#0b0b0b',
-    color: '#fff',
-    fontFamily: 'Arial'
+    color: '#fff'
   },
-
   sidebar: {
-    width: 260,
-    background: '#111',
+    width: 240,
     padding: 20,
-    display: 'flex',
-    flexDirection: 'column',
-    gap: 15,
-    borderRight: '1px solid #222'
-  },
-
-  brand: {
-    fontSize: 20,
-    fontWeight: 'bold',
-    color: '#f5c400',
-    marginBottom: 20
-  },
-
-  menu: {
+    background: '#111',
     display: 'flex',
     flexDirection: 'column',
     gap: 10
   },
-
-  link: {
-    color: '#fff',
-    textDecoration: 'none',
-    padding: 10,
-    borderRadius: 8,
-    background: '#1a1a1a',
-    border: '1px solid #2a2a2a',
-    fontSize: 14
-  },
-
   content: {
     flex: 1,
     padding: 20
-  },
-
-  bottom: {
-    marginTop: 'auto',
-    borderTop: '1px solid #222',
-    paddingTop: 15
-  },
-
-  user: {
-    fontSize: 12,
-    color: '#aaa',
-    marginBottom: 4
-  },
-
-  role: {
-    fontSize: 11,
-    color: '#f5c400',
-    marginBottom: 10
-  },
-
-  logout: {
-    padding: 10,
-    width: '100%',
-    background: '#222',
-    color: '#fff',
-    border: '1px solid #333',
-    cursor: 'pointer',
-    borderRadius: 8
   }
 };
