@@ -55,7 +55,6 @@ export default function Layout({ children }) {
     };
   }, []);
 
-  // ✅ FIX DO LOOP DE LOGOUT
   async function logout() {
     try {
       setLoading(true);
@@ -64,7 +63,6 @@ export default function Layout({ children }) {
 
       setUser(null);
 
-      // IMPORTANTE: evita loop de reload infinito
       window.location.replace('/');
     } catch (err) {
       console.error(err);
@@ -140,7 +138,7 @@ const styles = {
     display: 'flex',
     flexDirection: 'column',
     gap: 15,
-    borderRight: '1px solid '#222'
+    borderRight: '1px solid #222' // ✅ CORRIGIDO AQUI
   },
 
   brand: {
