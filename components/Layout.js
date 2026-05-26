@@ -8,8 +8,6 @@ export default function Layout({ children }) {
   useEffect(() => {
     let isMounted = true;
 
-    loadUser();
-
     async function loadUser() {
       setLoading(true);
 
@@ -49,6 +47,8 @@ export default function Layout({ children }) {
         }
       }
     }
+
+    loadUser();
 
     return () => {
       isMounted = false;
