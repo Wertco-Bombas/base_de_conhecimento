@@ -81,17 +81,13 @@ export default function Layout({ children }) {
               </a>
             )}
 
-            {user.role === 'admin' && (
-              <a style={styles.link} href="/admin">
-                👥 Usuários
-              </a>
-            )}
+           {user.role === 'admin' && (
+  <a style={styles.link} href="/usuarios">
+    👥 Usuários
+  </a>
+)}
 
-            {user.role === 'admin' && (
-              <a style={styles.link} href="/auditoria">
-                📊 Auditoria
-              </a>
-            )}
+            
 
           </div>
         )}
