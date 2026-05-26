@@ -1,25 +1,24 @@
 import { useEffect, useState } from 'react';
 import { supabase } from '../lib/supabaseClient';
+import { useRouter } from 'next/router';
 
 export default function Layout({ children }) {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
+  const router = useRouter();
 
   useEffect(() => {
-    let isMounted = true;
+    let mounted = true;
 
     async function loadUser() {
       setLoading(true);
 
-      // 🔥 CORREÇÃO PRINCIPAL: usar getSession (mais estável)
-      const {
-        data: { session }
-      } = await supabase.auth.getSession();
+      const { data } = await supabase.auth.getUser();
 
-      const authUser = session?.user;
+      const authUser = data?.user;
 
       if (!authUser) {
-        if (isMounted) {
+        if (mounted) {
           setUser(null);
           setLoading(false);
         }
@@ -32,7 +31,7 @@ export default function Layout({ children }) {
         .eq('id', authUser.id)
         .maybeSingle();
 
-      if (isMounted) {
+      if (mounted) {
         setUser({
           id: authUser.id,
           email: authUser.email,
@@ -45,22 +44,8 @@ export default function Layout({ children }) {
 
     loadUser();
 
-    // 🔥 listener de auth (evita estado quebrado)
-    const {
-      data: { subscription }
-    } = supabase.auth.onAuthStateChange((event) => {
-      if (event === 'SIGNED_OUT') {
-        setUser(null);
-      }
-
-      if (event === 'SIGNED_IN') {
-        loadUser();
-      }
-    });
-
     return () => {
-      isMounted = false;
-      subscription.unsubscribe();
+      mounted = false;
     };
   }, []);
 
@@ -68,59 +53,43 @@ export default function Layout({ children }) {
     try {
       setLoading(true);
 
-      setUser(null);
-
       await supabase.auth.signOut();
 
-      // 🔥 limpeza segura (evita sessão fantasma)
-      try {
-        localStorage.clear();
-        sessionStorage.clear();
-      } catch (e) {}
+      setUser(null);
 
-      // redirecionamento limpo
-      window.location.href = '/';
+      // 🔥 EVITA LOOP TOTAL
+      await new Promise(r => setTimeout(r, 100));
+
+      router.replace('/');
     } catch (err) {
-      console.error('Erro logout:', err);
-    } finally {
+      console.error(err);
       setLoading(false);
     }
   }
 
   return (
     <div style={styles.wrapper}>
-      {/* SIDEBAR */}
+
       <div style={styles.sidebar}>
         <div style={styles.brand}>WERTCO</div>
 
         {!loading && user && (
           <div style={styles.menu}>
-            <a style={styles.link} href="/base">
-              📚 Base de Conhecimento
-            </a>
+            <a style={styles.link} href="/base">📚 Base de Conhecimento</a>
 
             {(user.role === 'supervisor' || user.role === 'admin') && (
-              <a style={styles.link} href="/approval">
-                ✅ Aprovação
-              </a>
+              <a style={styles.link} href="/approval">✅ Aprovação</a>
             )}
 
             {user.role === 'admin' && (
-              <a style={styles.link} href="/usuarios">
-                👥 Usuários
-              </a>
+              <a style={styles.link} href="/usuarios">👥 Usuários</a>
             )}
           </div>
         )}
 
         <div style={styles.bottom}>
-          <div style={styles.user}>
-            👤 {user?.email || 'Não logado'}
-          </div>
-
-          <div style={styles.role}>
-            {user?.role ? `(${user.role})` : ''}
-          </div>
+          <div style={styles.user}>👤 {user?.email || 'Não logado'}</div>
+          <div style={styles.role}>{user?.role ? `(${user.role})` : ''}</div>
 
           <button onClick={logout} style={styles.logout}>
             Sair
@@ -128,7 +97,6 @@ export default function Layout({ children }) {
         </div>
       </div>
 
-      {/* CONTENT */}
       <div style={styles.content}>{children}</div>
     </div>
   );
