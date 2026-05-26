@@ -11,57 +11,56 @@ export default function Layout({ children }) {
     async function loadUser() {
       setLoading(true);
 
-      try {
-        const { data: auth } = await supabase.auth.getUser();
+      // 🔥 CORREÇÃO PRINCIPAL: usar getSession (mais estável)
+      const {
+        data: { session }
+      } = await supabase.auth.getSession();
 
-        if (!auth?.user) {
-          if (isMounted) {
-            setUser(null);
-            setLoading(false);
-          }
-          return;
-        }
+      const authUser = session?.user;
 
-        const { data: profile } = await supabase
-          .from('profiles')
-          .select('role, email')
-          .eq('id', auth.user.id)
-          .maybeSingle();
-
-        if (isMounted) {
-          setUser({
-            id: auth.user.id,
-            email: auth.user.email,
-            role: profile?.role || 'user'
-          });
-
-          setLoading(false);
-        }
-
-      } catch (err) {
-        console.error('Erro loadUser:', err);
-
+      if (!authUser) {
         if (isMounted) {
           setUser(null);
           setLoading(false);
         }
+        return;
+      }
+
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('role, email')
+        .eq('id', authUser.id)
+        .maybeSingle();
+
+      if (isMounted) {
+        setUser({
+          id: authUser.id,
+          email: authUser.email,
+          role: profile?.role || 'user'
+        });
+
+        setLoading(false);
       }
     }
 
     loadUser();
 
-    // 🔥 garante sincronização real de login/logout
-    const { data: listener } = supabase.auth.onAuthStateChange(
-      (event) => {
-        if (event === 'SIGNED_OUT') {
-          setUser(null);
-        }
+    // 🔥 listener de auth (evita estado quebrado)
+    const {
+      data: { subscription }
+    } = supabase.auth.onAuthStateChange((event) => {
+      if (event === 'SIGNED_OUT') {
+        setUser(null);
       }
-    );
+
+      if (event === 'SIGNED_IN') {
+        loadUser();
+      }
+    });
 
     return () => {
       isMounted = false;
-      listener.subscription.unsubscribe();
+      subscription.unsubscribe();
     };
   }, []);
 
@@ -71,25 +70,25 @@ export default function Layout({ children }) {
 
       setUser(null);
 
-      // força logout global no Supabase
-      await supabase.auth.signOut({ scope: 'global' });
+      await supabase.auth.signOut();
 
-      // limpa cache local (importante em alguns casos)
+      // 🔥 limpeza segura (evita sessão fantasma)
       try {
         localStorage.clear();
+        sessionStorage.clear();
       } catch (e) {}
 
-      // evita loop de reload
-      window.location.replace('/');
+      // redirecionamento limpo
+      window.location.href = '/';
     } catch (err) {
       console.error('Erro logout:', err);
+    } finally {
       setLoading(false);
     }
   }
 
   return (
     <div style={styles.wrapper}>
-
       {/* SIDEBAR */}
       <div style={styles.sidebar}>
         <div style={styles.brand}>WERTCO</div>
@@ -130,10 +129,7 @@ export default function Layout({ children }) {
       </div>
 
       {/* CONTENT */}
-      <div style={styles.content}>
-        {children}
-      </div>
-
+      <div style={styles.content}>{children}</div>
     </div>
   );
 }
