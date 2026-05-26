@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import Layout from '../components/Layout';
+import RoleGuard from '../components/RoleGuard';
 import { supabase } from '../lib/supabaseClient';
 
 export default function Usuarios() {
@@ -11,7 +12,6 @@ export default function Usuarios() {
 
   const [loading, setLoading] = useState(false);
 
-  // 🔥 NOVO: controle de senhas por usuário
   const [newPasswords, setNewPasswords] = useState({});
 
   useEffect(() => {
@@ -24,9 +24,7 @@ export default function Usuarios() {
       .select('*')
       .order('email');
 
-    if (!error) {
-      setUsers(data || []);
-    }
+    if (!error) setUsers(data || []);
   }
 
   async function createUser() {
@@ -39,9 +37,7 @@ export default function Usuarios() {
 
       const res = await fetch('/api/create-user', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           email: newEmail,
           password: newPassword,
@@ -65,7 +61,6 @@ export default function Usuarios() {
       setLoading(false);
 
       alert('Usuário criado com sucesso');
-
     } catch (err) {
       console.error(err);
       setLoading(false);
@@ -93,9 +88,7 @@ export default function Usuarios() {
       await load();
 
       setLoading(false);
-
       alert('Usuário removido');
-
     } catch (err) {
       console.error(err);
       setLoading(false);
@@ -103,7 +96,6 @@ export default function Usuarios() {
     }
   }
 
-  // 🔥 NOVO: atualizar senha
   async function updatePassword(userId) {
     const password = newPasswords[userId];
 
@@ -114,9 +106,7 @@ export default function Usuarios() {
     try {
       const res = await fetch('/api/update-password', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           userId,
           password
@@ -135,7 +125,6 @@ export default function Usuarios() {
       }));
 
       alert('Senha atualizada com sucesso');
-
     } catch (err) {
       console.error(err);
       alert('Erro ao atualizar senha');
@@ -143,97 +132,101 @@ export default function Usuarios() {
   }
 
   return (
-    <Layout>
-      <div style={styles.wrapper}>
+    <RoleGuard allowedRoles={['admin', 'supervisor']}>
+      <Layout>
 
-        <h1 style={styles.title}>Usuários</h1>
+        <div style={styles.wrapper}>
 
-        <div style={styles.card}>
-          <h2 style={styles.subtitle}>Novo Usuário</h2>
+          <h1 style={styles.title}>Usuários</h1>
 
-          <div style={styles.form}>
-            <input
-              style={styles.input}
-              placeholder="Email"
-              value={newEmail}
-              onChange={e => setNewEmail(e.target.value)}
-            />
+          <div style={styles.card}>
+            <h2 style={styles.subtitle}>Novo Usuário</h2>
 
-            <input
-              style={styles.input}
-              type="password"
-              placeholder="Senha"
-              value={newPassword}
-              onChange={e => setNewPassword(e.target.value)}
-            />
+            <div style={styles.form}>
+              <input
+                style={styles.input}
+                placeholder="Email"
+                value={newEmail}
+                onChange={e => setNewEmail(e.target.value)}
+              />
 
-            <select
-              style={styles.input}
-              value={newRole}
-              onChange={e => setNewRole(e.target.value)}
-            >
-              <option value="user">user</option>
-              <option value="supervisor">supervisor</option>
-            </select>
+              <input
+                style={styles.input}
+                type="password"
+                placeholder="Senha"
+                value={newPassword}
+                onChange={e => setNewPassword(e.target.value)}
+              />
 
-            <button
-              style={styles.mainBtn}
-              onClick={createUser}
-              disabled={loading}
-            >
-              {loading ? 'criando...' : 'Criar Usuário'}
-            </button>
-          </div>
-        </div>
-
-        <div style={styles.card}>
-          <h2 style={styles.subtitle}>Usuários</h2>
-
-          {users.map(u => (
-            <div key={u.id} style={styles.userCard}>
-
-              <div>
-                <p style={styles.email}>{u.email}</p>
-                <p style={styles.role}>{u.role}</p>
-
-                {/* 🔥 NOVO: campo de senha */}
-                <div style={{ display: 'flex', gap: 10, marginTop: 10, flexWrap: 'wrap' }}>
-                  <input
-                    type="password"
-                    placeholder="Nova senha"
-                    value={newPasswords[u.id] || ''}
-                    onChange={e =>
-                      setNewPasswords(prev => ({
-                        ...prev,
-                        [u.id]: e.target.value
-                      }))
-                    }
-                    style={styles.input}
-                  />
-
-                  <button
-                    style={styles.mainBtn}
-                    onClick={() => updatePassword(u.id)}
-                  >
-                    alterar senha
-                  </button>
-                </div>
-
-              </div>
+              <select
+                style={styles.input}
+                value={newRole}
+                onChange={e => setNewRole(e.target.value)}
+              >
+                <option value="user">user</option>
+                <option value="supervisor">supervisor</option>
+              </select>
 
               <button
-                style={styles.deleteBtn}
-                onClick={() => deleteUser(u.id, u.email)}
+                style={styles.mainBtn}
+                onClick={createUser}
+                disabled={loading}
               >
-                excluir
+                {loading ? 'criando...' : 'Criar Usuário'}
               </button>
             </div>
-          ))}
+          </div>
+
+          <div style={styles.card}>
+            <h2 style={styles.subtitle}>Usuários</h2>
+
+            {users.map(u => (
+              <div key={u.id} style={styles.userCard}>
+
+                <div>
+                  <p style={styles.email}>{u.email}</p>
+                  <p style={styles.role}>{u.role}</p>
+
+                  <div style={{ display: 'flex', gap: 10, marginTop: 10, flexWrap: 'wrap' }}>
+                    <input
+                      type="password"
+                      placeholder="Nova senha"
+                      value={newPasswords[u.id] || ''}
+                      onChange={e =>
+                        setNewPasswords(prev => ({
+                          ...prev,
+                          [u.id]: e.target.value
+                        }))
+                      }
+                      style={styles.input}
+                    />
+
+                    <button
+                      style={styles.mainBtn}
+                      onClick={() => updatePassword(u.id)}
+                    >
+                      alterar senha
+                    </button>
+                  </div>
+
+                </div>
+
+                <button
+                  style={styles.deleteBtn}
+                  onClick={() => deleteUser(u.id, u.email)}
+                >
+                  excluir
+                </button>
+
+              </div>
+            ))}
+
+          </div>
 
         </div>
 
-      </div>
-    </Layout>
+      </Layout>
+    </RoleGuard>
   );
 }
 
