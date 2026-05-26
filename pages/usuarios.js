@@ -26,7 +26,7 @@ export default function Usuarios() {
     }
   }
 
- async function createUser() {
+async function createUser() {
   if (!newEmail || !newPassword) {
     return alert('Preencha email e senha');
   }
@@ -34,29 +34,41 @@ export default function Usuarios() {
   try {
     setLoading(true);
 
-    const {
-      data,
-      error: authError
-    } = await supabase.auth.signUp({
-      email: newEmail,
-      password: newPassword
+    const res = await fetch('/api/create-user', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        email: newEmail,
+        password: newPassword,
+        role: newRole
+      })
     });
 
-    if (authError) {
+    const data = await res.json();
+
+    if (!res.ok) {
       setLoading(false);
-      return alert(authError.message);
+      return alert(data.error);
     }
 
-    // aguarda criação auth
-    const createdUser = data?.user;
+    setNewEmail('');
+    setNewPassword('');
+    setNewRole('user');
 
-    if (!createdUser) {
-      setLoading(false);
+    await load();
 
-      return alert(
-        'Usuário criado no Auth mas sem retorno de sessão. Verifique confirmação de email.'
-      );
-    }
+    setLoading(false);
+
+    alert('Usuário criado com sucesso');
+
+  } catch (err) {
+    console.error(err);
+    setLoading(false);
+    alert('Erro ao criar usuário');
+  }
+}
 
     // cria profile
     const { error: profileError } = await supabase
