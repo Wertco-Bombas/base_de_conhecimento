@@ -27,14 +27,25 @@ const [showCategorySelector, setShowCategorySelector] = useState(false);
   const [newDesc, setNewDesc] = useState('');
   const [newCat, setNewCat] = useState('');
 
-  import Layout from '../components/Layout';
+ import { useState } from 'react';
+import Layout from '../components/Layout';
 import ProtectedRoute from '../components/ProtectedRoute';
 
 export default function Base() {
+  const [newCat, setNewCat] = useState('');
+
   return (
     <ProtectedRoute>
       <Layout>
-        <h1>Base de conhecimento</h1>
+        <div>
+          <h1 style={{ color: '#fff' }}>Base de Conhecimento</h1>
+
+          <input
+            value={newCat}
+            onChange={(e) => setNewCat(e.target.value)}
+            placeholder="Nova categoria"
+          />
+        </div>
       </Layout>
     </ProtectedRoute>
   );
