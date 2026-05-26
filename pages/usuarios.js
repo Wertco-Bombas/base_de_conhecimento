@@ -14,7 +14,7 @@ export default function Usuarios() {
   const [loading, setLoading] = useState(false);
 
   const [newPasswords, setNewPasswords] = useState({});
-
+const router = useRouter();
   useEffect(() => {
     load();
   }, []);
@@ -56,6 +56,27 @@ export default function Usuarios() {
       setNewEmail('');
       setNewPassword('');
       setNewRole('user');
+
+      const { data: auth } = await supabase.auth.getUser();
+
+if (!auth?.user) {
+  router.push('/');
+  return;
+}
+
+const { data: profile } = await supabase
+  .from('profiles')
+  .select('role')
+  .eq('id', auth.user.id)
+  .single();
+
+if (
+  profile?.role !== 'admin' &&
+  profile?.role !== 'supervisor'
+) {
+  router.push('/base');
+  return;
+}
 
       await load();
 
