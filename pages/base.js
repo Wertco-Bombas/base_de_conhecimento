@@ -268,14 +268,7 @@ async function createCategory() {
     return new Date(date).toLocaleString('pt-BR');
   }
 
-  const ReplyBox = memo(function ReplyBox({
-    commentId,
-    topicId,
-    addComment
-  }) {
-    const [localText, setLocalText] = useState('');
-
-   const ReplyBox = memo(function ReplyBox({
+ const ReplyBox = memo(function ReplyBox({
   commentId,
   topicId,
   addComment
@@ -307,7 +300,6 @@ async function createCategory() {
         style={styles.mainBtn}
         onClick={async () => {
           await addComment(topicId, commentId, localText);
-
           setLocalText('');
         }}
       >
