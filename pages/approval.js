@@ -5,10 +5,36 @@ import { supabase } from '../lib/supabaseClient';
 export default function Approval() {
   const [topics, setTopics] = useState([]);
   const [comments, setComments] = useState([]);
+  const [user, setUser] = useState(null);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    load();
+    checkUser();
   }, []);
+
+  async function checkUser() {
+    const { data: auth } = await supabase.auth.getUser();
+
+    if (!auth?.user) return;
+
+    const { data: profile } = await supabase
+      .from('profiles')
+      .select('role')
+      .eq('id', auth.user.id)
+      .maybeSingle();
+
+    const role = profile?.role || 'user';
+
+    setUser({ id: auth.user.id, role });
+
+    if (role !== 'admin' && role !== 'supervisor') {
+      window.location.href = '/';
+      return;
+    }
+
+    load();
+    setLoading(false);
+  }
 
   async function load() {
     const { data: t } = await supabase
@@ -28,6 +54,8 @@ export default function Approval() {
   }
 
   async function approveTopic(id) {
+    if (!user) return;
+
     await supabase
       .from('topicos')
       .update({ status: 'approved' })
@@ -37,6 +65,8 @@ export default function Approval() {
   }
 
   async function rejectTopic(id) {
+    if (!user) return;
+
     await supabase
       .from('topicos')
       .update({ status: 'rejected' })
@@ -46,6 +76,8 @@ export default function Approval() {
   }
 
   async function approveComment(id) {
+    if (!user) return;
+
     await supabase
       .from('comentarios')
       .update({ status: 'approved' })
@@ -55,6 +87,8 @@ export default function Approval() {
   }
 
   async function rejectComment(id) {
+    if (!user) return;
+
     await supabase
       .from('comentarios')
       .update({ status: 'rejected' })
@@ -62,6 +96,8 @@ export default function Approval() {
 
     load();
   }
+
+  if (loading) return <div style={{ color: '#fff' }}>Carregando...</div>;
 
   return (
     <Layout>
