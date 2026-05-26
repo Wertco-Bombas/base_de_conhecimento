@@ -55,15 +55,26 @@ export default function Layout({ children }) {
     };
   }, []);
 
+  // ✅ FIX DO LOOP DE LOGOUT
   async function logout() {
-    await supabase.auth.signOut();
-    window.location.href = '/';
+    try {
+      setLoading(true);
+
+      await supabase.auth.signOut();
+
+      setUser(null);
+
+      // IMPORTANTE: evita loop de reload infinito
+      window.location.replace('/');
+    } catch (err) {
+      console.error(err);
+      setLoading(false);
+    }
   }
 
   return (
     <div style={styles.wrapper}>
 
-      {/* SIDEBAR */}
       <div style={styles.sidebar}>
         <div style={styles.brand}>WERTCO</div>
 
@@ -89,7 +100,6 @@ export default function Layout({ children }) {
           </div>
         )}
 
-        {/* USER INFO */}
         <div style={styles.bottom}>
           <div style={styles.user}>
             👤 {user?.email || 'Não logado'}
@@ -105,7 +115,6 @@ export default function Layout({ children }) {
         </div>
       </div>
 
-      {/* CONTENT */}
       <div style={styles.content}>
         {children}
       </div>
@@ -131,7 +140,7 @@ const styles = {
     display: 'flex',
     flexDirection: 'column',
     gap: 15,
-    borderRight: '1px solid #222'
+    borderRight: '1px solid '#222'
   },
 
   brand: {
