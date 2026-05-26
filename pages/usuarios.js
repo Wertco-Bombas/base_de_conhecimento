@@ -26,63 +26,70 @@ export default function Usuarios() {
     }
   }
 
-  async function createUser() {
-    if (!newEmail || !newPassword) {
-      return alert('Preencha email e senha');
-    }
-
-    try {
-      setLoading(true);
-
-      const { data: createdUser, error: authError } =
-        await supabase.auth.signUp({
-          email: newEmail,
-          password: newPassword
-        });
-
-      if (authError) {
-        setLoading(false);
-        return alert(authError.message);
-      }
-
-      const uid = createdUser?.user?.id;
-
-      if (!uid) {
-        setLoading(false);
-        return alert('Usuário não criado');
-      }
-
-      const { error: profileError } = await supabase
-        .from('profiles')
-        .insert({
-          id: uid,
-          email: newEmail,
-          role: newRole
-        });
-
-      if (profileError) {
-        setLoading(false);
-        return alert(profileError.message);
-      }
-
-      setNewEmail('');
-      setNewPassword('');
-      setNewRole('user');
-
-      await load();
-
-      setLoading(false);
-
-      alert('Usuário criado com sucesso');
-
-    } catch (err) {
-      console.error(err);
-
-      setLoading(false);
-
-      alert('Erro ao criar usuário');
-    }
+ async function createUser() {
+  if (!newEmail || !newPassword) {
+    return alert('Preencha email e senha');
   }
+
+  try {
+    setLoading(true);
+
+    const {
+      data,
+      error: authError
+    } = await supabase.auth.signUp({
+      email: newEmail,
+      password: newPassword
+    });
+
+    if (authError) {
+      setLoading(false);
+      return alert(authError.message);
+    }
+
+    // aguarda criação auth
+    const createdUser = data?.user;
+
+    if (!createdUser) {
+      setLoading(false);
+
+      return alert(
+        'Usuário criado no Auth mas sem retorno de sessão. Verifique confirmação de email.'
+      );
+    }
+
+    // cria profile
+    const { error: profileError } = await supabase
+      .from('profiles')
+      .upsert({
+        id: createdUser.id,
+        email: newEmail,
+        role: newRole
+      });
+
+    if (profileError) {
+      setLoading(false);
+      return alert(profileError.message);
+    }
+
+    setNewEmail('');
+    setNewPassword('');
+    setNewRole('user');
+
+    await load();
+
+    setLoading(false);
+
+    alert('Usuário criado com sucesso');
+
+  } catch (err) {
+    console.error(err);
+
+    setLoading(false);
+
+    alert('Erro ao criar usuário');
+  }
+}
 
   async function deleteUser(userId, email) {
     const confirmar = confirm(
