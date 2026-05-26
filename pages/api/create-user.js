@@ -1,43 +1,51 @@
-async function createUser() {
-  if (!newEmail || !newPassword) {
-    return alert('Preencha email e senha');
+import { createClient } from '@supabase/supabase-js';
+
+const supabaseAdmin = createClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL,
+  process.env.SUPABASE_SERVICE_ROLE_KEY
+);
+
+export default async function handler(req, res) {
+  if (req.method !== 'POST') {
+    return res.status(405).json({ error: 'Method not allowed' });
+  }
+
+  const { email, password, role } = req.body;
+
+  if (!email || !password) {
+    return res.status(400).json({ error: 'Email e senha obrigatórios' });
   }
 
   try {
-    setLoading(true);
-
-    const res = await fetch('/api/create-user', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify({
-        email: newEmail,
-        password: newPassword,
-        role: newRole
-      })
+    // cria usuário direto no Auth (SEM confirmação de email)
+    const { data, error } = await supabaseAdmin.auth.admin.createUser({
+      email,
+      password,
+      email_confirm: true
     });
 
-    const data = await res.json();
-
-    if (!res.ok) {
-      setLoading(false);
-      return alert(data.error);
+    if (error) {
+      return res.status(400).json({ error: error.message });
     }
 
-    setNewEmail('');
-    setNewPassword('');
-    setNewRole('user');
+    const user = data.user;
 
-    await load();
+    // cria profile
+    const { error: profileError } = await supabaseAdmin
+      .from('profiles')
+      .upsert({
+        id: user.id,
+        email,
+        role: role || 'user'
+      });
 
-    setLoading(false);
+    if (profileError) {
+      return res.status(400).json({ error: profileError.message });
+    }
 
-    alert('Usuário criado com sucesso');
+    return res.status(200).json({ ok: true });
 
   } catch (err) {
-    console.error(err);
-    setLoading(false);
-    alert('Erro ao criar usuário');
+    return res.status(500).json({ error: err.message });
   }
 }
