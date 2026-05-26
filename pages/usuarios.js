@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import Layout from '../components/Layout';
 import RoleGuard from '../components/RoleGuard';
 import { supabase } from '../lib/supabaseClient';
+import { useRouter } from 'next/router';
 
 export default function Usuarios() {
   const [users, setUsers] = useState([]);
