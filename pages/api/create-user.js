@@ -12,30 +12,36 @@ export default async function handler(req, res) {
 
   const { email, password, role } = req.body;
 
-  if (!email || !password) {
-    return res.status(400).json({ error: 'Email e senha obrigatórios' });
-  }
-
   try {
-    // cria usuário direto no Auth (SEM confirmação de email)
-    const { data, error } = await supabaseAdmin.auth.admin.createUser({
-      email,
-      password,
-      email_confirm: true
-    });
+    // tenta criar usuário
+    const { data, error } =
+      await supabaseAdmin.auth.admin.createUser({
+        email,
+        password,
+        email_confirm: true
+      });
 
-    if (error) {
+    // se já existe no auth, pega ele ao invés de quebrar tudo
+    let user = data?.user;
+
+    if (!user && error?.message?.includes('already been registered')) {
+      // busca usuário existente
+      const { data: list } =
+        await supabaseAdmin.auth.admin.listUsers();
+
+      user = list.users.find(u => u.email === email);
+    }
+
+    if (!user) {
       return res.status(400).json({ error: error.message });
     }
 
-    const user = data.user;
-
-    // cria profile
+    // GARANTE PROFILE SEMPRE
     const { error: profileError } = await supabaseAdmin
       .from('profiles')
       .upsert({
         id: user.id,
-        email,
+        email: user.email,
         role: role || 'user'
       });
 
