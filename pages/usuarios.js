@@ -11,6 +11,9 @@ export default function Usuarios() {
 
   const [loading, setLoading] = useState(false);
 
+  // 🔥 NOVO: controle de senhas por usuário
+  const [newPasswords, setNewPasswords] = useState({});
+
   useEffect(() => {
     load();
   }, []);
@@ -100,6 +103,45 @@ export default function Usuarios() {
     }
   }
 
+  // 🔥 NOVO: atualizar senha
+  async function updatePassword(userId) {
+    const password = newPasswords[userId];
+
+    if (!password || password.length < 6) {
+      return alert('Senha deve ter pelo menos 6 caracteres');
+    }
+
+    try {
+      const res = await fetch('/api/update-password', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          userId,
+          password
+        })
+      });
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        return alert(data.error || 'Erro ao atualizar senha');
+      }
+
+      setNewPasswords(prev => ({
+        ...prev,
+        [userId]: ''
+      }));
+
+      alert('Senha atualizada com sucesso');
+
+    } catch (err) {
+      console.error(err);
+      alert('Erro ao atualizar senha');
+    }
+  }
+
   return (
     <Layout>
       <div style={styles.wrapper}>
@@ -149,9 +191,34 @@ export default function Usuarios() {
 
           {users.map(u => (
             <div key={u.id} style={styles.userCard}>
+
               <div>
                 <p style={styles.email}>{u.email}</p>
                 <p style={styles.role}>{u.role}</p>
+
+                {/* 🔥 NOVO: campo de senha */}
+                <div style={{ display: 'flex', gap: 10, marginTop: 10, flexWrap: 'wrap' }}>
+                  <input
+                    type="password"
+                    placeholder="Nova senha"
+                    value={newPasswords[u.id] || ''}
+                    onChange={e =>
+                      setNewPasswords(prev => ({
+                        ...prev,
+                        [u.id]: e.target.value
+                      }))
+                    }
+                    style={styles.input}
+                  />
+
+                  <button
+                    style={styles.mainBtn}
+                    onClick={() => updatePassword(u.id)}
+                  >
+                    alterar senha
+                  </button>
+                </div>
+
               </div>
 
               <button
@@ -162,6 +229,7 @@ export default function Usuarios() {
               </button>
             </div>
           ))}
+
         </div>
 
       </div>
@@ -203,7 +271,9 @@ const styles = {
     display: 'flex',
     justifyContent: 'space-between',
     padding: 12,
-    borderBottom: '1px solid #222'
+    borderBottom: '1px solid #222',
+    flexWrap: 'wrap',
+    gap: 10
   },
 
   email: { color: '#fff', margin: 0 },
