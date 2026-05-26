@@ -14,12 +14,10 @@ export default function Base() {
   const [replyInput, setReplyInput] = useState({});
 
   const [showCategoryModal, setShowCategoryModal] = useState(false);
-const [newCategoryName, setNewCategoryName] = useState('');
+  const [newCategoryName, setNewCategoryName] = useState('');
 
-const [showCategorySelector, setShowCategorySelector] = useState(false);
-
+  const [showCategorySelector, setShowCategorySelector] = useState(false);
   const [showTopic, setShowTopic] = useState(false);
-
   const [showDeleteCategory, setShowDeleteCategory] = useState(false);
   const [selectedCategories, setSelectedCategories] = useState([]);
 
@@ -27,54 +25,30 @@ const [showCategorySelector, setShowCategorySelector] = useState(false);
   const [newDesc, setNewDesc] = useState('');
   const [newCat, setNewCat] = useState('');
 
- import { useState } from 'react';
-import Layout from '../components/Layout';
-import ProtectedRoute from '../components/ProtectedRoute';
+  useEffect(() => {
+    async function init() {
+      const { data } = await supabase.auth.getUser();
+      const currentUser = data?.user;
 
-export default function Base() {
-  const [newCat, setNewCat] = useState('');
+      setUser(currentUser || null);
 
-  return (
-    <ProtectedRoute>
-      <Layout>
-        <div>
-          <h1 style={{ color: '#fff' }}>Base de Conhecimento</h1>
+      if (!currentUser) return;
 
-          <input
-            value={newCat}
-            onChange={(e) => setNewCat(e.target.value)}
-            placeholder="Nova categoria"
-          />
-        </div>
-      </Layout>
-    </ProtectedRoute>
-  );
-}
+      const { data: existing } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('id', currentUser.id)
+        .single();
 
-useEffect(() => {
-  async function init() {
-    const { data } = await supabase.auth.getUser();
-    const currentUser = data?.user;
-
-    setUser(currentUser || null);
-
-    if (!currentUser) return;
-
-    // 👇 AQUI entra o seu código de profiles
-    const { data: existing } = await supabase
-      .from('profiles')
-      .select('*')
-      .eq('id', currentUser.id)
-      .single();
-
-    if (!existing) {
-      await supabase.from('profiles').insert({
-        id: currentUser.id,
-        email: currentUser.email,
-        role: 'usuario'
-      });
+      if (!existing) {
+        await supabase.from('profiles').insert({
+          id: currentUser.id,
+          email: currentUser.email,
+          role: 'usuario'
+        });
+      }
     }
-  }
+
 
   init();
   load();
