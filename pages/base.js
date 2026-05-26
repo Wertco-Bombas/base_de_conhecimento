@@ -27,6 +27,19 @@ const [showCategorySelector, setShowCategorySelector] = useState(false);
   const [newDesc, setNewDesc] = useState('');
   const [newCat, setNewCat] = useState('');
 
+  import Layout from '../components/Layout';
+import ProtectedRoute from '../components/ProtectedRoute';
+
+export default function Base() {
+  return (
+    <ProtectedRoute>
+      <Layout>
+        <h1>Base de conhecimento</h1>
+      </Layout>
+    </ProtectedRoute>
+  );
+}
+
 useEffect(() => {
   async function init() {
     const { data } = await supabase.auth.getUser();
