@@ -35,3 +35,33 @@ html, body {
   min-height: 100%;
   background: #0b0b0b;
 }
+
+@media (max-width: 768px) {
+  body {
+    font-size: 14px;
+  }
+
+  input, button, select {
+    font-size: 14px !important;
+  }
+
+  h1 {
+    font-size: 20px !important;
+  }
+
+  h2 {
+    font-size: 16px !important;
+  }
+
+  .mobileCard {
+    padding: 12px !important;
+  }
+
+  .mobileRow {
+    flex-direction: column !important;
+  }
+
+  .mobileInput {
+    width: 100% !important;
+  }
+}
