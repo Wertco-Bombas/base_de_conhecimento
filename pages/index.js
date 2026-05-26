@@ -1,103 +1,67 @@
-import { useEffect, useState } from 'react';
-import Layout from '../components/Layout';
-import ProtectedRoute from '../components/ProtectedRoute';
+import { useState } from 'react';
 import { supabase } from '../lib/supabaseClient';
+import { useRouter } from 'next/router';
 
-export default function Dashboard() {
-  const [stats, setStats] = useState({
-    users: 0,
-    topics: 0,
-    comments: 0,
-    categories: 0
-  });
+export default function Login() {
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const router = useRouter();
 
-  useEffect(() => {
-    load();
-  }, []);
-
-  async function load() {
-    const users = await supabase.from('profiles').select('*', { count: 'exact' });
-    const topics = await supabase.from('topicos').select('*', { count: 'exact' });
-    const comments = await supabase.from('comentarios').select('*', { count: 'exact' });
-    const categories = await supabase.from('categorias').select('*', { count: 'exact' });
-
-    setStats({
-      users: users.count || 0,
-      topics: topics.count || 0,
-      comments: comments.count || 0,
-      categories: categories.count || 0
+  async function login() {
+    const { error } = await supabase.auth.signInWithPassword({
+      email,
+      password
     });
+
+    if (error) {
+      alert(error.message);
+      return;
+    }
+
+    router.replace('/base');
   }
 
   return (
-    <ProtectedRoute>
-      <Layout>
+    <div style={styles.container}>
+      <h1>Login</h1>
 
-        <div style={styles.container}>
+      <input
+        placeholder="email"
+        value={email}
+        onChange={e => setEmail(e.target.value)}
+        style={styles.input}
+      />
 
-          <h1 style={styles.title}>Dashboard</h1>
+      <input
+        placeholder="senha"
+        type="password"
+        value={password}
+        onChange={e => setPassword(e.target.value)}
+        style={styles.input}
+      />
 
-          <div style={styles.grid}>
-
-            <div style={styles.card}>
-              <h2>Usuários</h2>
-              <p style={styles.number}>{stats.users}</p>
-            </div>
-
-            <div style={styles.card}>
-              <h2>Tópicos</h2>
-              <p style={styles.number}>{stats.topics}</p>
-            </div>
-
-            <div style={styles.card}>
-              <h2>Comentários</h2>
-              <p style={styles.number}>{stats.comments}</p>
-            </div>
-
-            <div style={styles.card}>
-              <h2>Categorias</h2>
-              <p style={styles.number}>{stats.categories}</p>
-            </div>
-
-          </div>
-
-        </div>
-
-      </Layout>
-    </ProtectedRoute>
+      <button onClick={login} style={styles.button}>
+        Entrar
+      </button>
+    </div>
   );
 }
 
 const styles = {
   container: {
-    width: '100%',
-    minHeight: '100vh',
-    background: '#0a0a0a',
+    display: 'flex',
+    flexDirection: 'column',
+    gap: 10,
+    width: 300,
+    margin: '100px auto',
     color: '#fff'
   },
-
-  title: {
-    color: '#f5c400',
-    marginBottom: 20
+  input: {
+    padding: 10
   },
-
-  grid: {
-    display: 'grid',
-    gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
-    gap: 15
-  },
-
-  card: {
-    background: '#111',
-    padding: 20,
-    borderRadius: 12,
-    border: '1px solid #222',
-    transition: '0.2s'
-  },
-
-  number: {
-    fontSize: 32,
-    color: '#f5c400',
-    fontWeight: 'bold'
+  button: {
+    padding: 10,
+    background: '#FFD600',
+    border: 'none'
   }
 };
