@@ -275,29 +275,47 @@ async function createCategory() {
   }) {
     const [localText, setLocalText] = useState('');
 
-    return (
-      <div
+   const ReplyBox = memo(function ReplyBox({
+  commentId,
+  topicId,
+  addComment
+}) {
+  const [localText, setLocalText] = useState('');
+
+  return (
+    <div
+      style={{
+        marginTop: 10,
+        display: 'flex',
+        gap: 8,
+        flexWrap: 'wrap',
+        width: '100%'
+      }}
+    >
+      <input
+        className="mobileInput"
+        placeholder="Escreva uma resposta..."
+        value={localText}
+        onChange={(e) => setLocalText(e.target.value)}
         style={{
-          marginTop: 10,
-          display: 'flex',
-          gap: 8,
-          flexWrap: 'wrap'
+          ...styles.input,
+          flex: 1
+        }}
+      />
+
+      <button
+        style={styles.mainBtn}
+        onClick={async () => {
+          await addComment(topicId, commentId, localText);
+
+          setLocalText('');
         }}
       >
-
-        <button
-          style={styles.mainBtn}
-          onClick={async () => {
-            await addComment(topicId, commentId, localText);
-
-            setLocalText('');
-          }}
-        >
-          enviar
-        </button>
-      </div>
-    );
-  });
+        enviar
+      </button>
+    </div>
+  );
+});
 
   const CommentNode = memo(function CommentNode({
     comment,
