@@ -191,6 +191,15 @@ const styles = {
     cursor: 'pointer',
     borderRadius: 8
   }
-
+wrapper: {
+  display: 'flex',
+  minHeight: '100vh',
+  width: '100%',
+  background: '#0b0b0b',
+  color: '#fff',
+  fontFamily: 'Arial'
+}
 
 };
+
+
