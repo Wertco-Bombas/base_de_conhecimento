@@ -13,43 +13,59 @@ export default async function handler(req, res) {
   const { email, password, role } = req.body;
 
   try {
-    // tenta criar usuário
-    const { data, error } =
-      await supabaseAdmin.auth.admin.createUser({
-        email,
-        password,
-        email_confirm: true
-      });
+    let user = null;
 
-    // se já existe no auth, pega ele ao invés de quebrar tudo
-    let user = data?.user;
+    // 1. tenta criar usuário
+    const { data, error } = await supabaseAdmin.auth.admin.createUser({
+      email,
+      password,
+      email_confirm: true
+    });
 
-    if (!user && error?.message?.includes('already been registered')) {
-      // busca usuário existente
-      const { data: list } =
+    if (data?.user) {
+      user = data.user;
+    }
+
+    // 2. se já existe, busca direto
+    if (!user) {
+      const { data: found } =
         await supabaseAdmin.auth.admin.listUsers();
 
-      user = list.users.find(u => u.email === email);
+      user = found.users.find(u => u.email === email);
     }
 
     if (!user) {
-      return res.status(400).json({ error: error.message });
+      return res.status(400).json({ error: 'Usuário não encontrado no Auth' });
     }
 
-    // GARANTE PROFILE SEMPRE
+    // 3. GARANTE PROFILE (sem depender de trigger)
     const { error: profileError } = await supabaseAdmin
       .from('profiles')
-      .upsert({
+      .upsert(
+        {
+          id: user.id,
+          email: user.email,
+          role: role || 'user'
+        },
+        { onConflict: 'id' }
+      );
+
+    if (profileError) {
+      console.error(profileError);
+      return res.status(500).json({
+        error: 'Erro ao salvar profile',
+        detail: profileError.message
+      });
+    }
+
+    return res.status(200).json({
+      ok: true,
+      user: {
         id: user.id,
         email: user.email,
         role: role || 'user'
-      });
-
-    if (profileError) {
-      return res.status(400).json({ error: profileError.message });
-    }
-
-    return res.status(200).json({ ok: true });
+      }
+    });
 
   } catch (err) {
     return res.status(500).json({ error: err.message });
