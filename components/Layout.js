@@ -50,8 +50,18 @@ export default function Layout({ children }) {
 
     loadUser();
 
+    // 🔥 garante sincronização real de login/logout
+    const { data: listener } = supabase.auth.onAuthStateChange(
+      (event) => {
+        if (event === 'SIGNED_OUT') {
+          setUser(null);
+        }
+      }
+    );
+
     return () => {
       isMounted = false;
+      listener.subscription.unsubscribe();
     };
   }, []);
 
@@ -59,12 +69,18 @@ export default function Layout({ children }) {
     try {
       setLoading(true);
 
-      await supabase.auth.signOut();
-
       setUser(null);
 
-      // evita loop de reload infinito
-      window.location.href = '/';
+      // força logout global no Supabase
+      await supabase.auth.signOut({ scope: 'global' });
+
+      // limpa cache local (importante em alguns casos)
+      try {
+        localStorage.clear();
+      } catch (e) {}
+
+      // evita loop de reload
+      window.location.replace('/');
     } catch (err) {
       console.error('Erro logout:', err);
       setLoading(false);
