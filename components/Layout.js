@@ -63,9 +63,10 @@ export default function Layout({ children }) {
 
       setUser(null);
 
-      window.location.replace('/');
+      // evita loop de reload infinito
+      window.location.href = '/';
     } catch (err) {
-      console.error(err);
+      console.error('Erro logout:', err);
       setLoading(false);
     }
   }
@@ -73,12 +74,12 @@ export default function Layout({ children }) {
   return (
     <div style={styles.wrapper}>
 
+      {/* SIDEBAR */}
       <div style={styles.sidebar}>
         <div style={styles.brand}>WERTCO</div>
 
         {!loading && user && (
           <div style={styles.menu}>
-
             <a style={styles.link} href="/base">
               📚 Base de Conhecimento
             </a>
@@ -94,7 +95,6 @@ export default function Layout({ children }) {
                 👥 Usuários
               </a>
             )}
-
           </div>
         )}
 
@@ -113,6 +113,7 @@ export default function Layout({ children }) {
         </div>
       </div>
 
+      {/* CONTENT */}
       <div style={styles.content}>
         {children}
       </div>
@@ -138,7 +139,7 @@ const styles = {
     display: 'flex',
     flexDirection: 'column',
     gap: 15,
-    borderRight: '1px solid #222' // ✅ CORRIGIDO AQUI
+    borderRight: '1px solid #222'
   },
 
   brand: {
