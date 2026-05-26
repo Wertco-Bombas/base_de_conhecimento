@@ -34,7 +34,6 @@ export default function Usuarios() {
     try {
       setLoading(true);
 
-      // cria usuário auth
       const { data: createdUser, error: authError } =
         await supabase.auth.signUp({
           email: newEmail,
@@ -53,7 +52,6 @@ export default function Usuarios() {
         return alert('Usuário não criado');
       }
 
-      // cria profile
       const { error: profileError } = await supabase
         .from('profiles')
         .insert({
@@ -83,6 +81,41 @@ export default function Usuarios() {
       setLoading(false);
 
       alert('Erro ao criar usuário');
+    }
+  }
+
+  async function deleteUser(userId, email) {
+    const confirmar = confirm(
+      `Excluir usuário?\n\n${email}`
+    );
+
+    if (!confirmar) return;
+
+    try {
+      setLoading(true);
+
+      const { error } = await supabase
+        .from('profiles')
+        .delete()
+        .eq('id', userId);
+
+      if (error) {
+        setLoading(false);
+        return alert(error.message);
+      }
+
+      await load();
+
+      setLoading(false);
+
+      alert('Usuário removido');
+
+    } catch (err) {
+      console.error(err);
+
+      setLoading(false);
+
+      alert('Erro ao excluir usuário');
     }
   }
 
@@ -161,15 +194,30 @@ export default function Usuarios() {
                 key={u.id}
                 style={styles.userCard}
               >
-                <div>
-                  <p style={styles.email}>
-                    {u.email}
-                  </p>
 
-                  <p style={styles.role}>
-                    {u.role}
-                  </p>
+                <div style={styles.userTop}>
+
+                  <div>
+                    <p style={styles.email}>
+                      {u.email}
+                    </p>
+
+                    <p style={styles.role}>
+                      {u.role}
+                    </p>
+                  </div>
+
+                  <button
+                    style={styles.deleteBtn}
+                    onClick={() =>
+                      deleteUser(u.id, u.email)
+                    }
+                  >
+                    excluir
+                  </button>
+
                 </div>
+
               </div>
             ))}
 
@@ -240,6 +288,15 @@ const styles = {
     fontWeight: 'bold'
   },
 
+  deleteBtn: {
+    background: 'transparent',
+    border: '1px solid #ff4d4d',
+    color: '#ff4d4d',
+    padding: '10px 14px',
+    borderRadius: 10,
+    cursor: 'pointer'
+  },
+
   userList: {
     display: 'flex',
     flexDirection: 'column',
@@ -251,6 +308,14 @@ const styles = {
     borderRadius: 14,
     background: '#0d0d0d',
     border: '1px solid #222'
+  },
+
+  userTop: {
+    display: 'flex',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    gap: 10,
+    flexWrap: 'wrap'
   },
 
   email: {
