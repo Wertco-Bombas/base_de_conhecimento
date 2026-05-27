@@ -500,7 +500,6 @@ async function createCategory() {
 
 <div style={styles.row} className="mobileRow">
   
-<div style={styles.row} className="mobileRow">
 
   <textarea
     className="mobileInput"
