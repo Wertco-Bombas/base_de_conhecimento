@@ -514,18 +514,17 @@ async function createCategory() {
   style={styles.input}
 />
 
-<div style={{ width: '100%' }}>
-  <input
-    type="file"
-    accept="image/*"
-    onChange={(e) =>
-      setCommentImage(prev => ({
-        ...prev,
-        [topic.id]: e.target.files[0]
-      }))
-    }
-  />
-</div>
+<input
+  type="file"
+  accept="image/*"
+  onChange={(e) =>
+    setTopicImage(e.target.files[0])
+  }
+  style={{
+    marginTop: 10,
+    color: '#fff'
+  }}
+/>
 
 <button
   style={styles.mainBtn}
