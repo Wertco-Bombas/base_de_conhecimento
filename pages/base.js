@@ -629,7 +629,7 @@ async function createCategory() {
         </button>
       </div>
     </div>
-  </div>
+ 
 
       )}
 
