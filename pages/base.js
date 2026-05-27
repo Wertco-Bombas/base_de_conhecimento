@@ -4,6 +4,7 @@ import { supabase } from '../lib/supabaseClient';
 import { canApprove } from '../lib/permissions';
 import { uploadImage } from '../lib/uploadImage';
 
+
 export default function Base() {
   const [user, setUser] = useState(null);
   const [topics, setTopics] = useState([]);
@@ -13,7 +14,7 @@ export default function Base() {
   const [q, setQ] = useState('');
   const [commentInput, setCommentInput] = useState({});
   const [replyInput, setReplyInput] = useState({});
-  
+  const [commentImage, setCommentImage] = useState(null);
 
   const [showCategoryModal, setShowCategoryModal] = useState(false);
   const [newCategoryName, setNewCategoryName] = useState('');
