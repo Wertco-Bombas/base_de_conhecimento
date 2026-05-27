@@ -500,71 +500,46 @@ async function createCategory() {
 
 <div style={styles.row} className="mobileRow">
   
-  <textarea
-    className="mobileInput"
-    rows={4}
-    placeholder="Escreva um comentário..."
-    value={commentInput[topic.id] || ''}
-    onChange={e =>
-      setCommentInput(prev => ({
-        ...prev,
-        [topic.id]: e.target.value
-      }))
-    }
-    style={styles.input}
-  />
-
-  <div style={{ width: '100%' }}>
-  <input
-  type="file"
-  accept="image/*"
-  onChange={(e) =>
-    setCommentImage(prev => ({
+<textarea
+  className="mobileInput"
+  rows={4}
+  placeholder="Escreva um comentário..."
+  value={commentInput[topic.id] || ''}
+  onChange={e =>
+    setCommentInput(prev => ({
       ...prev,
-      [topic.id]: e.target.files[0]
+      [topic.id]: e.target.value
     }))
   }
+  style={styles.input}
 />
-  </div>
 
-  <button
-    style={styles.mainBtn}
-    onClick={() =>
-      addComment(
-  topic.id,
-  null,
-  commentInput[topic.id],
-  commentImage?.[topic.id]
-)
+<div style={{ width: '100%' }}>
+  <input
+    type="file"
+    accept="image/*"
+    onChange={(e) =>
+      setCommentImage(prev => ({
+        ...prev,
+        [topic.id]: e.target.files[0]
+      }))
     }
-  >
-    enviar
-  </button>
+  />
 </div>
-      {showTopic && (
-  <div style={styles.modal}>
-    <div
-      style={{
-        ...styles.modalBox,
-        width: '90%',
-        maxWidth: 450,
-        display: 'flex',
-        flexDirection: 'column',
-        gap: 14
-      }}
-    >
-      <h2 style={{ color: '#FFD600' }}>
-        Novo Tópico
-      </h2>
 
-      <input
-        className="mobileInput"
-        style={styles.input}
-        placeholder="Título"
-        value={newTopic}
-        onChange={e => setNewTopic(e.target.value)}
-      />
-
+<button
+  style={styles.mainBtn}
+  onClick={() =>
+    addComment(
+      topic.id,
+      null,
+      commentInput[topic.id],
+      commentImage?.[topic.id]
+    )
+  }
+>
+  enviar
+</button>
 <textarea
   className="mobileInput"
   style={styles.input}
