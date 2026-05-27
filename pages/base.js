@@ -2,6 +2,7 @@ import { useEffect, useState, useMemo, memo } from 'react';
 import Layout from '../components/Layout';
 import { supabase } from '../lib/supabaseClient';
 import { canApprove } from '../lib/permissions';
+import { uploadImage } from '../lib/uploadImage';
 
 export default function Base() {
   const [user, setUser] = useState(null);
@@ -12,6 +13,7 @@ export default function Base() {
   const [q, setQ] = useState('');
   const [commentInput, setCommentInput] = useState({});
   const [replyInput, setReplyInput] = useState({});
+  
 
   const [showCategoryModal, setShowCategoryModal] = useState(false);
   const [newCategoryName, setNewCategoryName] = useState('');
@@ -20,6 +22,7 @@ export default function Base() {
   const [showTopic, setShowTopic] = useState(false);
   const [showDeleteCategory, setShowDeleteCategory] = useState(false);
   const [selectedCategories, setSelectedCategories] = useState([]);
+  const [topicImage, setTopicImage] = useState(null);
 
   const [newTopic, setNewTopic] = useState('');
   const [newDesc, setNewDesc] = useState('');
@@ -84,6 +87,11 @@ async function load() {
   async function createTopic() {
     if (!user) return alert('Faça login');
     if (!newTopic || !newCat) return alert('Preencha título e categoria');
+    let imageUrl = null;
+
+if (topicImage) {
+  imageUrl = await uploadImage(topicImage);
+}
 
     const { data: catData, error: catError } = await supabase
       .from('categorias')
@@ -94,6 +102,7 @@ async function load() {
     if (catError || !catData) return alert('Categoria não encontrada');
 
     const { error } = await supabase.from('topicos').insert({
+      image_url: imageUrl,
       titulo: newTopic,
       descricao: newDesc,
       categoria_id: catData.id,
@@ -437,6 +446,19 @@ async function createCategory() {
   }}
 >
   {topic.descricao}
+{topic.image_url && (
+  <img
+    src={topic.image_url}
+    alt=""
+    style={{
+      width: '100%',
+      marginTop: 15,
+      borderRadius: 12,
+      maxHeight: 400,
+      objectFit: 'cover'
+    }}
+  />
+)}
 </p>
 
       <div style={styles.meta}>
@@ -500,14 +522,24 @@ async function createCategory() {
         onChange={e => setNewTopic(e.target.value)}
       />
 
-      <textarea
-        className="mobileInput"
-        style={styles.input}
-        placeholder="Descrição"
-        rows={5}
-        value={newDesc}
-        onChange={e => setNewDesc(e.target.value)}
-      />
+<textarea
+  className="mobileInput"
+  style={styles.input}
+  placeholder="Descrição"
+  rows={5}
+  value={newDesc}
+  onChange={e => setNewDesc(e.target.value)}
+/>
+
+<input
+  type="file"
+  accept="image/*"
+  onChange={(e) => setTopicImage(e.target.files[0])}
+  style={{
+    marginTop: 10,
+    color: '#fff'
+  }}
+/>
 
      <div style={{ position: 'relative' }}>
   <button
