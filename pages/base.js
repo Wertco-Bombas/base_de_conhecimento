@@ -323,9 +323,14 @@ async function createCategory() {
           <span>{formatDate(comment.created_at)}</span>
         </div>
 
-        <div style={styles.commentText}>
-          💬 {comment.texto}
-        </div>
+        <div
+  style={{
+    ...styles.commentText,
+    whiteSpace: 'pre-line'
+  }}
+>
+  💬 {comment.texto}
+</div>
 
         <div style={styles.commentActions}>
           <button
@@ -424,7 +429,14 @@ async function createCategory() {
         </button>
       </div>
 
-      <p style={styles.desc}>{topic.descricao}</p>
+      <p
+  style={{
+    ...styles.desc,
+    whiteSpace: 'pre-line'
+  }}
+>
+  {topic.descricao}
+</p>
 
       <div style={styles.meta}>
         <span>{topic.user_email}</span>
@@ -439,8 +451,11 @@ async function createCategory() {
 
       <div style={styles.row} className="mobileRow">
         <input
-          className="mobileInput"
-          placeholder="Escreva um comentário..."
+          <textarea
+  className="mobileInput"
+  rows={4}
+  placeholder="Escreva um comentário..."
+/>
           value={commentInput[topic.id] || ''}
           onChange={e =>
             setCommentInput(prev => ({
