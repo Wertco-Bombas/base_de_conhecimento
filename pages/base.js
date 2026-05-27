@@ -283,11 +283,12 @@ async function createCategory() {
         width: '100%'
       }}
     >
-      <input
-        className="mobileInput"
-        placeholder="Escreva uma resposta..."
-        value={localText}
-        onChange={(e) => setLocalText(e.target.value)}
+      <textarea
+  className="mobileInput"
+  rows={3}
+  placeholder="Escreva uma resposta..."
+  value={localText}
+  onChange={(e) => setLocalText(e.target.value)}
         style={{
           ...styles.input,
           flex: 1
@@ -450,21 +451,19 @@ async function createCategory() {
       </div>
 
       <div style={styles.row} className="mobileRow">
-        <input
-          <textarea
+        <textarea
   className="mobileInput"
   rows={4}
   placeholder="Escreva um comentário..."
+  value={commentInput[topic.id] || ''}
+  onChange={e =>
+    setCommentInput(prev => ({
+      ...prev,
+      [topic.id]: e.target.value
+    }))
+  }
+  style={styles.input}
 />
-          value={commentInput[topic.id] || ''}
-          onChange={e =>
-            setCommentInput(prev => ({
-              ...prev,
-              [topic.id]: e.target.value
-            }))
-          }
-          style={styles.input}
-        />
 
         <button
           style={styles.mainBtn}
