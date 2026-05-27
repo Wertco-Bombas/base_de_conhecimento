@@ -14,7 +14,7 @@ export default function Base() {
   const [q, setQ] = useState('');
   const [commentInput, setCommentInput] = useState({});
   const [replyInput, setReplyInput] = useState({});
-  const [commentImage, setCommentImage] = useState(null);
+  const [commentImage, setCommentImage] = useState({});
 
   const [showCategoryModal, setShowCategoryModal] = useState(false);
   const [newCategoryName, setNewCategoryName] = useState('');
@@ -122,32 +122,43 @@ if (topicImage) {
     load();
   }
 
-  async function addComment(topicId, parentId = null, texto = null) {
-    if (!user) return alert('Faça login');
+ async function addComment(topicId, parentId = null, texto = null, imageFile = null) {
+  if (!user) return alert('Faça login');
 
-    const text = texto || commentInput[topicId];
+  const text = texto || commentInput[topicId];
 
-    if (!text?.trim()) return;
+  if (!text?.trim() && !imageFile) return;
 
-    const { error } = await supabase.from('comentarios').insert({
-      topic_id: topicId,
-      parent_id: parentId,
-      texto: text,
-      user_email: user?.email,
-      created_at: new Date().toISOString(),
-      status: canApprove(user) ? 'approved' : 'pending'
-    });
+  let imageUrl = null;
 
-    if (error) return alert(error.message);
-
-    setCommentInput(prev => ({
-      ...prev,
-      [topicId]: ''
-    }));
-
-    load();
+  if (imageFile) {
+    imageUrl = await uploadImage(imageFile);
   }
 
+  const { error } = await supabase.from('comentarios').insert({
+    topic_id: topicId,
+    parent_id: parentId,
+    texto: text || '',
+    image_url: imageUrl,
+    user_email: user?.email,
+    created_at: new Date().toISOString(),
+    status: canApprove(user) ? 'approved' : 'pending'
+  });
+
+if (error) return alert(error.message);
+
+setCommentInput(prev => ({
+  ...prev,
+  [topicId]: ''
+}));
+
+setCommentImage(prev => ({
+  ...prev,
+  [topicId]: null
+}));
+
+load();
+}
   async function deleteTopic(id) {
     const confirmar = confirm('Excluir tópico?');
 
@@ -341,6 +352,20 @@ async function createCategory() {
   }}
 >
   💬 {comment.texto}
+
+  {comment.image_url && (
+    <img
+      src={comment.image_url}
+      alt=""
+      style={{
+        width: '100%',
+        marginTop: 10,
+        borderRadius: 10,
+        maxHeight: 300,
+        objectFit: 'cover'
+      }}
+    />
+  )}
 </div>
 
         <div style={styles.commentActions}>
@@ -473,32 +498,47 @@ async function createCategory() {
         ))}
       </div>
 
-      <div style={styles.row} className="mobileRow">
-        <textarea
-  className="mobileInput"
-  rows={4}
-  placeholder="Escreva um comentário..."
-  value={commentInput[topic.id] || ''}
-  onChange={e =>
-    setCommentInput(prev => ({
-      ...prev,
-      [topic.id]: e.target.value
-    }))
-  }
-  style={styles.input}
-/>
+<div style={styles.row} className="mobileRow">
+  
+  <textarea
+    className="mobileInput"
+    rows={4}
+    placeholder="Escreva um comentário..."
+    value={commentInput[topic.id] || ''}
+    onChange={e =>
+      setCommentInput(prev => ({
+        ...prev,
+        [topic.id]: e.target.value
+      }))
+    }
+    style={styles.input}
+  />
 
-        <button
-          style={styles.mainBtn}
-          onClick={() => addComment(topic.id)}
-        >
-          enviar
-        </button>
-      </div>
+  <div style={{ width: '100%' }}>
+    <input
+      type="file"
+      accept="image/*"
+      onChange={(e) =>
+        setCommentImage(e.target.files[0])
+      }
+      style={{ color: '#fff', marginTop: 8 }}
+    />
+  </div>
 
-    </div>
-  );
-})}
+  <button
+    style={styles.mainBtn}
+    onClick={() =>
+      addComment(
+  topic.id,
+  null,
+  commentInput[topic.id],
+  commentImage?.[topic.id]
+)
+    }
+  >
+    enviar
+  </button>
+</div>
       {showTopic && (
   <div style={styles.modal}>
     <div
@@ -535,7 +575,9 @@ async function createCategory() {
 <input
   type="file"
   accept="image/*"
-  onChange={(e) => setTopicImage(e.target.files[0])}
+  onChange={(e) =>
+    setTopicImage(e.target.files[0])
+  }
   style={{
     marginTop: 10,
     color: '#fff'
