@@ -542,7 +542,7 @@ async function createCategory() {
   </button>
 
 </div>
-/>
+
 
 <input
   type="file"
