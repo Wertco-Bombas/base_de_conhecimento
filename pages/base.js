@@ -388,12 +388,12 @@ const ReplyBox = memo(function ReplyBox({
       <div style={styles.commentActions}>
         <button
           style={styles.smallBtn}
-onClick={() =>
-  setReplyInput(prev => ({
-    ...prev,
-    [comment.id]: !prev[comment.id]
-  }))
-}
+          onClick={() =>
+            setReplyInput(prev => ({
+              ...prev,
+              [comment.id]: prev[comment.id] ?? true
+            }))
+          }
         >
           responder
         </button>
@@ -406,7 +406,13 @@ onClick={() =>
         </button>
       </div>
 
-     
+      {replyInput[comment.id] && (
+        <ReplyBox
+          commentId={comment.id}
+          topicId={comment.topic_id}
+          addComment={addComment}
+        />
+      )}
 
       {comment.children?.length > 0 &&
         comment.children.map(child => (
@@ -650,7 +656,27 @@ return (
   )}
 </div>
 
-      
+      <div
+        style={{
+          display: 'flex',
+          gap: 10,
+          flexWrap: 'wrap'
+        }}
+      >
+        <button
+          style={styles.mainBtn}
+          onClick={createTopic}
+        >
+          salvar
+        </button>
+
+        <button
+          style={styles.smallBtn}
+          onClick={() => setShowTopic(false)}
+        >
+          fechar
+        </button>
+      </div>
      </div>
   );
 })}
