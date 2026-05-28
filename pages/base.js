@@ -619,7 +619,7 @@ return (
       setShowCategorySelector(prev => !prev)
     }
   >
-    {newCat || 'Selecionar categoria'}
+    
   </button>
 
   {showCategorySelector && (
