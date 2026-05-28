@@ -296,13 +296,6 @@ async function createCategory() {
 }) {
 const [localText, setLocalText] = useState('');
 
-const ReplyBox = memo(function ReplyBox({
-  commentId,
-  topicId,
-  addComment
-}) {
-  const [localText, setLocalText] = useState('');
-
   return (
     <div
       style={{
