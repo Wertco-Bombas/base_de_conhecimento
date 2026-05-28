@@ -298,7 +298,7 @@ const ReplyBox = memo(function ReplyBox({
   const [localImage, setLocalImage] = useState(null);
 
   return (
-    {/*
+    
     <div style={{
       marginTop: 10,
       display: 'flex',
@@ -342,7 +342,7 @@ const ReplyBox = memo(function ReplyBox({
       </button>
 
     </div>
-*/}
+
   );
 });
   const CommentNode = memo(function CommentNode({
