@@ -415,7 +415,10 @@ const CommentNode = memo(function CommentNode({
 
 /* 🔥 MODAL DA IMAGEM (DEVE FICAR FORA DO COMPONENTE AUXILIAR, MAS DENTRO DO RETURN PRINCIPAL) */
 
-{openImage && (
+
+return (
+  <Layout>
+  {openImage && (
   <div
     onClick={() => setOpenImage(null)}
     style={{
@@ -440,8 +443,6 @@ const CommentNode = memo(function CommentNode({
   </div>
 )}
 
-return (
-  <Layout>
     <input
       className="mobileInput"
       placeholder="Buscar tópicos e comentários..."
