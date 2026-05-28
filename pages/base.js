@@ -25,6 +25,8 @@ export default function Base() {
   const [selectedCategories, setSelectedCategories] = useState([]);
   const [topicImage, setTopicImage] = useState(null);
 
+  const [openImage, setOpenImage] = useState(null);
+
   const [newTopic, setNewTopic] = useState('');
   const [newDesc, setNewDesc] = useState('');
   const [newCat, setNewCat] = useState('');
@@ -354,17 +356,19 @@ async function createCategory() {
   💬 {comment.texto}
 
   {comment.image_url && (
-    <img
-      src={comment.image_url}
-      alt=""
-     style={{
+   <img
+  src={comment.image_url}
+  onClick={() => setOpenImage(comment.image_url)}
+ style={{
   width: '100%',
   marginTop: 10,
   borderRadius: 10,
-  maxHeight: 'none',
-  objectFit: 'contain'
+  maxHeight: 180,
+  objectFit: 'contain',
+  background: '#000',
+  cursor: 'zoom-in'
 }}
-    />
+/>
   )}
 </div>
 
@@ -408,6 +412,30 @@ async function createCategory() {
       </div>
     );
   });
+{openImage && (
+  <div
+    onClick={() => setOpenImage(null)}
+    style={{
+      position: 'fixed',
+      inset: 0,
+      background: 'rgba(0,0,0,0.9)',
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      zIndex: 9999,
+      cursor: 'zoom-out'
+    }}
+  >
+    <img
+      src={openImage}
+      style={{
+        maxWidth: '95%',
+        maxHeight: '95%',
+        borderRadius: 12
+      }}
+    />
+  </div>
+)}
 
   return (
     <Layout>
