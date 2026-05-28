@@ -318,7 +318,6 @@ const ReplyBox = memo(function ReplyBox({
         }}
       />
 
-      {/* 🔥 INPUT DE IMAGEM */}
       <input
         type="file"
         accept="image/*"
@@ -340,6 +339,7 @@ const ReplyBox = memo(function ReplyBox({
       >
         enviar
       </button>
+
     </div>
   );
 });
