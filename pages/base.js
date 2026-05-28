@@ -550,6 +550,7 @@ return (
 </div>
 
 <div style={styles.row} className="mobileRow">
+  
 
   <textarea
     className="mobileInput"
@@ -565,6 +566,17 @@ return (
     style={styles.input}
   />
 
+  <input
+    type="file"
+    accept="image/*"
+    onChange={(e) =>
+      setCommentImage(prev => ({
+        ...prev,
+        [topic.id]: e.target.files[0]
+      }))
+    }
+  />
+
   <button
     style={styles.mainBtn}
     onClick={() =>
@@ -572,7 +584,7 @@ return (
         topic.id,
         null,
         commentInput[topic.id],
-        null
+        commentImage?.[topic.id]
       )
     }
   >
