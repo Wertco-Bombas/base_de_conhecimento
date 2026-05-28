@@ -294,6 +294,13 @@ async function createCategory() {
   topicId,
   addComment
 }) {
+const [localText, setLocalText] = useState('');
+
+const ReplyBox = memo(function ReplyBox({
+  commentId,
+  topicId,
+  addComment
+}) {
   const [localText, setLocalText] = useState('');
 
   return (
@@ -307,11 +314,11 @@ async function createCategory() {
       }}
     >
       <textarea
-  className="mobileInput"
-  rows={3}
-  placeholder="Escreva uma resposta..."
-  value={localText}
-  onChange={(e) => setLocalText(e.target.value)}
+        className="mobileInput"
+        rows={3}
+        placeholder="Escreva uma resposta..."
+        value={localText}
+        onChange={(e) => setLocalText(e.target.value)}
         style={{
           ...styles.input,
           flex: 1
@@ -331,132 +338,132 @@ async function createCategory() {
   );
 });
 
-  const CommentNode = memo(function CommentNode({
-    comment,
-    level = 0
-  }) {
-    return (
+const CommentNode = memo(function CommentNode({
+  comment,
+  level = 0
+}) {
+  return (
+    <div
+      style={{
+        ...styles.commentBox,
+        marginLeft: level * 25
+      }}
+    >
+      <div style={styles.commentMeta}>
+        <span>{comment.user_email || 'Usuário'}</span>
+        <span>{formatDate(comment.created_at)}</span>
+      </div>
+
       <div
         style={{
-          ...styles.commentBox,
-          marginLeft: level * 25
+          ...styles.commentText,
+          whiteSpace: 'pre-line'
         }}
       >
-        <div style={styles.commentMeta}>
-          <span>{comment.user_email || 'Usuário'}</span>
-          <span>{formatDate(comment.created_at)}</span>
-        </div>
+        💬 {comment.texto}
 
-        <div
-  style={{
-    ...styles.commentText,
-    whiteSpace: 'pre-line'
-  }}
->
-  💬 {comment.texto}
-
-  {comment.image_url && (
-   <img
-  src={comment.image_url}
- onClick={() => setOpenImage(comment.image_url)}
- style={{
-  width: '100%',
-  marginTop: 10,
-  borderRadius: 10,
-  maxHeight: 180,
-  objectFit: 'contain',
-  background: '#000',
-  cursor: 'zoom-in'
-}}
-/>
-  )}
-</div>
-
-        <div style={styles.commentActions}>
-          <button
-            style={styles.smallBtn}
-            onClick={() =>
-              setReplyInput(prev => ({
-                ...prev,
-                [comment.id]: prev[comment.id] ?? true
-              }))
-            }
-          >
-            responder
-          </button>
-
-          <button
-            style={styles.smallBtnDanger}
-            onClick={() => deleteComment(comment.id)}
-          >
-            excluir
-          </button>
-        </div>
-
-        {replyInput[comment.id] && (
-          <ReplyBox
-            commentId={comment.id}
-            topicId={comment.topic_id}
-            addComment={addComment}
+        {comment.image_url && (
+          <img
+            src={comment.image_url}
+            onClick={() => setOpenImage(comment.image_url)}
+            style={{
+              width: '100%',
+              marginTop: 10,
+              borderRadius: 10,
+              maxHeight: 180,
+              objectFit: 'contain',
+              background: '#000',
+              cursor: 'zoom-in'
+            }}
           />
         )}
-
-        {comment.children?.length > 0 &&
-          comment.children.map(child => (
-            <CommentNode
-              key={child.id}
-              comment={child}
-              level={level + 1}
-            />
-          ))}
       </div>
-    );
-  });
- {openImage && (
-      <div
-        onClick={() => setOpenImage(null)}
-        style={{
-          position: 'fixed',
-          inset: 0,
-          background: 'rgba(0,0,0,0.9)',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          zIndex: 9999,
-          cursor: 'zoom-out'
-        }}
-      >
-        <img
-          src={openImage}
-          style={{
-            maxWidth: '95%',
-            maxHeight: '95%',
-            borderRadius: 12
-          }}
-        />
-      </div>
-    )}
 
-  </Layout>
-);
-
-  return (
-    <Layout>
-      <input
-        className="mobileInput"
-        placeholder="Buscar tópicos e comentários..."
-        value={q}
-        onChange={e => setQ(e.target.value)}
-        style={styles.search}
-      />
-
-      <div style={styles.topBar}>
+      <div style={styles.commentActions}>
         <button
-          style={styles.mainBtn}
-          onClick={() => setShowTopic(true)}
+          style={styles.smallBtn}
+          onClick={() =>
+            setReplyInput(prev => ({
+              ...prev,
+              [comment.id]: prev[comment.id] ?? true
+            }))
+          }
         >
-          + Novo Tópico
+          responder
         </button>
+
+        <button
+          style={styles.smallBtnDanger}
+          onClick={() => deleteComment(comment.id)}
+        >
+          excluir
+        </button>
+      </div>
+
+      {replyInput[comment.id] && (
+        <ReplyBox
+          commentId={comment.id}
+          topicId={comment.topic_id}
+          addComment={addComment}
+        />
+      )}
+
+      {comment.children?.length > 0 &&
+        comment.children.map(child => (
+          <CommentNode
+            key={child.id}
+            comment={child}
+            level={level + 1}
+          />
+        ))}
+    </div>
+  );
+});
+
+/* 🔥 MODAL DA IMAGEM (DEVE FICAR FORA DO COMPONENTE AUXILIAR, MAS DENTRO DO RETURN PRINCIPAL) */
+
+{openImage && (
+  <div
+    onClick={() => setOpenImage(null)}
+    style={{
+      position: 'fixed',
+      inset: 0,
+      background: 'rgba(0,0,0,0.9)',
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      zIndex: 9999,
+      cursor: 'zoom-out'
+    }}
+  >
+    <img
+      src={openImage}
+      style={{
+        maxWidth: '95%',
+        maxHeight: '95%',
+        borderRadius: 12
+      }}
+    />
+  </div>
+)}
+
+return (
+  <Layout>
+    <input
+      className="mobileInput"
+      placeholder="Buscar tópicos e comentários..."
+      value={q}
+      onChange={e => setQ(e.target.value)}
+      style={styles.search}
+    />
+
+    <div style={styles.topBar}>
+      <button
+        style={styles.mainBtn}
+        onClick={() => setShowTopic(true)}
+      >
+        + Novo Tópico
+      </button>
 
 <button
   style={styles.mainBtn}
