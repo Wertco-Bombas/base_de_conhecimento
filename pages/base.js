@@ -388,12 +388,12 @@ const ReplyBox = memo(function ReplyBox({
       <div style={styles.commentActions}>
         <button
           style={styles.smallBtn}
-          onClick={() =>
-            setReplyInput(prev => ({
-              ...prev,
-              [comment.id]: prev[comment.id] ?? true
-            }))
-          }
+onClick={() =>
+  setReplyInput(prev => ({
+    ...prev,
+    [comment.id]: !prev[comment.id]
+  }))
+}
         >
           responder
         </button>
