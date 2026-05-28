@@ -343,32 +343,7 @@ const ReplyBox = memo(function ReplyBox({
     </div>
   );
 });
-      <textarea
-        className="mobileInput"
-        rows={3}
-        placeholder="Escreva uma resposta..."
-        value={localText}
-        onChange={(e) => setLocalText(e.target.value)}
-        style={{
-          ...styles.input,
-          flex: 1
-        }}
-      />
-
-      <button
-        style={styles.mainBtn}
-        onClick={async () => {
-          await addComment(topicId, commentId, localText);
-          setLocalText('');
-        }}
-      >
-        enviar
-      </button>
-    </div>
-  );
-});
-
-const CommentNode = memo(function CommentNode({
+  const CommentNode = memo(function CommentNode({
   comment,
   level = 0,
   setOpenImage
