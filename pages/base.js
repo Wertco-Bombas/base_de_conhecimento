@@ -627,10 +627,9 @@ async function createCategory() {
           fechar
         </button>
       </div>
-    </div>
- 
-
-      )}
+     </div>
+  );
+})}
 
       {showDeleteCategory && (
         <div style={styles.modal}>
