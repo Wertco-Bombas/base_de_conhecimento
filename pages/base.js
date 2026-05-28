@@ -289,11 +289,60 @@ async function createCategory() {
     return new Date(date).toLocaleString('pt-BR');
   }
 
- const ReplyBox = memo(function ReplyBox({
+const ReplyBox = memo(function ReplyBox({
   commentId,
   topicId,
   addComment
 }) {
+  const [localText, setLocalText] = useState('');
+  const [localImage, setLocalImage] = useState(null);
+
+  return (
+    <div style={{
+      marginTop: 10,
+      display: 'flex',
+      gap: 8,
+      flexWrap: 'wrap',
+      width: '100%'
+    }}>
+
+      <textarea
+        className="mobileInput"
+        rows={3}
+        placeholder="Escreva uma resposta..."
+        value={localText}
+        onChange={(e) => setLocalText(e.target.value)}
+        style={{
+          ...styles.input,
+          flex: 1
+        }}
+      />
+
+      {/* 🔥 INPUT DE IMAGEM */}
+      <input
+        type="file"
+        accept="image/*"
+        onChange={(e) => setLocalImage(e.target.files[0])}
+      />
+
+      <button
+        style={styles.mainBtn}
+        onClick={async () => {
+          await addComment(
+            topicId,
+            commentId,
+            localText,
+            localImage
+          );
+          setLocalText('');
+          setLocalImage(null);
+        }}
+      >
+        enviar
+      </button>
+    </div>
+  );
+});
 const [localText, setLocalText] = useState('');
 
   return (
