@@ -552,7 +552,6 @@ return (
 </div>
 
 <div style={styles.row} className="mobileRow">
-  
 
   <textarea
     className="mobileInput"
@@ -594,21 +593,7 @@ return (
   </button>
 
 </div>
-
-<input
-  type="file"
-  accept="image/*"
-  onChange={(e) =>
-    setTopicImage(e.target.files[0])
-  }
-  style={{
-    marginTop: 10,
-    color: '#fff'
-  }}
-/>
-
-     <div style={{ position: 'relative' }}>
-  <button
+      <button
     type="button"
     style={{
       ...styles.input,
@@ -682,6 +667,70 @@ return (
      </div>
   );
 })}
+{showTopic && (
+  <div style={styles.modal}>
+    <div
+      style={{
+        ...styles.modalBox,
+        width: '90%',
+        maxWidth: 600,
+        display: 'flex',
+        flexDirection: 'column',
+        gap: 14
+      }}
+    >
+
+      <h2 style={{ color: '#FFD600' }}>
+        Novo Tópico
+      </h2>
+
+      <input
+        className="mobileInput"
+        style={styles.input}
+        placeholder="Título"
+        value={newTopic}
+        onChange={e => setNewTopic(e.target.value)}
+      />
+
+      <textarea
+        className="mobileInput"
+        rows={5}
+        style={styles.input}
+        placeholder="Descrição"
+        value={newDesc}
+        onChange={e => setNewDesc(e.target.value)}
+      />
+
+      <select
+        value={newCat}
+        onChange={e => setNewCat(e.target.value)}
+        style={styles.input}
+      >
+        <option value="">
+          Escolha uma categoria
+        </option>
+
+        {categories.map(cat => (
+          <option
+            key={cat.id}
+            value={cat.nome}
+          >
+            {cat.nome}
+          </option>
+        ))}
+      </select>
+
+      <input
+        type="file"
+        accept="image/*"
+        onChange={(e) =>
+          setTopicImage(e.target.files[0])
+        }
+      />
+
+    </div>
+  </div>
+)}
 
       {showDeleteCategory && (
         <div style={styles.modal}>
