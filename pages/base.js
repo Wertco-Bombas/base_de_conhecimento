@@ -358,7 +358,7 @@ async function createCategory() {
   {comment.image_url && (
    <img
   src={comment.image_url}
-  onClick={() => setOpenImage(t.image_url)}
+ onClick={() => setOpenImage(comment.image_url)}
  style={{
   width: '100%',
   marginTop: 10,
@@ -412,31 +412,33 @@ async function createCategory() {
       </div>
     );
   });
-{openImage && (
-  <div
-    onClick={() => setOpenImage(null)}
-    style={{
-      position: 'fixed',
-      inset: 0,
-      background: 'rgba(0,0,0,0.9)',
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'center',
-      zIndex: 9999,
-      cursor: 'zoom-out'
-    }}
-  >
-    <img
-      src={openImage}
-      style={{
-        maxWidth: '95%',
-        maxHeight: '95%',
-        borderRadius: 12
-      }}
-    />
-  </div>
-)}
-)}
+ {openImage && (
+      <div
+        onClick={() => setOpenImage(null)}
+        style={{
+          position: 'fixed',
+          inset: 0,
+          background: 'rgba(0,0,0,0.9)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          zIndex: 9999,
+          cursor: 'zoom-out'
+        }}
+      >
+        <img
+          src={openImage}
+          style={{
+            maxWidth: '95%',
+            maxHeight: '95%',
+            borderRadius: 12
+          }}
+        />
+      </div>
+    )}
+
+  </Layout>
+);
 
   return (
     <Layout>
