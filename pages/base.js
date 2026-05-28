@@ -436,6 +436,7 @@ async function createCategory() {
     />
   </div>
 )}
+)}
 
   return (
     <Layout>
