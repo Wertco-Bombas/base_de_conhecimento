@@ -343,18 +343,7 @@ const ReplyBox = memo(function ReplyBox({
     </div>
   );
 });
-const [localText, setLocalText] = useState('');
 
-  return (
-    <div
-      style={{
-        marginTop: 10,
-        display: 'flex',
-        gap: 8,
-        flexWrap: 'wrap',
-        width: '100%'
-      }}
-    >
       <textarea
         className="mobileInput"
         rows={3}
@@ -382,7 +371,8 @@ const [localText, setLocalText] = useState('');
 
 const CommentNode = memo(function CommentNode({
   comment,
-  level = 0
+  level = 0,
+  setOpenImage
 }) {
   return (
     <div
@@ -569,16 +559,20 @@ return (
 )}
 </p>
 
-      <div style={styles.meta}>
-        <span>{topic.user_email}</span>
-        <span>{formatDate(topic.created_at)}</span>
-      </div>
+ <div style={styles.meta}>
+  <span>{topic.user_email}</span>
+  <span>{formatDate(topic.created_at)}</span>
+</div>
 
-      <div style={{ marginTop: 20 }}>
-        {tree?.map(comment => (
-          <CommentNode key={comment.id} comment={comment} />
-        ))}
-      </div>
+<div style={{ marginTop: 20 }}>
+  {tree?.map(comment => (
+    <CommentNode
+      key={comment.id}
+      comment={comment}
+      setOpenImage={setOpenImage}
+    />
+  ))}
+</div>
 
 <div style={styles.row} className="mobileRow">
   
