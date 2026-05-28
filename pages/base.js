@@ -343,7 +343,6 @@ const ReplyBox = memo(function ReplyBox({
     </div>
   );
 });
-
       <textarea
         className="mobileInput"
         rows={3}
@@ -394,21 +393,21 @@ const CommentNode = memo(function CommentNode({
       >
         💬 {comment.texto}
 
-        {comment.image_url && (
-          <img
-            src={comment.image_url}
-            onClick={() => setOpenImage(comment.image_url)}
-            style={{
-              width: '100%',
-              marginTop: 10,
-              borderRadius: 10,
-              maxHeight: 180,
-              objectFit: 'contain',
-              background: '#000',
-              cursor: 'zoom-in'
-            }}
-          />
-        )}
+       {comment.image_url && (
+  <img
+    src={comment.image_url}
+    onClick={() => setOpenImage(comment.image_url)}
+    style={{
+      width: '100%',
+      marginTop: 10,
+      borderRadius: 10,
+      maxHeight: 180,
+      objectFit: 'contain',
+      background: '#000',
+      cursor: 'zoom-in'
+    }}
+  />
+)}
       </div>
 
       <div style={styles.commentActions}>
@@ -443,10 +442,11 @@ const CommentNode = memo(function CommentNode({
       {comment.children?.length > 0 &&
         comment.children.map(child => (
           <CommentNode
-            key={child.id}
-            comment={child}
-            level={level + 1}
-          />
+  key={child.id}
+  comment={child}
+  level={level + 1}
+  setOpenImage={setOpenImage}
+/>
         ))}
     </div>
   );
