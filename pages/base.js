@@ -357,13 +357,13 @@ async function createCategory() {
     <img
       src={comment.image_url}
       alt=""
-      style={{
-        width: '100%',
-        marginTop: 10,
-        borderRadius: 10,
-        maxHeight: 300,
-        objectFit: 'cover'
-      }}
+     style={{
+  width: '100%',
+  marginTop: 10,
+  borderRadius: 10,
+  maxHeight: 'none',
+  objectFit: 'contain'
+}}
     />
   )}
 </div>
@@ -476,13 +476,14 @@ async function createCategory() {
   <img
     src={topic.image_url}
     alt=""
-    style={{
-      width: '100%',
-      marginTop: 15,
-      borderRadius: 12,
-      maxHeight: 400,
-      objectFit: 'cover'
-    }}
+   style={{
+  width: '100%',
+  marginTop: 10,
+  borderRadius: 10,
+  maxHeight: 500,
+  objectFit: 'contain',
+  background: '#000'
+}}
   />
 )}
 </p>
