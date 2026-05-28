@@ -358,7 +358,7 @@ async function createCategory() {
   {comment.image_url && (
    <img
   src={comment.image_url}
-  onClick={() => setOpenImage(comment.image_url)}
+  onClick={() => setOpenImage(t.image_url)}
  style={{
   width: '100%',
   marginTop: 10,
