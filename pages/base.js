@@ -797,7 +797,45 @@ return (
         value={newCategoryName}
         onChange={e => setNewCategoryName(e.target.value)}
       />
+<div
+  style={{
+    maxHeight: 220,
+    overflowY: 'auto',
+    border: '1px solid #333',
+    borderRadius: 12,
+    background: '#0b0b0b',
+    padding: 10
+  }}
+>
+  <div
+    style={{
+      marginBottom: 10,
+      color: '#FFD600',
+      fontWeight: 'bold'
+    }}
+  >
+    Categorias existentes
+  </div>
 
+  {categories.length === 0 ? (
+    <div style={{ color: '#777' }}>
+      Nenhuma categoria cadastrada
+    </div>
+  ) : (
+    categories.map(cat => (
+      <div
+        key={cat.id}
+        style={{
+          padding: '8px 10px',
+          borderBottom: '1px solid #222',
+          color: '#fff'
+        }}
+      >
+        {cat.nome}
+      </div>
+    ))
+  )}
+</div>
       <div
         style={{
           display: 'flex',
