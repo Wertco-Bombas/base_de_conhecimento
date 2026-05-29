@@ -1,33 +1,41 @@
 export default function RichText({ value, onChange }) {
 
-  const convertNetworkPathsToLinks = (text) => {
+  const renderContent = (text) => {
+    if (!text) return null;
 
-    if (!text) return '';
+    // Divide por linhas para manter estrutura
+    const lines = text.split('\n');
 
-    const regex = /\\\\.*?(?=\n|$)/g;
+    return lines.map((line, index) => {
 
-    return text.replace(regex, (match) => {
+      const match = line.match(/\\\\.*$/);
 
-      const normalized = match.replace(/\\/g, '/');
+      if (match) {
+        const path = match[0];
 
-      const href = `file:///${normalized}`;
+        const normalized = path.replace(/\\/g, '/');
+        const href = `file:///${normalized}`;
 
-      return `
-        <a
-          href="${href}"
-          target="_blank"
-          rel="noopener noreferrer"
-          style="
-            color:#3b82f6;
-            text-decoration:underline;
-            cursor:pointer;
-            display:block;
-            margin-top:4px;
-          "
-        >
-          📎 ${match}
-        </a>
-      `;
+        return (
+          <div key={index}>
+            📎{" "}
+            <a
+              href={href}
+              target="_blank"
+              rel="noopener noreferrer"
+              style={{
+                color: '#3b82f6',
+                textDecoration: 'underline',
+                cursor: 'pointer'
+              }}
+            >
+              {path}
+            </a>
+          </div>
+        );
+      }
+
+      return <div key={index}>{line}</div>;
     });
   };
 
@@ -44,12 +52,9 @@ export default function RichText({ value, onChange }) {
         Pré-visualização
       </div>
 
-      <div
-        style={styles.preview}
-        dangerouslySetInnerHTML={{
-          __html: convertNetworkPathsToLinks(value)
-        }}
-      />
+      <div style={styles.preview}>
+        {renderContent(value)}
+      </div>
     </div>
   );
 }
