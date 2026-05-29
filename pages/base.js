@@ -345,6 +345,47 @@ const ReplyBox = memo(function ReplyBox({
 
   );
 });
+const renderNetworkText = (text) => {
+  if (!text) return null;
+
+  const lines = text.split('\n');
+
+  return lines.map((line, i) => {
+    const isPath = line.trim().startsWith('\\\\');
+
+    if (isPath) {
+      const clean = line.trim();
+
+      return (
+        <div key={i} style={{ marginBottom: 6 }}>
+          📎 {clean}
+
+          <button
+            onClick={() => {
+              navigator.clipboard.writeText(clean);
+
+              alert("Caminho copiado!");
+            }}
+            style={{
+              marginLeft: 8,
+              background: 'transparent',
+              border: '1px solid #FFD600',
+              color: '#FFD600',
+              padding: '2px 6px',
+              cursor: 'pointer',
+              borderRadius: 4,
+              fontSize: 12
+            }}
+          >
+            copiar
+          </button>
+        </div>
+      );
+    }
+
+    return <div key={i}>{line}</div>;
+  });
+};
   const CommentNode = memo(function CommentNode({
   comment,
   level = 0,
@@ -362,59 +403,9 @@ const ReplyBox = memo(function ReplyBox({
         <span>{formatDate(comment.created_at)}</span>
       </div>
 
-      <div
-        style={{
-          ...styles.commentText,
-          whiteSpace: 'pre-line'
-        }}
-const renderNetworkText = (text) => {
-  if (!text) return null;
-
-  const lines = text.split('\n');
-
-  return lines.map((line, i) => {
-    const isPath = line.trim().startsWith('\\\\');
-
-    if (isPath) {
-      const clean = line.trim();
-
-      return (
-        <div key={i} style={{ marginBottom: 6 }}>
-          📎{" "}
-          <span>{clean}</span>
-
-          {" "}
-
-          <button
-            onClick={() => {
-              const fixed = clean.replace(/\\/g, '/');
-              const url = `file://///${fixed}`;
-              window.open(url, '_blank');
-            }}
-            style={{
-              marginLeft: 8,
-              background: 'transparent',
-              border: '1px solid #3b82f6',
-              color: '#3b82f6',
-              cursor: 'pointer',
-              padding: '2px 6px',
-              borderRadius: 4
-            }}
-          >
-            Abrir
-          </button>
-        </div>
-      );
-    }
-
-    return <div key={i}>{line}</div>;
-  });
-};
-      >
-        💬 <div style={styles.commentText}>
+     <div style={styles.commentText}>
   💬 {renderNetworkText(comment.texto)}
 </div>
-
        {comment.image_url && (
   <img
     src={comment.image_url}
