@@ -367,8 +367,53 @@ const ReplyBox = memo(function ReplyBox({
           ...styles.commentText,
           whiteSpace: 'pre-line'
         }}
+const renderNetworkText = (text) => {
+  if (!text) return null;
+
+  const lines = text.split('\n');
+
+  return lines.map((line, i) => {
+    const isPath = line.trim().startsWith('\\\\');
+
+    if (isPath) {
+      const clean = line.trim();
+
+      return (
+        <div key={i} style={{ marginBottom: 6 }}>
+          📎{" "}
+          <span>{clean}</span>
+
+          {" "}
+
+          <button
+            onClick={() => {
+              const fixed = clean.replace(/\\/g, '/');
+              const url = `file://///${fixed}`;
+              window.open(url, '_blank');
+            }}
+            style={{
+              marginLeft: 8,
+              background: 'transparent',
+              border: '1px solid #3b82f6',
+              color: '#3b82f6',
+              cursor: 'pointer',
+              padding: '2px 6px',
+              borderRadius: 4
+            }}
+          >
+            Abrir
+          </button>
+        </div>
+      );
+    }
+
+    return <div key={i}>{line}</div>;
+  });
+};
       >
-        💬 {comment.texto}
+        💬 <div style={styles.commentText}>
+  💬 {renderNetworkText(comment.texto)}
+</div>
 
        {comment.image_url && (
   <img
