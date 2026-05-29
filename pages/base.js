@@ -357,32 +357,47 @@ const renderNetworkText = (text) => {
       const clean = line.trim();
 
       return (
-        <div key={i} style={{ marginBottom: 6 }}>
-          📎 {clean}
+  <div key={i} style={{ marginBottom: 6 }}>
+    📎 {clean}
 
-          <button
-            onClick={() => {
-              navigator.clipboard.writeText(clean);
+    <button
+      onClick={() => {
+        navigator.clipboard.writeText(clean);
+        alert("Caminho copiado!");
+      }}
+      style={{
+        marginLeft: 8,
+        background: 'transparent',
+        border: '1px solid #FFD600',
+        color: '#FFD600',
+        padding: '2px 6px',
+        cursor: 'pointer',
+        borderRadius: 4,
+        fontSize: 12
+      }}
+    >
+      copiar
+    </button>
 
-              alert("Caminho copiado!");
-            }}
-            style={{
-              marginLeft: 8,
-              background: 'transparent',
-              border: '1px solid #FFD600',
-              color: '#FFD600',
-              padding: '2px 6px',
-              cursor: 'pointer',
-              borderRadius: 4,
-              fontSize: 12
-            }}
-          >
-            copiar
-          </button>
-        </div>
-      );
-    }
-
+    <button
+      onClick={() => {
+        window.open(clean, '_blank');
+      }}
+      style={{
+        marginLeft: 8,
+        background: '#FFD600',
+        border: 'none',
+        color: '#000',
+        padding: '2px 6px',
+        cursor: 'pointer',
+        borderRadius: 4,
+        fontSize: 12
+      }}
+    >
+      abrir
+    </button>
+  </div>
+);
     return <div key={i}>{line}</div>;
   });
 };
