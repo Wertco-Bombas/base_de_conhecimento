@@ -421,9 +421,8 @@ const renderNetworkText = (text) => {
     }}
   />
 )}
-      
 
-      <div style={styles.commentActions}>
+<div style={styles.commentActions}>
         <button
           style={styles.smallBtn}
           onClick={() =>
