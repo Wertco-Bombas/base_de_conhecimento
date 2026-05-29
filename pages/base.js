@@ -421,7 +421,7 @@ const renderNetworkText = (text) => {
     }}
   />
 )}
-      </div>
+      
 
       <div style={styles.commentActions}>
         <button
