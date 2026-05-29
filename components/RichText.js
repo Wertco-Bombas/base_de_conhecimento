@@ -1,7 +1,7 @@
 export default function RichText({ value, onChange }) {
 
-  const isNetworkPath = (text) => {
-    return text && text.trim().startsWith('\\\\');
+  const isNetworkPath = (line) => {
+    return line && line.trim().startsWith('\\\\');
   };
 
   const handleCopy = (text) => {
@@ -10,14 +10,11 @@ export default function RichText({ value, onChange }) {
   };
 
   const handleOpen = (text) => {
-    const fixed = text
-      .trim()
-      .replace(/\\/g, '/')
-      .replace(/^\/\//, '');
+    // mantém UNC original funcionando no Windows Explorer
+    const clean = text.trim();
 
-    const url = `file://///${fixed}`;
-
-    window.location.href = url;
+    // abre diretamente via Explorer (mais confiável que file://)
+    window.open(`file:///${clean.replace(/\\/g, '/')}`, '_blank');
   };
 
   const renderPreview = (text) => {
@@ -31,31 +28,35 @@ export default function RichText({ value, onChange }) {
         const clean = line.trim();
 
         return (
-          <div key={index} style={{ marginBottom: 8 }}>
-            📎 <span style={{ color: '#fff' }}>{clean}</span>
+          <div key={index} style={{ marginBottom: 10 }}>
+            <div style={{ color: '#fff' }}>
+              📎 {clean}
+            </div>
 
-            <div style={{ marginTop: 4, display: 'flex', gap: 10 }}>
-              
+            <div style={{ display: 'flex', gap: 8, marginTop: 4 }}>
               <button
                 onClick={() => handleOpen(clean)}
-                style={styles.linkButton}
+                style={styles.openBtn}
               >
                 Abrir
               </button>
 
               <button
                 onClick={() => handleCopy(clean)}
-                style={styles.copyButton}
+                style={styles.copyBtn}
               >
                 Copiar
               </button>
-
             </div>
           </div>
         );
       }
 
-      return <div key={index}>{line}</div>;
+      return (
+        <div key={index} style={{ marginBottom: 4 }}>
+          {line}
+        </div>
+      );
     });
   };
 
@@ -106,7 +107,7 @@ const styles = {
     whiteSpace: 'pre-wrap'
   },
 
-  linkButton: {
+  openBtn: {
     background: 'transparent',
     border: '1px solid #3b82f6',
     color: '#3b82f6',
@@ -115,7 +116,7 @@ const styles = {
     borderRadius: 4
   },
 
-  copyButton: {
+  copyBtn: {
     background: 'transparent',
     border: '1px solid #999',
     color: '#999',
