@@ -3,33 +3,37 @@ export default function RichText({ value, onChange }) {
   const renderContent = (text) => {
     if (!text) return null;
 
-    // Divide por linhas para manter estrutura
     const lines = text.split('\n');
 
     return lines.map((line, index) => {
 
-      const match = line.match(/\\\\.*$/);
+      const isNetworkPath = line.trim().startsWith('\\\\');
 
-      if (match) {
-        const path = match[0];
+      if (isNetworkPath) {
 
-        const normalized = path.replace(/\\/g, '/');
-        const href = `file:///${normalized}`;
+        const normalized = line
+          .trim()
+          .replace(/\\/g, '/');
+
+        const href = `file://///${normalized.replace(/^\/+/, '')}`;
 
         return (
           <div key={index}>
             📎{" "}
             <a
               href={href}
-              target="_blank"
-              rel="noopener noreferrer"
               style={{
                 color: '#3b82f6',
                 textDecoration: 'underline',
                 cursor: 'pointer'
               }}
+              onClick={(e) => {
+                // ajuda alguns browsers corporativos
+                e.preventDefault();
+                window.location.href = href;
+              }}
             >
-              {path}
+              {line.trim()}
             </a>
           </div>
         );
