@@ -346,6 +346,22 @@ const ReplyBox = memo(function ReplyBox({
   );
 });
 const renderNetworkText = (text) => {
+  function convertPathToUrl(path) {
+  if (!path) return '';
+
+  // converte \ser-sp-001\dados\arquivo.pdf
+  // para http://ser-sp-001/dados/arquivo.pdf
+
+  if (path.startsWith('\\\\ser-sp-001')) {
+    return path
+      .replace('\\\\ser-sp-001', 'http://ser-sp-001')
+      .replace(/\\/g, '/');
+  }
+
+  return path;
+}
+
+  
   if (!text) return null;
 
   const lines = text.split('\n');
