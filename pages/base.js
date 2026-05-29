@@ -351,31 +351,30 @@ const renderNetworkText = (text) => {
   const lines = text.split('\n');
 
   return lines.map((line, i) => {
-    const isPath = line.trim().startsWith('\\\\');
+    const trimmed = line.trim();
+
+    const isUrl =
+      trimmed.startsWith('http://') ||
+      trimmed.startsWith('https://');
+
+    const isPath = trimmed.startsWith('\\\\');
+
+    if (isUrl) {
+      return (
+        <div key={i}>
+          <a href={trimmed} target="_blank" rel="noreferrer">
+            {trimmed}
+          </a>
+        </div>
+      );
+    }
 
     if (isPath) {
-      const clean = line.trim();
-
       return (
-        <div key={i} style={{ marginBottom: 6 }}>
-          📎 {clean}
-
+        <div key={i}>
+          📎 {trimmed}
           <button
-            onClick={() => {
-              navigator.clipboard.writeText(clean);
-
-              alert("Caminho copiado!");
-            }}
-            style={{
-              marginLeft: 8,
-              background: 'transparent',
-              border: '1px solid #FFD600',
-              color: '#FFD600',
-              padding: '2px 6px',
-              cursor: 'pointer',
-              borderRadius: 4,
-              fontSize: 12
-            }}
+            onClick={() => navigator.clipboard.writeText(trimmed)}
           >
             copiar
           </button>
@@ -386,83 +385,6 @@ const renderNetworkText = (text) => {
     return <div key={i}>{line}</div>;
   });
 };
-  const CommentNode = memo(function CommentNode({
-  comment,
-  level = 0,
-  setOpenImage
-}) {
-  return (
-    <div
-      style={{
-        ...styles.commentBox,
-        marginLeft: level * 25
-      }}
-    >
-      <div style={styles.commentMeta}>
-        <span>{comment.user_email || 'Usuário'}</span>
-        <span>{formatDate(comment.created_at)}</span>
-      </div>
-
-     <div style={styles.commentText}>
-  💬 {renderNetworkText(comment.texto)}
-</div>
-       {comment.image_url && (
-  <img
-    src={comment.image_url}
-    onClick={() => setOpenImage(comment.image_url)}
-    style={{
-      width: '100%',
-      marginTop: 10,
-      borderRadius: 10,
-      maxHeight: 180,
-      objectFit: 'contain',
-      background: '#000',
-      cursor: 'zoom-in'
-    }}
-  />
-)}
-
-<div style={styles.commentActions}>
-        <button
-          style={styles.smallBtn}
-          onClick={() =>
-            setReplyInput(prev => ({
-              ...prev,
-              [comment.id]: prev[comment.id] ?? true
-            }))
-          }
-        >
-          responder
-        </button>
-
-        <button
-          style={styles.smallBtnDanger}
-          onClick={() => deleteComment(comment.id)}
-        >
-          excluir
-        </button>
-      </div>
-
-      {replyInput[comment.id] && (
-        <ReplyBox
-          commentId={comment.id}
-          topicId={comment.topic_id}
-          addComment={addComment}
-        />
-      )}
-
-      {comment.children?.length > 0 &&
-        comment.children.map(child => (
-          <CommentNode
-  key={child.id}
-  comment={child}
-  level={level + 1}
-  setOpenImage={setOpenImage}
-/>
-        ))}
-    </div>
-  );
-});
 
 /* 🔥 MODAL DA IMAGEM (DEVE FICAR FORA DO COMPONENTE AUXILIAR, MAS DENTRO DO RETURN PRINCIPAL) */
 
