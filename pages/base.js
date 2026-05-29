@@ -1,6 +1,3 @@
-Vc simplificou o meu código, vou mandar o código compelto e vc me mostra exatamente o que mduar, pois não estou achando
-
-
 import { useEffect, useState, useMemo, memo } from 'react';
 import Layout from '../components/Layout';
 import { supabase } from '../lib/supabaseClient';
