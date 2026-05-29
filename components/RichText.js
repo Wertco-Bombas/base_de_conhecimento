@@ -1,40 +1,56 @@
 export default function RichText({ value, onChange }) {
 
-  const renderContent = (text) => {
+  const isNetworkPath = (text) => {
+    return text && text.trim().startsWith('\\\\');
+  };
+
+  const handleCopy = (text) => {
+    navigator.clipboard.writeText(text);
+    alert('Caminho copiado. Cole no Explorer.');
+  };
+
+  const handleOpen = (text) => {
+    const fixed = text
+      .trim()
+      .replace(/\\/g, '/')
+      .replace(/^\/\//, '');
+
+    const url = `file://///${fixed}`;
+
+    window.location.href = url;
+  };
+
+  const renderPreview = (text) => {
     if (!text) return null;
 
     const lines = text.split('\n');
 
     return lines.map((line, index) => {
 
-      const isNetworkPath = line.trim().startsWith('\\\\');
-
-      if (isNetworkPath) {
-
-        const normalized = line
-          .trim()
-          .replace(/\\/g, '/');
-
-        const href = `file://///${normalized.replace(/^\/+/, '')}`;
+      if (isNetworkPath(line)) {
+        const clean = line.trim();
 
         return (
-          <div key={index}>
-            📎{" "}
-            <a
-              href={href}
-              style={{
-                color: '#3b82f6',
-                textDecoration: 'underline',
-                cursor: 'pointer'
-              }}
-              onClick={(e) => {
-                // ajuda alguns browsers corporativos
-                e.preventDefault();
-                window.location.href = href;
-              }}
-            >
-              {line.trim()}
-            </a>
+          <div key={index} style={{ marginBottom: 8 }}>
+            📎 <span style={{ color: '#fff' }}>{clean}</span>
+
+            <div style={{ marginTop: 4, display: 'flex', gap: 10 }}>
+              
+              <button
+                onClick={() => handleOpen(clean)}
+                style={styles.linkButton}
+              >
+                Abrir
+              </button>
+
+              <button
+                onClick={() => handleCopy(clean)}
+                style={styles.copyButton}
+              >
+                Copiar
+              </button>
+
+            </div>
           </div>
         );
       }
@@ -57,7 +73,7 @@ export default function RichText({ value, onChange }) {
       </div>
 
       <div style={styles.preview}>
-        {renderContent(value)}
+        {renderPreview(value)}
       </div>
     </div>
   );
@@ -87,7 +103,24 @@ const styles = {
     border: '1px solid #333',
     borderRadius: 8,
     color: '#fff',
-    whiteSpace: 'pre-wrap',
-    wordBreak: 'break-word'
+    whiteSpace: 'pre-wrap'
+  },
+
+  linkButton: {
+    background: 'transparent',
+    border: '1px solid #3b82f6',
+    color: '#3b82f6',
+    padding: '4px 8px',
+    cursor: 'pointer',
+    borderRadius: 4
+  },
+
+  copyButton: {
+    background: 'transparent',
+    border: '1px solid #999',
+    color: '#999',
+    padding: '4px 8px',
+    cursor: 'pointer',
+    borderRadius: 4
   }
 };
