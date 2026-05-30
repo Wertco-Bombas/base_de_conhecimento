@@ -29,11 +29,8 @@ export default function RichText({ value, onChange }) {
             href={part}
             target="_blank"
             rel="noreferrer"
-            style={{
-              color: '#3b82f6',
-              textDecoration: 'underline',
-              cursor: 'pointer'
-            }}
+            style={styles.link}
+            onClick={(e) => e.stopPropagation()}
           >
             {part}
           </a>
@@ -55,12 +52,12 @@ export default function RichText({ value, onChange }) {
         const clean = line.trim();
 
         return (
-          <div key={index} style={{ marginBottom: 10 }}>
-            <div style={{ color: '#fff' }}>
+          <div key={index} style={styles.networkBlock}>
+            <div style={styles.networkText}>
               📎 {clean}
             </div>
 
-            <div style={{ display: 'flex', gap: 8, marginTop: 4 }}>
+            <div style={styles.buttonRow}>
               <button
                 onClick={() => handleOpen(clean)}
                 style={styles.openBtn}
@@ -80,7 +77,7 @@ export default function RichText({ value, onChange }) {
       }
 
       return (
-        <div key={index} style={{ marginBottom: 4 }}>
+        <div key={index} style={styles.line}>
           {renderTextWithLinks(line)}
         </div>
       );
@@ -88,7 +85,7 @@ export default function RichText({ value, onChange }) {
   };
 
   return (
-    <div>
+    <div style={styles.container}>
       <textarea
         value={value}
         onChange={(e) => onChange(e.target.value)}
@@ -108,6 +105,10 @@ export default function RichText({ value, onChange }) {
 }
 
 const styles = {
+  container: {
+    width: '100%'
+  },
+
   editor: {
     width: '100%',
     minHeight: 120,
@@ -131,7 +132,43 @@ const styles = {
     border: '1px solid #333',
     borderRadius: 8,
     color: '#fff',
-    whiteSpace: 'pre-wrap'
+    whiteSpace: 'pre-wrap',
+
+    // 🔥 GARANTE CLIQUE SEM BLOQUEIO
+    position: 'relative',
+    zIndex: 1,
+    pointerEvents: 'auto'
+  },
+
+  line: {
+    marginBottom: 4,
+    position: 'relative',
+    zIndex: 2
+  },
+
+  link: {
+    color: '#3b82f6',
+    textDecoration: 'underline',
+    cursor: 'pointer',
+    position: 'relative',
+    zIndex: 10,
+    pointerEvents: 'auto'
+  },
+
+  networkBlock: {
+    marginBottom: 10,
+    position: 'relative',
+    zIndex: 2
+  },
+
+  networkText: {
+    color: '#fff'
+  },
+
+  buttonRow: {
+    display: 'flex',
+    gap: 8,
+    marginTop: 4
   },
 
   openBtn: {
