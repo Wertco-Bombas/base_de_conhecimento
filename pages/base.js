@@ -655,6 +655,8 @@ return (
     style={styles.input}
   />
 
+  <label style={styles.fileBtn}>
+  📎 Escolher imagem
   <input
     type="file"
     accept="image/*"
@@ -664,7 +666,9 @@ return (
         [topic.id]: e.target.files[0]
       }))
     }
+    style={{ display: 'none' }}
   />
+</label>
 
   <button
     style={styles.mainBtn}
