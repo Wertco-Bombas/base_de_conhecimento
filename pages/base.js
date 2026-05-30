@@ -478,12 +478,18 @@ const CommentNode = memo(function CommentNode({
           responder
         </button>
 
-        <button
-          style={styles.smallBtnDanger}
-          onClick={() => deleteComment(comment.id)}
-        >
-          excluir
-        </button>
+       {(
+  user?.role === 'admin' ||
+  user?.role === 'supervisor' ||
+  comment.user_email === user?.email
+) && (
+  <button
+    style={styles.smallBtnDanger}
+    onClick={() => deleteComment(comment.id)}
+  >
+    excluir
+  </button>
+)}
       </div>
 
       {replyInput[comment.id] && (
