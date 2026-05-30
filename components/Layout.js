@@ -69,7 +69,7 @@ export default function Layout({ children }) {
     <div style={styles.wrapper}>
 
       {/* SIDEBAR */}
-      <div style={styles.sidebar} className="sidebar-hover">
+      <div className="sidebar-hover" style={styles.sidebar}>
         <div style={styles.brand}>WERTCO</div>
 
         {!loading && user && (
