@@ -130,7 +130,6 @@ const styles = {
   },
 
 sidebar: {
-  width: 70,
   background: '#111',
   padding: 20,
   display: 'flex',
