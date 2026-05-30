@@ -686,27 +686,6 @@ return (
 
 </div>
 
-      <div
-        style={{
-          display: 'flex',
-          gap: 10,
-          flexWrap: 'wrap'
-        }}
-      >
-        <button
-          style={styles.mainBtn}
-          onClick={createTopic}
-        >
-          salvar
-        </button>
-
-        <button
-          style={styles.smallBtn}
-          onClick={() => setShowTopic(false)}
-        >
-          fechar
-        </button>
-      </div>
      </div>
   );
 })}
