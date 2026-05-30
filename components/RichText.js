@@ -10,11 +10,36 @@ export default function RichText({ value, onChange }) {
   };
 
   const handleOpen = (text) => {
-    // mantém UNC original funcionando no Windows Explorer
     const clean = text.trim();
-
-    // abre diretamente via Explorer (mais confiável que file://)
     window.open(`file:///${clean.replace(/\\/g, '/')}`, '_blank');
+  };
+
+  const renderTextWithLinks = (text) => {
+    if (!text) return text;
+
+    const urlRegex = /(https?:\/\/[^\s]+)/g;
+
+    const parts = text.split(urlRegex);
+
+    return parts.map((part, i) => {
+      const isUrl = part.match(/^https?:\/\//);
+
+      if (isUrl) {
+        return (
+          <a
+            key={i}
+            href={part}
+            target="_blank"
+            rel="noreferrer"
+            style={{ color: '#3b82f6', textDecoration: 'underline' }}
+          >
+            {part}
+          </a>
+        );
+      }
+
+      return <span key={i}>{part}</span>;
+    });
   };
 
   const renderPreview = (text) => {
@@ -52,11 +77,11 @@ export default function RichText({ value, onChange }) {
         );
       }
 
-     return (
-  <div key={index} style={{ marginBottom: 4 }}>
-    {renderTextWithLinks(line)}
-  </div>
-);
+      return (
+        <div key={index} style={{ marginBottom: 4 }}>
+          {renderTextWithLinks(line)}
+        </div>
+      );
     });
   };
 
@@ -79,29 +104,6 @@ export default function RichText({ value, onChange }) {
     </div>
   );
 }
-const renderTextWithLinks = (text) => {
-  if (!text) return text;
-
-  const urlRegex = /(https?:\/\/[^\s]+)/g;
-
-  return text.split(urlRegex).map((part, i) => {
-    if (part.match(urlRegex)) {
-      return (
-        <a
-          key={i}
-          href={part}
-          target="_blank"
-          rel="noreferrer"
-          style={{ color: '#3b82f6', textDecoration: 'underline' }}
-        >
-          {part}
-        </a>
-      );
-    }
-
-    return part;
-  });
-};
 
 const styles = {
   editor: {
