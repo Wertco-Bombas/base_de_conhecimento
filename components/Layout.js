@@ -70,7 +70,9 @@ export default function Layout({ children }) {
 
       {/* SIDEBAR */}
       <div className="sidebar-hover" style={styles.sidebar}>
-        <div style={styles.brand}>WERTCO</div>
+        <div style={styles.brand}>
+  <img src="/logo_app.jpg" alt="Logo" style={{ width: 120, height: 'auto' }} />
+</div>
 
         {!loading && user && (
           <div style={styles.menu}>
