@@ -67,7 +67,7 @@ html, body {
   .sidebar-hover:hover {
   width: 260px !important;
 }
-  .sidebar-hover {
+.sidebar-hover {
   width: 70px;
   transition: width 0.25s ease;
 }
