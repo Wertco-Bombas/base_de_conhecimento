@@ -10,6 +10,7 @@ export default function Base() {
   const [topics, setTopics] = useState([]);
   const [comments, setComments] = useState([]);
   const [categories, setCategories] = useState([]);
+  console.log('USER ATUAL:', user);
 
   const [q, setQ] = useState('');
   const [commentInput, setCommentInput] = useState({});
