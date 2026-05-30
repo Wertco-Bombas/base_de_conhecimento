@@ -655,8 +655,8 @@ return (
     style={styles.input}
   />
 
-  <label style={styles.fileBtn}>
-  📎 Escolher imagem
+  <label style={styles.iconFileBtn}>
+  📷
   <input
     type="file"
     accept="image/*"
