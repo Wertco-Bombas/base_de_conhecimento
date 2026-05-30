@@ -5,6 +5,9 @@ export default function Layout({ children }) {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
 
+  const [latestInfo, setLatestInfo] = useState(null);
+const [showInfoPopup, setShowInfoPopup] = useState(false);
+
   useEffect(() => {
     let isMounted = true;
 
@@ -67,6 +70,30 @@ export default function Layout({ children }) {
 
   return (
     <div style={styles.wrapper}>
+
+    useEffect(() => {
+  async function checkLatestInfo() {
+    const { data } = await supabase
+      .from('informacoes_importantes')
+      .select('*')
+      .order('created_at', { ascending: false })
+      .limit(1);
+
+    if (data && data.length > 0) {
+      const latest = data[0];
+
+      setLatestInfo(latest);
+
+      const seen = localStorage.getItem('latest_info_seen');
+
+      if (!seen || seen !== latest.id.toString()) {
+        setShowInfoPopup(true);
+      }
+    }
+  }
+
+  checkLatestInfo();
+}, []);
 
       {/* SIDEBAR */}
       <div className="sidebar-hover" style={styles.sidebar}>
