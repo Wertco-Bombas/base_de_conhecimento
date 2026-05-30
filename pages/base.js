@@ -1105,6 +1105,11 @@ const styles = {
   transition: '0.2s ease',
   userSelect: 'none'
 },
+  iconFileBtnHover: {
+  background: '#FFD600',
+  color: '#000',
+  transform: 'scale(1.05)'
+}
 
   modal: {
     position: 'fixed',
