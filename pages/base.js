@@ -585,12 +585,14 @@ return (
           </div>
         </div>
 
-        <button
-          style={styles.smallBtnDanger}
-          onClick={() => deleteTopic(topic.id)}
-        >
-          excluir tópico
-        </button>
+        {(user?.role === 'admin' || user?.role === 'supervisor') && (
+  <button
+    style={styles.smallBtnDanger}
+    onClick={() => deleteTopic(topic.id)}
+  >
+    excluir tópico
+  </button>
+)}
       </div>
 
       <p
