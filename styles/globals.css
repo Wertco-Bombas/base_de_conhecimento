@@ -70,6 +70,16 @@ html, body {
 .sidebar-hover:hover .menu-text {
   opacity: 1;
 }
+.logo-sidebar {
+  width: 40px;
+  height: auto;
+  transition: width 0.25s ease;
+}
+
+.sidebar-hover:hover .logo-sidebar {
+  width: 120px;
+}
+
 
 @media (max-width: 768px) {
   body {
