@@ -99,13 +99,43 @@ export default function Approval() {
     load();
   }
 
+  const styles = {
+    actionRow: {
+      display: 'flex',
+      gap: 10,
+      marginTop: 12,
+      flexWrap: 'wrap'
+    },
+
+    approveBtn: {
+      background: '#1ed760',
+      border: 'none',
+      color: '#000',
+      padding: '8px 14px',
+      borderRadius: 10,
+      cursor: 'pointer',
+      fontWeight: 'bold',
+      transition: '0.2s'
+    },
+
+    rejectBtn: {
+      background: '#ff4d4d',
+      border: 'none',
+      color: '#fff',
+      padding: '8px 14px',
+      borderRadius: 10,
+      cursor: 'pointer',
+      fontWeight: 'bold',
+      transition: '0.2s'
+    }
+  };
+
   if (loading) return <div style={{ color: '#fff' }}>Carregando...</div>;
 
   return (
     <Layout>
       <h1 style={{ color: '#FFD600' }}>Aprovação</h1>
 
-      {/* MODAL IMAGEM */}
       {openImage && (
         <div
           onClick={() => setOpenImage(null)}
@@ -168,9 +198,20 @@ export default function Approval() {
             />
           )}
 
-          <div style={{ marginTop: 10 }}>
-            <button onClick={() => approveTopic(t.id)}>Aprovar</button>
-            <button onClick={() => rejectTopic(t.id)}>Rejeitar</button>
+          <div style={styles.actionRow}>
+            <button
+              style={styles.approveBtn}
+              onClick={() => approveTopic(t.id)}
+            >
+              Aprovar
+            </button>
+
+            <button
+              style={styles.rejectBtn}
+              onClick={() => rejectTopic(t.id)}
+            >
+              Rejeitar
+            </button>
           </div>
         </div>
       ))}
@@ -208,9 +249,20 @@ export default function Approval() {
             />
           )}
 
-          <div style={{ marginTop: 10 }}>
-            <button onClick={() => approveComment(c.id)}>Aprovar</button>
-            <button onClick={() => rejectComment(c.id)}>Rejeitar</button>
+          <div style={styles.actionRow}>
+            <button
+              style={styles.approveBtn}
+              onClick={() => approveComment(c.id)}
+            >
+              Aprovar
+            </button>
+
+            <button
+              style={styles.rejectBtn}
+              onClick={() => rejectComment(c.id)}
+            >
+              Rejeitar
+            </button>
           </div>
         </div>
       ))}
