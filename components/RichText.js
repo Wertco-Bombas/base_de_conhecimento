@@ -97,9 +97,21 @@ export default function RichText({ value, onChange }) {
         Pré-visualização
       </div>
 
-      <div style={styles.preview}>
-        {renderPreview(value)}
-      </div>
+      <div style={{ padding: 20, background: 'red', zIndex: 99999 }}>
+  <a
+    href="https://google.com"
+    target="_blank"
+    rel="noreferrer"
+    style={{
+      color: 'white',
+      fontSize: 20,
+      textDecoration: 'underline',
+      pointerEvents: 'auto'
+    }}
+  >
+    TESTE GOOGLE
+  </a>
+</div>
     </div>
   );
 }
