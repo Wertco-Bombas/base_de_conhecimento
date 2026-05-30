@@ -67,21 +67,38 @@ export default function Informacoes() {
     setShowModal(false);
   }
 
+  // 🆕 FUNÇÃO DE EXCLUIR
+  async function excluirInfo(id) {
+    const confirmar = confirm('Deseja excluir esta informação?');
+    if (!confirmar) return;
+
+    const { error } = await supabase
+      .from('informacoes_importantes')
+      .delete()
+      .eq('id', id);
+
+    if (error) {
+      alert(error.message);
+      return;
+    }
+
+    setInfos(prev => prev.filter(item => item.id !== id));
+  }
+
+  const canEdit = user?.role === 'admin' || user?.role === 'supervisor';
+
   return (
     <Layout>
       <h1 style={{ color: '#FFD600' }}>Informações Importantes</h1>
 
-      {user?.role === 'admin' || user?.role === 'supervisor' ? (
+      {canEdit && (
         <button
-          style={{
-            ...styles.mainBtn,
-            marginBottom: 20
-          }}
+          style={{ ...styles.mainBtn, marginBottom: 20 }}
           onClick={() => setShowModal(true)}
         >
           + Nova Informação
         </button>
-      ) : null}
+      )}
 
       {loading ? (
         <p>Carregando...</p>
@@ -91,8 +108,26 @@ export default function Informacoes() {
         infos.map(info => (
           <div key={info.id} style={styles.card}>
             <h3 style={{ margin: 0 }}>{info.titulo}</h3>
-            <p style={{ whiteSpace: 'pre-line' }}>{info.conteudo}</p>
-            <small style={{ color: '#888' }}>Criado por: {info.created_by}</small>
+
+            <p style={{ whiteSpace: 'pre-line' }}>
+              {info.conteudo}
+            </p>
+
+            <small style={{ color: '#888' }}>
+              Criado por: {info.created_by}
+            </small>
+
+            {/* 🆕 BOTÃO EXCLUIR */}
+            {canEdit && (
+              <div style={{ marginTop: 12 }}>
+                <button
+                  onClick={() => excluirInfo(info.id)}
+                  style={styles.deleteBtn}
+                >
+                  Excluir
+                </button>
+              </div>
+            )}
           </div>
         ))
       )}
@@ -117,8 +152,15 @@ export default function Informacoes() {
             />
 
             <div style={{ display: 'flex', gap: 10 }}>
-              <button style={styles.mainBtn} onClick={salvar}>Salvar</button>
-              <button style={styles.smallBtn} onClick={() => setShowModal(false)}>Fechar</button>
+              <button style={styles.mainBtn} onClick={salvar}>
+                Salvar
+              </button>
+              <button
+                style={styles.smallBtn}
+                onClick={() => setShowModal(false)}
+              >
+                Fechar
+              </button>
             </div>
           </div>
         </div>
@@ -151,6 +193,16 @@ const styles = {
     border: '1px solid #FFD600',
     color: '#FFD600',
     padding: '6px 10px',
+    cursor: 'pointer'
+  },
+
+  // 🆕 botão de excluir
+  deleteBtn: {
+    background: 'transparent',
+    border: '1px solid #ff4d4d',
+    color: '#ff4d4d',
+    padding: '6px 10px',
+    borderRadius: 8,
     cursor: 'pointer'
   },
 
