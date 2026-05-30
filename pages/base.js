@@ -10,7 +10,7 @@ export default function Base() {
   const [topics, setTopics] = useState([]);
   const [comments, setComments] = useState([]);
   const [categories, setCategories] = useState([]);
-  console.log('USER ATUAL:', user);
+  
 
   const [q, setQ] = useState('');
   const [commentInput, setCommentInput] = useState({});
@@ -32,33 +32,43 @@ export default function Base() {
   const [newDesc, setNewDesc] = useState('');
   const [newCat, setNewCat] = useState('');
 
-  useEffect(() => {
-    async function init() {
-      const { data } = await supabase.auth.getUser();
-      const currentUser = data?.user;
+useEffect(() => {
+  async function init() {
+    const { data: authData } = await supabase.auth.getUser();
+    const currentUser = authData?.user;
 
-      setUser(currentUser || null);
-
-      if (!currentUser) return;
-
-      const { data: existing } = await supabase
-        .from('profiles')
-        .select('*')
-        .eq('id', currentUser.id)
-        .single();
-
-      if (!existing) {
-        await supabase.from('profiles').insert({
-          id: currentUser.id,
-          email: currentUser.email,
-          role: 'usuario'
-        });
-      }
+    if (!currentUser) {
+      setUser(null);
+      return;
     }
 
+    const { data: profile, error } = await supabase
+      .from('profiles')
+      .select('role, email')
+      .eq('id', currentUser.id)
+      .maybeSingle();
+
+    if (error) console.error(error);
+
+    // cria profile se não existir
+    if (!profile) {
+      await supabase.from('profiles').insert({
+        id: currentUser.id,
+        email: currentUser.email,
+        role: 'usuario'
+      });
+    }
+
+    setUser({
+      id: currentUser.id,
+      email: currentUser.email,
+      role: profile?.role || 'usuario'
+    });
+
+    load();
+  }
 
   init();
-  load();
 }, []);
 
 async function load() {
