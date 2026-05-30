@@ -169,21 +169,8 @@ export default function Approval() {
           )}
 
           <div style={{ marginTop: 10 }}>
-            <div style={styles.actionRow}>
-  <button
-    style={styles.approveBtn}
-    onClick={() => approveTopic(t.id)}
-  >
-    ✔ Aprovar
-  </button>
-
-  <button
-    style={styles.rejectBtn}
-    onClick={() => rejectTopic(t.id)}
-  >
-    ✖ Rejeitar
-  </button>
-</div>
+            <button onClick={() => approveTopic(t.id)}>Aprovar</button>
+            <button onClick={() => rejectTopic(t.id)}>Rejeitar</button>
           </div>
         </div>
       ))}
@@ -222,21 +209,8 @@ export default function Approval() {
           )}
 
           <div style={{ marginTop: 10 }}>
-            <div style={styles.actionRow}>
-  <button
-    style={styles.approveBtn}
-    onClick={() => approveComment(c.id)}
-  >
-    ✔ Aprovar
-  </button>
-
-  <button
-    style={styles.rejectBtn}
-    onClick={() => rejectComment(c.id)}
-  >
-    ✖ Rejeitar
-  </button>
-</div>
+            <button onClick={() => approveComment(c.id)}>Aprovar</button>
+            <button onClick={() => rejectComment(c.id)}>Rejeitar</button>
           </div>
         </div>
       ))}
