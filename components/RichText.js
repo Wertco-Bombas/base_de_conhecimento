@@ -52,11 +52,11 @@ export default function RichText({ value, onChange }) {
         );
       }
 
-      return (
-        <div key={index} style={{ marginBottom: 4 }}>
-          {line}
-        </div>
-      );
+     return (
+  <div key={index} style={{ marginBottom: 4 }}>
+    {renderTextWithLinks(line)}
+  </div>
+);
     });
   };
 
@@ -79,6 +79,29 @@ export default function RichText({ value, onChange }) {
     </div>
   );
 }
+const renderTextWithLinks = (text) => {
+  if (!text) return text;
+
+  const urlRegex = /(https?:\/\/[^\s]+)/g;
+
+  return text.split(urlRegex).map((part, i) => {
+    if (part.match(urlRegex)) {
+      return (
+        <a
+          key={i}
+          href={part}
+          target="_blank"
+          rel="noreferrer"
+          style={{ color: '#3b82f6', textDecoration: 'underline' }}
+        >
+          {part}
+        </a>
+      );
+    }
+
+    return part;
+  });
+};
 
 const styles = {
   editor: {
