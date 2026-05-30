@@ -76,21 +76,19 @@ export default function Layout({ children }) {
           <div style={styles.menu}>
 
             <a style={styles.link} href="/base">
-              <span style={{ fontSize: 18 }}>📚</span>
-<span className="menu-text">Base de Conhecimento</span>
-            </a>
+  <span style={{ fontSize: 18, minWidth: 24, textAlign: 'center' }}>📚</span>
+  <span className="menu-text">Base de Conhecimento</span>
+</a>
 
-            {(user.role === 'supervisor' || user.role === 'admin') && (
-              <a style={styles.link} href="/approval">
-                ✅ Aprovação
-              </a>
-            )}
+           <a style={styles.link} href="/approval">
+  <span style={{ fontSize: 18, minWidth: 24, textAlign: 'center' }}>✅</span>
+  <span className="menu-text">Aprovação</span>
+</a>
 
-           {(user.role === 'admin' || user.role === 'supervisor') && (
-  <a style={styles.link} href="/usuarios">
-    👥 Usuários
-  </a>
-)}
+          <a style={styles.link} href="/usuarios">
+  <span style={{ fontSize: 18, minWidth: 24, textAlign: 'center' }}>👥</span>
+  <span className="menu-text">Usuários</span>
+</a>
 
           </div>
         )}
