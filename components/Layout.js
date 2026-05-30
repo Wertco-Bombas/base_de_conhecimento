@@ -71,7 +71,11 @@ export default function Layout({ children }) {
       {/* SIDEBAR */}
       <div className="sidebar-hover" style={styles.sidebar}>
         <div style={styles.brand}>
-  <img src="/logo_app.jpg" alt="Logo" style={{ width: 120, height: 'auto' }} />
+  <img
+    src="/logo_app.jpg"
+    alt="Logo"
+    className="logo-sidebar"
+  />
 </div>
 
         {!loading && user && (
