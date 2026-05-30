@@ -126,6 +126,17 @@ html, body {
   transition: 0.2s ease;
   white-space: nowrap;
 }
+  .logo-sidebar {
+  width: 40px;
+  height: 40px;
+  object-fit: contain;
+  transition: all 0.25s ease;
+}
+
+.sidebar-hover:hover .logo-sidebar {
+  width: 140px;
+  height: auto;
+}
 @media (max-width: 768px) {
   body {
     font-size: 14px;
