@@ -76,7 +76,8 @@ export default function Layout({ children }) {
           <div style={styles.menu}>
 
             <a style={styles.link} href="/base">
-              📚 Base de Conhecimento
+              <span style={{ fontSize: 18 }}>📚</span>
+<span className="menu-text">Base de Conhecimento</span>
             </a>
 
             {(user.role === 'supervisor' || user.role === 'admin') && (
@@ -129,7 +130,7 @@ const styles = {
   },
 
 sidebar: {
-  width: 70, // fechado
+  width: 70,
   background: '#111',
   padding: 20,
   display: 'flex',
@@ -156,15 +157,19 @@ sidebar: {
     gap: 10
   },
 
-  link: {
-    color: '#fff',
-    textDecoration: 'none',
-    padding: 10,
-    borderRadius: 8,
-    background: '#1a1a1a',
-    border: '1px solid #2a2a2a',
-    fontSize: 14
-  },
+ link: {
+  color: '#fff',
+  textDecoration: 'none',
+  padding: 10,
+  borderRadius: 8,
+  background: '#1a1a1a',
+  border: '1px solid #2a2a2a',
+  fontSize: 14,
+  display: 'flex',
+  alignItems: 'center',
+  gap: 10,
+  whiteSpace: 'nowrap'
+},
 
   content: {
     flex: 1,
