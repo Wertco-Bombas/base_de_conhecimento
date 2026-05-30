@@ -1105,11 +1105,7 @@ const styles = {
   transition: '0.2s ease',
   userSelect: 'none'
 },
-  iconFileBtnHover: {
-  background: '#FFD600',
-  color: '#000',
-  transform: 'scale(1.05)'
-}
+
 
   modal: {
     position: 'fixed',
@@ -1130,4 +1126,18 @@ const styles = {
     width: '100%',
     color: '#fff'
   }
+  iconFileBtn: {
+  display: 'flex',
+  alignItems: 'center',
+  justifyContent: 'center',
+  width: 44,
+  height: 44,
+  borderRadius: 12,
+  background: '#0b0b0b',
+  border: '1px solid #FFD600',
+  color: '#FFD600',
+  fontSize: 22,
+  cursor: 'pointer',
+  transition: '0.2s ease'
+}
 };
