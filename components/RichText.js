@@ -17,12 +17,10 @@ export default function RichText({ value, onChange }) {
   const renderTextWithLinks = (text) => {
     if (!text) return text;
 
-    const urlRegex = /(https?:\/\/[^\s]+)/g;
-
-    const parts = text.split(urlRegex);
+    const parts = text.split(/(https?:\/\/[^\s]+)/g);
 
     return parts.map((part, i) => {
-      const isUrl = part.match(/^https?:\/\//);
+      const isUrl = part.startsWith('http://') || part.startsWith('https://');
 
       if (isUrl) {
         return (
@@ -31,7 +29,11 @@ export default function RichText({ value, onChange }) {
             href={part}
             target="_blank"
             rel="noreferrer"
-            style={{ color: '#3b82f6', textDecoration: 'underline' }}
+            style={{
+              color: '#3b82f6',
+              textDecoration: 'underline',
+              cursor: 'pointer'
+            }}
           >
             {part}
           </a>
