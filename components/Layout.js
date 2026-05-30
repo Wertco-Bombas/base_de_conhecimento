@@ -69,7 +69,7 @@ export default function Layout({ children }) {
     <div style={styles.wrapper}>
 
       {/* SIDEBAR */}
-      <div style={styles.sidebar}>
+      <div style={styles.sidebar} className="sidebar-hover">
         <div style={styles.brand}>WERTCO</div>
 
         {!loading && user && (
@@ -128,18 +128,20 @@ const styles = {
     fontFamily: 'Arial'
   },
 
-  sidebar: {
-    width: 260,
-    background: '#111',
-    padding: 20,
-    display: 'flex',
-    flexDirection: 'column',
-    gap: 15,
-    borderRight: '1px solid #222',
-    position: 'sticky',
-    top: 0,
-    height: '100vh'
-  },
+sidebar: {
+  width: 70, // fechado
+  background: '#111',
+  padding: 20,
+  display: 'flex',
+  flexDirection: 'column',
+  gap: 15,
+  borderRight: '1px solid #222',
+  position: 'sticky',
+  top: 0,
+  height: '100vh',
+  overflow: 'hidden',
+  transition: 'width 0.25s ease'
+},
 
   brand: {
     fontSize: 20,
