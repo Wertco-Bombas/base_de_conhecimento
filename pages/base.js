@@ -549,12 +549,14 @@ return (
   + Nova Categoria
 </button>
 
-        <button
-          style={styles.smallBtnDanger}
-          onClick={deleteCategory}
-        >
-          Excluir Categoria
-        </button>
+        {(user?.role === 'admin' || user?.role === 'supervisor') && (
+  <button
+    style={styles.smallBtnDanger}
+    onClick={deleteCategory}
+  >
+    Excluir Categoria
+  </button>
+)}
       </div>
 
      {visibleTopics?.map(topic => {
