@@ -56,8 +56,15 @@ html, body {
 
 .menu-text {
   opacity: 0;
-  transition: 0.2s ease;
+  width: 0;
+  overflow: hidden;
   white-space: nowrap;
+  transition: opacity 0.2s ease;
+}
+
+.sidebar-hover:hover .menu-text {
+  opacity: 1;
+  width: auto;
 }
 
 .sidebar-hover:hover .menu-text {
