@@ -15,31 +15,60 @@ export default function RichText({ value, onChange }) {
   };
 
   const renderTextWithLinks = (text) => {
-    if (!text) return text;
+  if (!text) return text;
 
-    const parts = text.split(/(https?:\/\/[^\s]+)/g);
+  const urlRegex = /(https?:\/\/[^\s]+)/g;
 
-    return parts.map((part, i) => {
-      const isUrl = part.startsWith('http://') || part.startsWith('https://');
+  const matches = [...text.matchAll(urlRegex)];
 
-      if (isUrl) {
-        return (
-          <a
-            key={i}
-            href={part}
-            target="_blank"
-            rel="noreferrer"
-            style={styles.link}
-            onClick={(e) => e.stopPropagation()}
-          >
-            {part}
-          </a>
-        );
-      }
+  if (matches.length === 0) {
+    return text;
+  }
 
-      return <span key={i}>{part}</span>;
-    });
-  };
+  const result = [];
+  let lastIndex = 0;
+
+  matches.forEach((match, i) => {
+    const url = match[0];
+    const index = match.index;
+
+    if (index > lastIndex) {
+      result.push(
+        <span key={`t-${i}`}>
+          {text.substring(lastIndex, index)}
+        </span>
+      );
+    }
+
+    result.push(
+      <a
+        key={`a-${i}`}
+        href={url}
+        target="_blank"
+        rel="noreferrer"
+        style={{
+          color: '#3b82f6',
+          textDecoration: 'underline',
+          cursor: 'pointer'
+        }}
+      >
+        {url}
+      </a>
+    );
+
+    lastIndex = index + url.length;
+  });
+
+  if (lastIndex < text.length) {
+    result.push(
+      <span key="end">
+        {text.substring(lastIndex)}
+      </span>
+    );
+  }
+
+  return result;
+};
 
   const renderPreview = (text) => {
     if (!text) return null;
