@@ -148,11 +148,12 @@ sidebar: {
 },
 
   brand: {
-    fontSize: 20,
-    fontWeight: 'bold',
-    color: '#FFD600',
-    marginBottom: 20
-  },
+  display: 'flex',
+  justifyContent: 'center',
+  alignItems: 'center',
+  marginBottom: 20,
+  minHeight: 50
+},
 
   menu: {
     display: 'flex',
