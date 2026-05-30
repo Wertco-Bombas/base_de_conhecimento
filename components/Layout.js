@@ -85,6 +85,14 @@ export default function Layout({ children }) {
   <span style={{ fontSize: 18, minWidth: 24, textAlign: 'center' }}>📚</span>
   <span className="menu-text">Base de Conhecimento</span>
 </a>
+          <a style={styles.link} href="/informacoes">
+  <span style={{ fontSize: 18, minWidth: 24, textAlign: 'center' }}>
+    📢
+  </span>
+  <span className="menu-text">
+    Informações
+  </span>
+</a>
 
            <a style={styles.link} href="/approval">
   <span style={{ fontSize: 18, minWidth: 24, textAlign: 'center' }}>✅</span>
