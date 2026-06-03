@@ -33,7 +33,7 @@ export default function Base() {
   const [newCat, setNewCat] = useState('');
 
   const [editingComment, setEditingComment] = useState(null);
-const [editingCommentText, setEditingCommentText] = useState('');
+const [editingTexts, setEditingTexts] = useState({});
 
 const [editingTopic, setEditingTopic] = useState(null);
 const [editingTopicTitle, setEditingTopicTitle] = useState('');
@@ -167,7 +167,7 @@ if (topicImage) {
   const { error } = await supabase
   .from('comentarios')
   .update({
-    texto: editingCommentText
+    texto: editingTexts[editingComment]
   })
   .eq('id', editingComment);
 
@@ -335,16 +335,11 @@ const commentTrees = useMemo(() => {
   const map = {};
 
   visibleTopics.forEach(topic => {
-    map[topic.id] = buildTree(
-      comments,
-      null,
-      topic.id,
-      user?.role
-    );
+    map[topic.id] = buildTree(comments, null, topic.id, user?.role);
   });
 
   return map;
-}, [comments, visibleTopics, buildTree, user?.role]);
+}, [comments, user?.role]);
 
   function formatDate(date) {
     if (!date) return '';
@@ -435,7 +430,7 @@ const renderNetworkText = (text) => {
 
       return (
         <div key={i} style={{ marginBottom: 6 }}>
-          [ANEXO] {clean}
+          📎 {clean}
 
           <button
             onClick={() => {
@@ -498,10 +493,13 @@ const CommentNode = memo(function CommentNode({
       {editingComment === comment.id ? (
         <>
           <textarea
-            value={editingCommentText}
-            onChange={(e) =>
-              setEditingCommentText(e.target.value)
-            }
+           value={editingTexts[comment.id] || ''}
+onChange={(e) =>
+  setEditingTexts(prev => ({
+    ...prev,
+    [comment.id]: e.target.value
+  }))
+}
             style={{
               ...styles.input,
               marginTop: 10
@@ -533,7 +531,7 @@ const CommentNode = memo(function CommentNode({
         </>
       ) : (
         <div style={styles.commentText}>
-          [COM] {renderNetworkText(comment.texto)}
+          💬 {renderNetworkText(comment.texto)}
         </div>
       )}
 
@@ -827,7 +825,7 @@ return (
   style={styles.input}
 />
   <label style={styles.iconFileBtn}>
-  IMG
+  📷
   <input
     type="file"
     accept="image/*"
