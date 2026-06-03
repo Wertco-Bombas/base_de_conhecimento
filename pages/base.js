@@ -335,11 +335,20 @@ const commentTrees = useMemo(() => {
   const map = {};
 
   visibleTopics.forEach(topic => {
-    map[topic.id] = buildTree(comments, null, topic.id, user?.role);
+    map[topic.id] = buildTree(
+      comments,
+      null,
+      topic.id,
+      user?.role
+    );
   });
 
   return map;
-}, [comments, user?.role]);
+}, [
+  comments,
+  user?.role,
+  visibleTopics.length
+]);
 
   function formatDate(date) {
     if (!date) return '';
