@@ -356,15 +356,15 @@ function ReplyBox({
   const [localImage, setLocalImage] = useState(null);
 
   return (
-    
-    <div style={{
-      marginTop: 10,
-      display: 'flex',
-      gap: 8,
-      flexWrap: 'wrap',
-      width: '100%'
-    }}>
-
+    <div
+      style={{
+        marginTop: 10,
+        display: 'flex',
+        gap: 8,
+        flexWrap: 'wrap',
+        width: '100%'
+      }}
+    >
       <textarea
         className="mobileInput"
         rows={3}
@@ -398,11 +398,9 @@ function ReplyBox({
       >
         enviar
       </button>
-
     </div>
-
   );
-});
+}
 const renderNetworkText = (text) => {
   function convertPathToUrl(path) {
   if (!path) return '';
