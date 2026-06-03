@@ -1,4 +1,4 @@
-import { useEffect, useState, useMemo, memo } from 'react';
+import { useEffect, useState, useMemo, useCallback, memo } from 'react';
 import Layout from '../components/Layout';
 import { supabase } from '../lib/supabaseClient';
 import { canApprove } from '../lib/permissions';
@@ -341,7 +341,7 @@ const commentTrees = useMemo(() => {
       topic.id,
       user?.role
     );
- 
+  });
 
   return map;
 }, [comments, visibleTopics, buildTree, user?.role]);
@@ -1107,20 +1107,7 @@ return (
 }
 
 const styles = {
-iconFileBtn: {
-  display: 'flex',
-  alignItems: 'center',
-  justifyContent: 'center',
-  width: 44,
-  height: 44,
-  borderRadius: 12,
-  background: '#0b0b0b',
-  border: '1px solid #FFD600',
-  color: '#FFD600',
-  fontSize: 22,
-  cursor: 'pointer',
-  transition: '0.2s ease'
-},
+
   topBar: {
     display: 'flex',
     gap: 10,
