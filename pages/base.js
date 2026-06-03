@@ -165,12 +165,11 @@ if (topicImage) {
   if (!editingComment) return;
 
   const { error } = await supabase
-    .from('comentarios')
-    .update({
-      texto: editingCommentText,
-      updated_at: new Date().toISOString()
-    })
-    .eq('id', editingComment);
+  .from('comentarios')
+  .update({
+    texto: editingCommentText
+  })
+  .eq('id', editingComment);
 
   if (error) {
     alert(error.message);
