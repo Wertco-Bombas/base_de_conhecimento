@@ -473,7 +473,7 @@ const renderNetworkText = (text) => {
     return <div key={i}>{line}</div>;
   });
 };
-function CommentNode({
+const CommentNode = memo(function CommentNode({
   comment,
   level = 0,
   setOpenImage
@@ -505,7 +505,10 @@ function CommentNode({
           />
 
           <div style={{ marginTop: 10 }}>
-            <button style={styles.mainBtn} onClick={updateComment}>
+            <button
+              style={styles.mainBtn}
+              onClick={updateComment}
+            >
               salvar
             </button>
 
@@ -607,7 +610,7 @@ function CommentNode({
         ))}
     </div>
   );
-}
+});
 /* 🔥 MODAL DA IMAGEM (DEVE FICAR FORA DO COMPONENTE AUXILIAR, MAS DENTRO DO RETURN PRINCIPAL) */
 
 
