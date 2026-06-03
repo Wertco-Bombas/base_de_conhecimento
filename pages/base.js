@@ -331,20 +331,20 @@ async function createCategory() {
     );
   }, [filteredTopics, user]);
 
-  const commentTrees = useMemo(() => {
-    const map = {};
+const commentTrees = useMemo(() => {
+  const map = {};
 
-    visibleTopics.forEach(topic => {
-      map[topic.id] = buildTree(
-  comments,
-  null,
-  topic.id,
-  user?.role
+  visibleTopics.forEach(topic => {
+    map[topic.id] = buildTree(
+      comments,
+      null,
+      topic.id,
+      user?.role
+    );
+ 
 
-    });
-
-    return map;
-  }, [comments, visibleTopics]);
+  return map;
+}, [comments, visibleTopics, buildTree, user?.role]);
 
   function formatDate(date) {
     if (!date) return '';
@@ -819,8 +819,11 @@ return (
     placeholder="Escreva um comentário..."
     value={commentInput[topic.id] || ''}
     onChange={e =>
-    const handleCommentChange = useCallback((topicId, value) => {
-  setCommentInput(prev => {
+  setCommentInput(prev => ({
+    ...prev,
+    [topic.id]: e.target.value
+  }))
+}
     if (prev[topicId] === value) return prev;
     return { ...prev, [topicId]: value };
   });
