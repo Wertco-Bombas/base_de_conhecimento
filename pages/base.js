@@ -477,7 +477,7 @@ function CommentNode({
   comment,
   level = 0,
   setOpenImage
-}) {
+}) 
   return (
     <div
       style={{
@@ -609,7 +609,7 @@ function CommentNode({
         ))}
     </div>
   );
-});
+}
 
 /* 🔥 MODAL DA IMAGEM (DEVE FICAR FORA DO COMPONENTE AUXILIAR, MAS DENTRO DO RETURN PRINCIPAL) */
 
