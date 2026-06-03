@@ -32,6 +32,13 @@ export default function Base() {
   const [newDesc, setNewDesc] = useState('');
   const [newCat, setNewCat] = useState('');
 
+  const [editingComment, setEditingComment] = useState(null);
+const [editingCommentText, setEditingCommentText] = useState('');
+
+const [editingTopic, setEditingTopic] = useState(null);
+const [editingTopicTitle, setEditingTopicTitle] = useState('');
+const [editingTopicDesc, setEditingTopicDesc] = useState('');
+
 useEffect(() => {
   async function init() {
     const { data: authData } = await supabase.auth.getUser();
@@ -70,6 +77,26 @@ useEffect(() => {
 
   init();
 }, []);
+  async function updateTopic() {
+  if (!editingTopic) return;
+
+  const { error } = await supabase
+    .from('topicos')
+    .update({
+      titulo: editingTopicTitle,
+      descricao: editingTopicDesc,
+      updated_at: new Date().toISOString()
+    })
+    .eq('id', editingTopic);
+
+  if (error) {
+    alert(error.message);
+    return;
+  }
+
+  setEditingTopic(null);
+  load();
+}
 
 async function load() {
   const { data: t, error: e1 } = await supabase
@@ -134,6 +161,27 @@ if (topicImage) {
 
     load();
   }
+  async function updateComment() {
+  if (!editingComment) return;
+
+  const { error } = await supabase
+    .from('comentarios')
+    .update({
+      texto: editingCommentText,
+      updated_at: new Date().toISOString()
+    })
+    .eq('id', editingComment);
+
+  if (error) {
+    alert(error.message);
+    return;
+  }
+
+  setEditingComment(null);
+  setEditingCommentText('');
+
+  load();
+}
 
  async function addComment(topicId, parentId = null, texto = null, imageFile = null) {
   if (!user) return alert('Faça login');
@@ -445,9 +493,47 @@ const CommentNode = memo(function CommentNode({
         <span>{formatDate(comment.created_at)}</span>
       </div>
 
-     <div style={styles.commentText}>
-  💬 {renderNetworkText(comment.texto)}
-</div>
+     {editingComment === comment.id ? (
+  <>
+    <textarea
+      value={editingCommentText}
+      onChange={(e) =>
+        setEditingCommentText(e.target.value)
+      }
+      style={{
+        ...styles.input,
+        marginTop: 10
+      }}
+      rows={4}
+    />
+
+    <div style={{ marginTop: 10 }}>
+      <button
+        style={styles.mainBtn}
+        onClick={updateComment}
+      >
+        salvar
+      </button>
+
+      <button
+        style={{
+          ...styles.smallBtn,
+          marginLeft: 10
+        }}
+        onClick={() => {
+          setEditingComment(null);
+          setEditingCommentText('');
+        }}
+      >
+        cancelar
+      </button>
+    </div>
+  </>
+) : (
+  <div style={styles.commentText}>
+    💬 {renderNetworkText(comment.texto)}
+  </div>
+)}
        {comment.image_url && (
   <img
     src={comment.image_url}
@@ -466,6 +552,21 @@ const CommentNode = memo(function CommentNode({
       
 
       <div style={styles.commentActions}>
+        {(
+  user?.role === 'admin' ||
+  user?.role === 'supervisor' ||
+  comment.user_email === user?.email
+) && (
+  <button
+    style={styles.smallBtn}
+    onClick={() => {
+      setEditingComment(comment.id);
+      setEditingCommentText(comment.texto || '');
+    }}
+  >
+    editar
+  </button>
+)}
         <button
           style={styles.smallBtn}
           onClick={() =>
@@ -565,8 +666,10 @@ return (
 >
   + Nova Categoria
 </button>
-
-        {(user?.role === 'admin' || user?.role === 'supervisor') && (
+    {(
+  user?.role === 'admin' ||
+  user?.role === 'supervisor'
+) && (
   <button
     style={styles.smallBtnDanger}
     onClick={deleteCategory}
@@ -574,6 +677,8 @@ return (
     Excluir Categoria
   </button>
 )}
+
+       
       </div>
 
      {visibleTopics?.map(topic => {
@@ -584,46 +689,111 @@ return (
 
       <div style={styles.header} className="mobileHeader">
         <div>
-          <h2 style={styles.title}>{topic.titulo}</h2>
+       {editingTopic === topic.id ? (
+  <>
+    <input
+      value={editingTopicTitle}
+      onChange={(e) =>
+        setEditingTopicTitle(e.target.value)
+      }
+      style={styles.input}
+    />
+
+    <textarea
+      rows={6}
+      value={editingTopicDesc}
+      onChange={(e) =>
+        setEditingTopicDesc(e.target.value)
+      }
+      style={{
+        ...styles.input,
+        marginTop: 10
+      }}
+    />
+
+    <div style={{ marginTop: 10 }}>
+      <button
+        style={styles.mainBtn}
+        onClick={updateTopic}
+      >
+        salvar
+      </button>
+
+      <button
+        style={{
+          ...styles.smallBtn,
+          marginLeft: 10
+        }}
+        onClick={() => setEditingTopic(null)}
+      >
+        cancelar
+      </button>
+    </div>
+  </>
+) : (
+  <h2 style={styles.title}>
+    {topic.titulo}
+  </h2>
+)}
+          
 
           <div style={styles.category}>
             {topic.categorias?.nome}
           </div>
         </div>
 
-        {(user?.role === 'admin' || user?.role === 'supervisor') && (
-  <button
-    style={styles.smallBtnDanger}
-    onClick={() => deleteTopic(topic.id)}
-  >
-    excluir tópico
-  </button>
+   {(
+  user?.role === 'admin' ||
+  user?.role === 'supervisor' ||
+  topic.user_email === user?.email
+) && (
+  <>
+    <button
+      style={styles.smallBtn}
+      onClick={() => {
+        setEditingTopic(topic.id);
+        setEditingTopicTitle(topic.titulo);
+        setEditingTopicDesc(topic.descricao);
+      }}
+    >
+      editar tópico
+    </button>
+
+    <button
+      style={styles.smallBtnDanger}
+      onClick={() => deleteTopic(topic.id)}
+    >
+      excluir tópico
+    </button>
+  </>
 )}
       </div>
 
-      <p
-  style={{
-    ...styles.desc,
-    whiteSpace: 'pre-line'
-  }}
->
-  {topic.descricao}
-{topic.image_url && (
-  <img
-    src={topic.image_url}
-    alt=""
-   style={{
-  width: '100%',
-  marginTop: 10,
-  borderRadius: 10,
-  maxHeight: 500,
-  objectFit: 'contain',
-  background: '#000'
-}}
-  />
-)}
-</p>
+     {editingTopic !== topic.id && (
+  <p
+    style={{
+      ...styles.desc,
+      whiteSpace: 'pre-line'
+    }}
+  >
+    {topic.descricao}
 
+    {topic.image_url && (
+      <img
+        src={topic.image_url}
+        alt=""
+        style={{
+          width: '100%',
+          marginTop: 10,
+          borderRadius: 10,
+          maxHeight: 500,
+          objectFit: 'contain',
+          background: '#000'
+        }}
+      />
+    )}
+  </p>
+)}
  <div style={styles.meta}>
   <span>{topic.user_email}</span>
   <span>{formatDate(topic.created_at)}</span>
