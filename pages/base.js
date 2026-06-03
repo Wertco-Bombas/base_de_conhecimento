@@ -347,7 +347,7 @@ async function createCategory() {
     return new Date(date).toLocaleString('pt-BR');
   }
 
-const ReplyBox = memo(function ReplyBox({
+function ReplyBox({
   commentId,
   topicId,
   addComment
@@ -475,7 +475,7 @@ const renderNetworkText = (text) => {
     return <div key={i}>{line}</div>;
   });
 };
-const CommentNode = memo(function CommentNode({
+function CommentNode({
   comment,
   level = 0,
   setOpenImage
