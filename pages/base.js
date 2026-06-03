@@ -435,7 +435,7 @@ const renderNetworkText = (text) => {
 
       return (
         <div key={i} style={{ marginBottom: 6 }}>
-          📎 {clean}
+          [ANEXO] {clean}
 
           <button
             onClick={() => {
@@ -533,7 +533,7 @@ const CommentNode = memo(function CommentNode({
         </>
       ) : (
         <div style={styles.commentText}>
-          💬 {renderNetworkText(comment.texto)}
+          [COM] {renderNetworkText(comment.texto)}
         </div>
       )}
 
@@ -827,7 +827,7 @@ return (
   style={styles.input}
 />
   <label style={styles.iconFileBtn}>
-  📷
+  IMG
   <input
     type="file"
     accept="image/*"
