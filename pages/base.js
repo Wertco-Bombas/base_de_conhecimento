@@ -477,7 +477,7 @@ function CommentNode({
   comment,
   level = 0,
   setOpenImage
-}) 
+}) {
   return (
     <div
       style={{
@@ -490,80 +490,78 @@ function CommentNode({
         <span>{formatDate(comment.created_at)}</span>
       </div>
 
-     {editingComment === comment.id ? (
-  <>
-    <textarea
-      value={editingCommentText}
-      onChange={(e) =>
-        setEditingCommentText(e.target.value)
-      }
-      style={{
-        ...styles.input,
-        marginTop: 10
-      }}
-      rows={4}
-    />
+      {editingComment === comment.id ? (
+        <>
+          <textarea
+            value={editingCommentText}
+            onChange={(e) =>
+              setEditingCommentText(e.target.value)
+            }
+            style={{
+              ...styles.input,
+              marginTop: 10
+            }}
+            rows={4}
+          />
 
-    <div style={{ marginTop: 10 }}>
-      <button
-        style={styles.mainBtn}
-        onClick={updateComment}
-      >
-        salvar
-      </button>
+          <div style={{ marginTop: 10 }}>
+            <button style={styles.mainBtn} onClick={updateComment}>
+              salvar
+            </button>
 
-      <button
-        style={{
-          ...styles.smallBtn,
-          marginLeft: 10
-        }}
-        onClick={() => {
-          setEditingComment(null);
-          setEditingCommentText('');
-        }}
-      >
-        cancelar
-      </button>
-    </div>
-  </>
-) : (
-  <div style={styles.commentText}>
-    💬 {renderNetworkText(comment.texto)}
-  </div>
-)}
-       {comment.image_url && (
-  <img
-    src={comment.image_url}
-    onClick={() => setOpenImage(comment.image_url)}
-    style={{
-      width: '100%',
-      marginTop: 10,
-      borderRadius: 10,
-      maxHeight: 180,
-      objectFit: 'contain',
-      background: '#000',
-      cursor: 'zoom-in'
-    }}
-  />
-)}
-      
+            <button
+              style={{
+                ...styles.smallBtn,
+                marginLeft: 10
+              }}
+              onClick={() => {
+                setEditingComment(null);
+                setEditingCommentText('');
+              }}
+            >
+              cancelar
+            </button>
+          </div>
+        </>
+      ) : (
+        <div style={styles.commentText}>
+          💬 {renderNetworkText(comment.texto)}
+        </div>
+      )}
+
+      {comment.image_url && (
+        <img
+          src={comment.image_url}
+          onClick={() => setOpenImage(comment.image_url)}
+          style={{
+            width: '100%',
+            marginTop: 10,
+            borderRadius: 10,
+            maxHeight: 180,
+            objectFit: 'contain',
+            background: '#000',
+            cursor: 'zoom-in'
+          }}
+        />
+      )}
 
       <div style={styles.commentActions}>
         {(
-  user?.role === 'admin' ||
-  user?.role === 'supervisor' ||
-  comment.user_email === user?.email
-) && (
-  <button
-    style={styles.smallBtn}
-    onClick={() => {
-      setEditingComment(comment.id);
-      setEditingCommentText(comment.texto || '');
-    }}
-  >
-    editar
-  </button>
-)}
+          user?.role === 'admin' ||
+          user?.role === 'supervisor' ||
+          comment.user_email === user?.email
+        ) && (
+          <button
+            style={styles.smallBtn}
+            onClick={() => {
+              setEditingComment(comment.id);
+              setEditingCommentText(comment.texto || '');
+            }}
+          >
+            editar
+          </button>
+        )}
+
         <button
           style={styles.smallBtn}
           onClick={() =>
@@ -576,18 +574,18 @@ function CommentNode({
           responder
         </button>
 
-       {(
-  user?.role === 'admin' ||
-  user?.role === 'supervisor' ||
-  comment.user_email === user?.email
-) && (
-  <button
-    style={styles.smallBtnDanger}
-    onClick={() => deleteComment(comment.id)}
-  >
-    excluir
-  </button>
-)}
+        {(
+          user?.role === 'admin' ||
+          user?.role === 'supervisor' ||
+          comment.user_email === user?.email
+        ) && (
+          <button
+            style={styles.smallBtnDanger}
+            onClick={() => deleteComment(comment.id)}
+          >
+            excluir
+          </button>
+        )}
       </div>
 
       {replyInput[comment.id] && (
@@ -601,16 +599,15 @@ function CommentNode({
       {comment.children?.length > 0 &&
         comment.children.map(child => (
           <CommentNode
-  key={child.id}
-  comment={child}
-  level={level + 1}
-  setOpenImage={setOpenImage}
-/>
+            key={child.id}
+            comment={child}
+            level={level + 1}
+            setOpenImage={setOpenImage}
+          />
         ))}
     </div>
   );
 }
-
 /* 🔥 MODAL DA IMAGEM (DEVE FICAR FORA DO COMPONENTE AUXILIAR, MAS DENTRO DO RETURN PRINCIPAL) */
 
 
