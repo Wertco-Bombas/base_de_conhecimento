@@ -294,20 +294,20 @@ async function createCategory() {
     );
   }
 
-  function buildTree(list, parentId = null, topicId = null) {
-    parentId = parentId ? String(parentId) : null;
+  const buildTree = useCallback((list, parentId = null, topicId = null, userRole) => {
+  parentId = parentId ? String(parentId) : null;
 
-    return list
-      .filter(c =>
-        String(c.parent_id ?? null) === String(parentId ?? null) &&
-        String(c.topic_id ?? null) === String(topicId ?? null) &&
-        (c.status === 'approved' || canApprove(user))
-      )
-      .map(c => ({
-        ...c,
-        children: buildTree(list, c.id, topicId) || []
-      }));
-  }
+  return list
+    .filter(c =>
+      String(c.parent_id ?? null) === String(parentId ?? null) &&
+      String(c.topic_id ?? null) === String(topicId ?? null) &&
+      (c.status === 'approved' || userRole === 'admin' || userRole === 'supervisor')
+    )
+    .map(c => ({
+      ...c,
+      children: buildTree(list, c.id, topicId, userRole)
+    }));
+}, []);
 
   const filteredTopics = useMemo(() => {
     return topics.filter(t => {
@@ -335,7 +335,12 @@ async function createCategory() {
     const map = {};
 
     visibleTopics.forEach(topic => {
-      map[topic.id] = buildTree(comments, null, topic.id);
+      map[topic.id] = buildTree(
+  comments,
+  null,
+  topic.id,
+  user?.role
+
     });
 
     return map;
@@ -814,11 +819,12 @@ return (
     placeholder="Escreva um comentário..."
     value={commentInput[topic.id] || ''}
     onChange={e =>
-      setCommentInput(prev => ({
-        ...prev,
-        [topic.id]: e.target.value
-      }))
-    }
+    const handleCommentChange = useCallback((topicId, value) => {
+  setCommentInput(prev => {
+    if (prev[topicId] === value) return prev;
+    return { ...prev, [topicId]: value };
+  });
+}, []);
     style={styles.input}
   />
 
