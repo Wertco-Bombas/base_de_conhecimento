@@ -814,23 +814,18 @@ return (
 <div style={styles.row} className="mobileRow">
 
   <textarea
-    className="mobileInput"
-    rows={4}
-    placeholder="Escreva um comentário..."
-    value={commentInput[topic.id] || ''}
-    onChange={e =>
-  setCommentInput(prev => ({
-    ...prev,
-    [topic.id]: e.target.value
-  }))
-}
-    if (prev[topicId] === value) return prev;
-    return { ...prev, [topicId]: value };
-  });
-}, []);
-    style={styles.input}
-  />
-
+  className="mobileInput"
+  rows={4}
+  placeholder="Escreva um comentário..."
+  value={commentInput[topic.id] || ''}
+  onChange={(e) =>
+    setCommentInput(prev => ({
+      ...prev,
+      [topic.id]: e.target.value
+    }))
+  }
+  style={styles.input}
+/>
   <label style={styles.iconFileBtn}>
   📷
   <input
