@@ -1314,7 +1314,7 @@ const styles = {
   width: '100%',
   color: '#fff'
 },
-categorySelect: {
+
   categorySelect: {
   width: '100%',
   padding: '14px 16px',
