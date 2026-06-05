@@ -161,15 +161,13 @@ if (topicImage) {
 
     load();
   }
-  async function updateComment() {
-  if (!editingComment) return;
-
+async function updateComment(id, text) {
   const { error } = await supabase
-  .from('comentarios')
-  .update({
-    texto: editingTexts[editingComment]
-  })
-  .eq('id', editingComment);
+    .from('comentarios')
+    .update({
+      texto: text
+    })
+    .eq('id', id);
 
   if (error) {
     alert(error.message);
@@ -177,12 +175,6 @@ if (topicImage) {
   }
 
   setEditingComment(null);
-
-setEditingTexts(prev => ({
-  ...prev,
-  [editingComment]: ''
-}));
-
   load();
 }
 
@@ -495,6 +487,7 @@ function CommentNode({
   level = 0,
   setOpenImage
 }) {
+  const [editText, setEditText] = useState(comment.texto || '');
   return (
     <div
       style={{
@@ -509,49 +502,42 @@ function CommentNode({
 
       {editingComment === comment.id ? (
         <>
-          function CommentNode({
-  comment,
-  level = 0,
-  setOpenImage
-}) {
-            const [editText, setEditText] = useState(comment.texto || '');
-            <textarea
-  value={editText}
-  onChange={(e) => setEditText(e.target.value)}
-  style={{
-    ...styles.input,
-    marginTop: 10
-  }}
-  rows={4}
-/>
+         
+           {editingComment === comment.id ? (
+  <>
+    <textarea
+      value={editText}
+      onChange={(e) => setEditText(e.target.value)}
+      style={{
+        ...styles.input,
+        marginTop: 10
+      }}
+      rows={4}
+    />
 
-          <div style={{ marginTop: 10 }}>
-            <button
-              style={styles.mainBtn}
-              onClick={updateComment}
-            >
-              salvar
-            </button>
+    <div style={{ marginTop: 10 }}>
+      <button
+        style={styles.mainBtn}
+        onClick={() => updateComment(comment.id, editText)}
+      >
+        salvar
+      </button>
 
-            <button
-              style={{
-                ...styles.smallBtn,
-                marginLeft: 10
-              }}
-              onClick={() => {
-  setEditingComment(null);
-}}
-            >
-              cancelar
-            </button>
-          </div>
-        </>
-      ) : (
-        <div style={styles.commentText}>
-          💬 {renderNetworkText(comment.texto)}
-        </div>
-      )}
-
+      <button
+        style={{
+          ...styles.smallBtn,
+          marginLeft: 10
+        }}
+        onClick={() => {
+          setEditingComment(null);
+          setEditText(comment.texto || '');
+        }}
+      >
+        cancelar
+      </button>
+    </div>
+  </>
+) : (
       {comment.image_url && (
         <img
           src={comment.image_url}
