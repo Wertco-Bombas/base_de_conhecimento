@@ -705,7 +705,7 @@ return (
   style={styles.mainBtn}
   onClick={() => {
     setShowPendingPopup(false);
-    router.push('/aprovacao');
+    router.push('/approval);
   }}
 >
   ir para aprovação
