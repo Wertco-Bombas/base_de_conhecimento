@@ -10,6 +10,8 @@ export default function Base() {
   const [topics, setTopics] = useState([]);
   const [comments, setComments] = useState([]);
   const [categories, setCategories] = useState([]);
+
+  const [pendingComments, setPendingComments] = useState([]);
   
 
   const [q, setQ] = useState('');
@@ -122,31 +124,40 @@ useEffect(() => {
 }
 
 async function load(currentRole = user?.role) {
-  const { data: t, error: e1 } = await supabase
+  const { data: t } = await supabase
     .from('topicos')
     .select('*');
 
-  const { data: cats, error: e2 } = await supabase
+  const { data: cats } = await supabase
     .from('categorias')
     .select('*');
 
-  const { data: c, error: e3 } = await supabase
+  // ✅ base de conhecimento (aprovados)
+  const { data: approvedComments } = await supabase
     .from('comentarios')
-    .select('*');
+    .select('*')
+    .eq('status', 'approved');
 
-  if (e1 || e2 || e3) {
-    console.error(e1 || e2 || e3);
-  }
+  // 🚨 fila de aprovação (pendentes)
+  const { data: pendingComments } = await supabase
+    .from('comentarios')
+    .select('*')
+    .eq('status', 'pending');
 
-    const tFinal = (t || []).map(topic => ({
-      ...topic,
-      categorias: cats?.find(c => c.id === topic.categoria_id) || null
-    }));
+  const tFinal = (t || []).map(topic => ({
+    ...topic,
+    categorias: cats?.find(c => c.id === topic.categoria_id) || null
+  }));
 
-    setTopics(tFinal || []);
-    setComments(c || []);
-    setCategories(cats || []);
-  }
+  setTopics(tFinal || []);
+  setCategories(cats || []);
+
+  // 👇 ESSA LINHA MUDA O JOGO
+  setComments(approvedComments || []);
+
+  // 🔥 você ainda NÃO tem isso no state
+  setPendingComments(pendingComments || []);
+}
 
   async function createTopic() {
     if (!user) return alert('Faça login');
@@ -320,7 +331,7 @@ async function createCategory() {
     .filter(c =>
       String(c.parent_id ?? null) === String(parentId ?? null) &&
       String(c.topic_id ?? null) === String(topicId ?? null) &&
-      (c.status === 'approved' || userRole === 'admin' || userRole === 'supervisor')
+      (c.status === 'approved' || userRole === 'admin')
     )
     .map(c => ({
       ...c,
@@ -356,11 +367,17 @@ async function createCategory() {
   categoryFilter
 ]);
 
- const visibleTopics = useMemo(() => {
-  return filteredTopics.filter(t =>
-    t.status === 'approved'
-  );
-}, [filteredTopics]);
+const visibleTopics = useMemo(() => {
+  if (!user) return [];
+
+  // supervisor e admin veem tudo
+  if (user.role === 'admin' || user.role === 'supervisor') {
+    return filteredTopics;
+  }
+
+  // usuário normal só vê aprovados
+  return filteredTopics.filter(t => t.status === 'approved');
+}, [filteredTopics, user]);
 
 const commentTrees = useMemo(() => {
   const map = {};
