@@ -500,10 +500,7 @@ function CommentNode({
         <span>{formatDate(comment.created_at)}</span>
       </div>
 
-      {editingComment === comment.id ? (
-        <>
-         
-           {editingComment === comment.id ? (
+     {editingComment === comment.id ? (
   <>
     <textarea
       value={editText}
@@ -538,22 +535,28 @@ function CommentNode({
     </div>
   </>
 ) : (
-      {comment.image_url && (
-        <img
-          src={comment.image_url}
-          onClick={() => setOpenImage(comment.image_url)}
-          style={{
-            width: '100%',
-            marginTop: 10,
-            borderRadius: 10,
-            maxHeight: 180,
-            objectFit: 'contain',
-            background: '#000',
-            cursor: 'zoom-in'
-          }}
-        />
-      )}
+  <>
+    <div style={styles.commentText}>
+      💬 {renderNetworkText(comment.texto)}
+    </div>
 
+    {comment.image_url && (
+      <img
+        src={comment.image_url}
+        onClick={() => setOpenImage(comment.image_url)}
+        style={{
+          width: '100%',
+          marginTop: 10,
+          borderRadius: 10,
+          maxHeight: 180,
+          objectFit: 'contain',
+          background: '#000',
+          cursor: 'zoom-in'
+        }}
+      />
+    )}
+  </>
+)}
       <div style={styles.commentActions}>
         {(
           user?.role === 'admin' ||
