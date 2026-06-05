@@ -363,6 +363,10 @@ function ReplyBox({
 }) {
   const [localText, setLocalText] = useState('');
   const [localImage, setLocalImage] = useState(null);
+  
+   useEffect(() => {
+    console.log('ReplyBox montou:', commentId);
+  }, []);
 
   return (
     <div
