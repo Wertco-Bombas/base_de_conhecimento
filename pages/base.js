@@ -1002,7 +1002,7 @@ return (
                 gap: 8
               }}
             >
-              {categories.map(cat => (
+              {sortedCategories.map(cat => (
                 <div
                   key={cat.id}
                   onClick={() => toggleCategory(cat.nome)}
