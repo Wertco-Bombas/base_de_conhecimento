@@ -334,16 +334,7 @@ async function createCategory() {
   categoryFilter
 ]);
 
-      const commentMatch = comments.some(c =>
-        c.topic_id === t.id &&
-        c.texto?.toLowerCase().includes(q.toLowerCase())
-      );
-
-      return topicMatch || commentMatch;
-    });
-  }, [topics, comments, q]);
-
-  const visibleTopics = useMemo(() => {
+    const visibleTopics = useMemo(() => {
     return filteredTopics.filter(t =>
       t.status === 'approved' || canApprove(user)
     );
