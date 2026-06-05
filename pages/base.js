@@ -33,7 +33,7 @@ export default function Base() {
   const [newCat, setNewCat] = useState('');
 
   const [editingComment, setEditingComment] = useState(null);
-const [editingTexts, setEditingTexts] = useState({});
+
 
 const [editingTopic, setEditingTopic] = useState(null);
 const [editingTopicTitle, setEditingTopicTitle] = useState('');
@@ -509,20 +509,21 @@ function CommentNode({
 
       {editingComment === comment.id ? (
         <>
-          <textarea
-           value={editingTexts[comment.id] || ''}
-onChange={(e) =>
-  setEditingTexts(prev => ({
-    ...prev,
-    [comment.id]: e.target.value
-  }))
-}
-            style={{
-              ...styles.input,
-              marginTop: 10
-            }}
-            rows={4}
-          />
+          function CommentNode({
+  comment,
+  level = 0,
+  setOpenImage
+}) {
+            const [editText, setEditText] = useState(comment.texto || '');
+            <textarea
+  value={editText}
+  onChange={(e) => setEditText(e.target.value)}
+  style={{
+    ...styles.input,
+    marginTop: 10
+  }}
+  rows={4}
+/>
 
           <div style={{ marginTop: 10 }}>
             <button
