@@ -1306,14 +1306,15 @@ const styles = {
     zIndex: 999
   },
 
-  modalBox: {
-    background: '#111',
-    border: '1px solid #FFD600',
-    borderRadius: 18,
-    padding: 24,
-    width: '100%',
-    color: '#fff'
-  },
+ modalBox: {
+  background: '#111',
+  border: '1px solid #FFD600',
+  borderRadius: 18,
+  padding: 24,
+  width: '100%',
+  color: '#fff'
+},
+categorySelect: {
   categorySelect: {
   width: '100%',
   padding: '14px 16px',
