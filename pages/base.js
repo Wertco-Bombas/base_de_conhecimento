@@ -92,16 +92,16 @@ useEffect(() => {
   if (!user) return;
 
   const pendingTopics = topics.filter(x => x.status === 'pending');
-  const pendingComments = comments.filter(x => x.status === 'pending');
 
-  const totalPending = pendingTopics.length + pendingComments.length;
+  const totalPending =
+    pendingTopics.length + pendingComments.length;
 
   setPendingCount(totalPending);
 
   if (user?.role === 'supervisor' && totalPending > 0) {
     setShowPendingPopup(true);
   }
-}, [user, topics, comments]);
+}, [user, topics, pendingComments]);
   async function updateTopic() {
   if (!editingTopic) return;
 
