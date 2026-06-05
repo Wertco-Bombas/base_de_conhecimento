@@ -1328,5 +1328,5 @@ categorySelect: {
   outline: 'none',
   cursor: 'pointer',
   boxShadow: '0 0 12px rgba(255,214,0,0.25)'
-},
+}
 };
