@@ -133,16 +133,20 @@ async function load(currentRole = user?.role) {
     .select('*');
 
   // ✅ base de conhecimento (aprovados)
-  const { data: approvedComments } = await supabase
-    .from('comentarios')
-    .select('*')
-    .eq('status', 'approved');
+ // comentários aprovados (base)
+const { data: approvedComments } = await supabase
+  .from('comentarios')
+  .select('*')
+  .eq('status', 'approved');
+
+// comentários pendentes (fila de aprovação)
+const { data: pendingCommentsData } = await supabase
+  .from('comentarios')
+  .select('*')
+  .eq('status', 'pending');
 
   // 🚨 fila de aprovação (pendentes)
-  const { data: pendingComments } = await supabase
-    .from('comentarios')
-    .select('*')
-    .eq('status', 'pending');
+  
 
   const tFinal = (t || []).map(topic => ({
     ...topic,
@@ -154,9 +158,10 @@ async function load(currentRole = user?.role) {
 
   // 👇 ESSA LINHA MUDA O JOGO
   setComments(approvedComments || []);
+  setPendingComments(pendingCommentsData || []);
 
   // 🔥 você ainda NÃO tem isso no state
-  setPendingComments(pendingComments || []);
+  
 }
 
   async function createTopic() {
@@ -331,7 +336,7 @@ async function createCategory() {
     .filter(c =>
       String(c.parent_id ?? null) === String(parentId ?? null) &&
       String(c.topic_id ?? null) === String(topicId ?? null) &&
-      (c.status === 'approved' || userRole === 'admin')
+      (c.status === 'approved')
     )
     .map(c => ({
       ...c,
