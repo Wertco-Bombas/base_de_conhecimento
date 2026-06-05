@@ -1313,7 +1313,7 @@ const styles = {
     padding: 24,
     width: '100%',
     color: '#fff'
-  }
+  },
   categorySelect: {
   width: '100%',
   padding: '14px 16px',
