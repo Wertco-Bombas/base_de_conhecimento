@@ -13,6 +13,7 @@ export default function Base() {
   
 
   const [q, setQ] = useState('');
+  const [categoryFilter, setCategoryFilter] = useState('');
   const [commentInput, setCommentInput] = useState({});
   const [replyInput, setReplyInput] = useState({});
   const [commentImage, setCommentImage] = useState({});
@@ -305,12 +306,33 @@ async function createCategory() {
     }));
 }, []);
 
-  const filteredTopics = useMemo(() => {
-    return topics.filter(t => {
-      const topicMatch =
-        `${t.titulo} ${t.descricao} ${t.categorias?.nome || ''}`
-          .toLowerCase()
-          .includes(q.toLowerCase());
+ const filteredTopics = useMemo(() => {
+  return topics.filter(t => {
+    const topicMatch =
+      `${t.titulo} ${t.descricao} ${t.categorias?.nome || ''}`
+        .toLowerCase()
+        .includes(q.toLowerCase());
+
+    const commentMatch = comments.some(c =>
+      c.topic_id === t.id &&
+      c.texto?.toLowerCase().includes(q.toLowerCase())
+    );
+
+    const categoryMatch =
+      !categoryFilter ||
+      t.categorias?.nome === categoryFilter;
+
+    return (
+      (topicMatch || commentMatch) &&
+      categoryMatch
+    );
+  });
+}, [
+  topics,
+  comments,
+  q,
+  categoryFilter
+]);
 
       const commentMatch = comments.some(c =>
         c.topic_id === t.id &&
@@ -661,6 +683,26 @@ return (
       onChange={e => setQ(e.target.value)}
       style={styles.search}
     />
+        <select
+  value={categoryFilter}
+  onChange={(e) => setCategoryFilter(e.target.value)}
+  style={{
+    ...styles.input,
+    marginBottom: 20,
+    width: '100%'
+  }}
+>
+  <option value="">Todas as categorias</option>
+
+  {categories.map(cat => (
+    <option
+      key={cat.id}
+      value={cat.nome}
+    >
+      {cat.nome}
+    </option>
+  ))}
+</select>
 
     <div style={styles.topBar}>
       <button
