@@ -1095,23 +1095,23 @@ return (
   </div>
 
   {categories.length === 0 ? (
-    <div style={{ color: '#777' }}>
-      Nenhuma categoria cadastrada
+  <div style={{ color: '#777' }}>
+    Nenhuma categoria cadastrada
+  </div>
+) : (
+  sortedCategories.map(cat => (
+    <div
+      key={cat.id}
+      style={{
+        padding: '8px 10px',
+        borderBottom: '1px solid #222',
+        color: '#fff'
+      }}
+    >
+      {cat.nome}
     </div>
-  ) : (
-    categories.map(cat => (
-      <div
-        key={cat.id}
-        style={{
-          padding: '8px 10px',
-          borderBottom: '1px solid #222',
-          color: '#fff'
-        }}
-      >
-        {cat.nome}
-      </div>
-    ))
-  )}
+  ))
+)}
 </div>
       <div
         style={{
