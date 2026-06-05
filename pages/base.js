@@ -356,11 +356,11 @@ async function createCategory() {
   categoryFilter
 ]);
 
-    const visibleTopics = useMemo(() => {
-    return filteredTopics.filter(t =>
-      t.status === 'approved' || canApprove(user)
-    );
-  }, [filteredTopics, user]);
+   const visibleTopics = useMemo(() => {
+  return filteredTopics.filter(t =>
+    t.status === 'approved' || user?.role === 'supervisor'
+  );
+}, [filteredTopics, user]);
 
 const commentTrees = useMemo(() => {
   const map = {};
@@ -675,13 +675,29 @@ return (
         Existem <b>{pendingCount}</b> itens aguardando aprovação.
       </p>
 
-      <div style={{ marginTop: 20 }}>
+      <div style={{ marginTop: 20, display: 'flex', gap: 10 }}>
+        
         <button
           style={styles.mainBtn}
+          onClick={() => {
+            setShowPendingPopup(false);
+
+            // 👉 aqui você pode rolar até uma seção ou abrir modal
+            document.getElementById('pending-section')?.scrollIntoView({
+              behavior: 'smooth'
+            });
+          }}
+        >
+          ir para aprovação
+        </button>
+
+        <button
+          style={styles.smallBtn}
           onClick={() => setShowPendingPopup(false)}
         >
-          ok, entendi
+          fechar
         </button>
+
       </div>
     </div>
   </div>
