@@ -490,7 +490,7 @@ const renderNetworkText = (text) => {
     return <div key={i}>{line}</div>;
   });
 };
-const CommentNode = memo(function CommentNode({
+function CommentNode({
   comment,
   level = 0,
   setOpenImage
@@ -633,7 +633,7 @@ onChange={(e) =>
         ))}
     </div>
   );
-});
+}
 /* 🔥 MODAL DA IMAGEM (DEVE FICAR FORA DO COMPONENTE AUXILIAR, MAS DENTRO DO RETURN PRINCIPAL) */
 
 
