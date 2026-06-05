@@ -356,11 +356,11 @@ async function createCategory() {
   categoryFilter
 ]);
 
-   const visibleTopics = useMemo(() => {
+ const visibleTopics = useMemo(() => {
   return filteredTopics.filter(t =>
-    t.status === 'approved' || user?.role === 'supervisor'
+    t.status === 'approved'
   );
-}, [filteredTopics, user]);
+}, [filteredTopics]);
 
 const commentTrees = useMemo(() => {
   const map = {};
