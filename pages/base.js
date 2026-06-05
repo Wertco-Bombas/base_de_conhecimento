@@ -677,11 +677,7 @@ return (
         <select
   value={categoryFilter}
   onChange={(e) => setCategoryFilter(e.target.value)}
-  style={{
-    ...styles.input,
-    marginBottom: 20,
-    width: '100%'
-  }}
+  style={styles.categorySelect}
 >
   <option value="">Todas as categorias</option>
 
@@ -1318,4 +1314,18 @@ const styles = {
     width: '100%',
     color: '#fff'
   }
+  categorySelect: {
+  width: '100%',
+  padding: '14px 16px',
+  marginBottom: 20,
+  background: '#111',
+  color: '#FFD600',
+  border: '2px solid #FFD600',
+  borderRadius: 14,
+  fontSize: 16,
+  fontWeight: 'bold',
+  outline: 'none',
+  cursor: 'pointer',
+  boxShadow: '0 0 12px rgba(255,214,0,0.25)'
+},
 };
