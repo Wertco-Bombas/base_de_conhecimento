@@ -39,7 +39,12 @@ export default function Base() {
 const [editingTopic, setEditingTopic] = useState(null);
 const [editingTopicTitle, setEditingTopicTitle] = useState('');
 const [editingTopicDesc, setEditingTopicDesc] = useState('');
-
+const sortedCategories = useMemo(() => {
+  return [...categories].sort((a, b) =>
+    a.nome.localeCompare(b.nome, 'pt-BR', { sensitivity: 'base' })
+  );
+}, [categories]);
+  
 useEffect(() => {
   async function init() {
     const { data: authData } = await supabase.auth.getUser();
@@ -931,30 +936,18 @@ return (
       />
 
       <select
-        value={newCat}
-        onChange={e => setNewCat(e.target.value)}
-        style={styles.input}
-      >
-        <option value="">
-          Escolha uma categoria
-        </option>
+  value={newCat}
+  onChange={e => setNewCat(e.target.value)}
+  style={styles.input}
+>
+  <option value="">Escolha uma categoria</option>
 
-{[...categories]
-  .sort((a, b) => a.nome.localeCompare(b.nome))
-  .map(cat => (
-    <div
-      key={cat.id}
-      style={{
-        padding: '8px 10px',
-        borderBottom: '1px solid #222',
-        color: '#fff'
-      }}
-    >
+  {sortedCategories.map(cat => (
+    <option key={cat.id} value={cat.nome}>
       {cat.nome}
-    </div>
+    </option>
   ))}
-      </select>
-
+</select>
       <input
         type="file"
         accept="image/*"
