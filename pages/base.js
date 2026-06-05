@@ -3,9 +3,11 @@ import Layout from '../components/Layout';
 import { supabase } from '../lib/supabaseClient';
 import { canApprove } from '../lib/permissions';
 import { uploadImage } from '../lib/uploadImage';
+import { useRouter } from 'next/router';
 
 
 export default function Base() {
+  const router = useRouter();
   const [user, setUser] = useState(null);
   const [topics, setTopics] = useState([]);
   const [comments, setComments] = useState([]);
@@ -700,18 +702,14 @@ return (
       <div style={{ marginTop: 20, display: 'flex', gap: 10 }}>
         
         <button
-          style={styles.mainBtn}
-          onClick={() => {
-            setShowPendingPopup(false);
-
-            // 👉 aqui você pode rolar até uma seção ou abrir modal
-            document.getElementById('pending-section')?.scrollIntoView({
-              behavior: 'smooth'
-            });
-          }}
-        >
-          ir para aprovação
-        </button>
+  style={styles.mainBtn}
+  onClick={() => {
+    setShowPendingPopup(false);
+    router.push('/aprovacao');
+  }}
+>
+  ir para aprovação
+</button>
 
         <button
           style={styles.smallBtn}
