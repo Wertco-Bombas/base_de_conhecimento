@@ -681,14 +681,13 @@ return (
 >
   <option value="">Todas as categorias</option>
 
-  {categories.map(cat => (
-    <option
-      key={cat.id}
-      value={cat.nome}
-    >
+{[...categories]
+  .sort((a, b) => a.nome.localeCompare(b.nome))
+  .map(cat => (
+    <option key={cat.id} value={cat.nome}>
       {cat.nome}
     </option>
-  ))}
+))}
 </select>
 
     <div style={styles.topBar}>
@@ -940,14 +939,20 @@ return (
           Escolha uma categoria
         </option>
 
-        {categories.map(cat => (
-          <option
-            key={cat.id}
-            value={cat.nome}
-          >
-            {cat.nome}
-          </option>
-        ))}
+{[...categories]
+  .sort((a, b) => a.nome.localeCompare(b.nome))
+  .map(cat => (
+    <div
+      key={cat.id}
+      style={{
+        padding: '8px 10px',
+        borderBottom: '1px solid #222',
+        color: '#fff'
+      }}
+    >
+      {cat.nome}
+    </div>
+  ))}
       </select>
 
       <input
