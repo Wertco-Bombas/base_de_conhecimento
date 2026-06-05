@@ -177,7 +177,11 @@ if (topicImage) {
   }
 
   setEditingComment(null);
-  setEditingCommentText('');
+
+setEditingTexts(prev => ({
+  ...prev,
+  [editingComment]: ''
+}));
 
   load();
 }
@@ -534,9 +538,8 @@ onChange={(e) =>
                 marginLeft: 10
               }}
               onClick={() => {
-                setEditingComment(null);
-                setEditingCommentText('');
-              }}
+  setEditingComment(null);
+}}
             >
               cancelar
             </button>
@@ -573,9 +576,13 @@ onChange={(e) =>
           <button
             style={styles.smallBtn}
             onClick={() => {
-              setEditingComment(comment.id);
-              setEditingCommentText(comment.texto || '');
-            }}
+  setEditingComment(comment.id);
+
+  setEditingTexts(prev => ({
+    ...prev,
+    [comment.id]: comment.texto || ''
+  }));
+}}
           >
             editar
           </button>
