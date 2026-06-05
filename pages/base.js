@@ -495,6 +495,21 @@ const CommentNode = memo(function CommentNode({
   level = 0,
   setOpenImage
 }) {
+
+  console.log('CommentNode render:', comment.id);
+
+  useEffect(() => {
+    console.log('CommentNode montou:', comment.id);
+
+    return () => {
+      console.log('CommentNode desmontou:', comment.id);
+    };
+  }, []);
+
+  return (
+    ...
+  );
+});
   return (
     <div
       style={{
