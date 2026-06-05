@@ -33,6 +33,9 @@ export default function Base() {
   const [newDesc, setNewDesc] = useState('');
   const [newCat, setNewCat] = useState('');
 
+  const [showPendingPopup, setShowPendingPopup] = useState(false);
+  const [pendingCount, setPendingCount] = useState(0);
+
   const [editingComment, setEditingComment] = useState(null);
 
 
@@ -78,11 +81,25 @@ useEffect(() => {
       role: profile?.role || 'usuario'
     });
 
-    load();
+    load(profile?.role || 'usuario');
   }
 
   init();
 }, []);
+  useEffect(() => {
+  if (!user) return;
+
+  const pendingTopics = topics.filter(x => x.status === 'pending');
+  const pendingComments = comments.filter(x => x.status === 'pending');
+
+  const totalPending = pendingTopics.length + pendingComments.length;
+
+  setPendingCount(totalPending);
+
+  if (user?.role === 'supervisor' && totalPending > 0) {
+    setShowPendingPopup(true);
+  }
+}, [user, topics, comments]);
   async function updateTopic() {
   if (!editingTopic) return;
 
@@ -101,10 +118,10 @@ useEffect(() => {
   }
 
   setEditingTopic(null);
-  load();
+  load(user?.role);
 }
 
-async function load() {
+async function load(currentRole = user?.role) {
   const { data: t, error: e1 } = await supabase
     .from('topicos')
     .select('*');
@@ -165,7 +182,7 @@ if (topicImage) {
     setNewCat('');
     setShowTopic(false);
 
-    load();
+    load(user?.role);
   }
 async function updateComment(id, text) {
   const { error } = await supabase
@@ -181,7 +198,7 @@ async function updateComment(id, text) {
   }
 
   setEditingComment(null);
-  load();
+  load(user?.role);
 }
 
  async function addComment(topicId, parentId = null, texto = null, imageFile = null) {
@@ -219,7 +236,7 @@ setCommentImage(prev => ({
   [topicId]: null
 }));
 
-load();
+load(user?.role);
 }
   async function deleteTopic(id) {
     const confirmar = confirm('Excluir tópico?');
@@ -228,7 +245,7 @@ load();
 
     await supabase.from('topicos').delete().eq('id', id);
 
-    load();
+    load(user?.role);
   }
 
   async function deleteComment(id) {
@@ -238,7 +255,7 @@ load();
 
     await supabase.from('comentarios').delete().eq('id', id);
 
-    load();
+    load(user?.role);
   }
 
 async function createCategory() {
@@ -257,7 +274,7 @@ async function createCategory() {
   setNewCategoryName('');
   setShowCategoryModal(false);
 
-  load();
+  load(user?.role);
 }
 
   async function deleteCategory() {
@@ -285,7 +302,7 @@ async function createCategory() {
     setSelectedCategories([]);
     setShowDeleteCategory(false);
 
-    load();
+    load(user?.role);
   }
 
   function toggleCategory(nome) {
@@ -647,6 +664,28 @@ function CommentNode({
 
 return (
   <Layout>
+  {showPendingPopup && user?.role === 'supervisor' && (
+  <div style={styles.modal}>
+    <div style={styles.modalBox}>
+      <h2 style={{ color: '#FFD600' }}>
+        Pendências de aprovação
+      </h2>
+
+      <p>
+        Existem <b>{pendingCount}</b> itens aguardando aprovação.
+      </p>
+
+      <div style={{ marginTop: 20 }}>
+        <button
+          style={styles.mainBtn}
+          onClick={() => setShowPendingPopup(false)}
+        >
+          ok, entendi
+        </button>
+      </div>
+    </div>
+  </div>
+)}
   {openImage && (
   <div
     onClick={() => setOpenImage(null)}
