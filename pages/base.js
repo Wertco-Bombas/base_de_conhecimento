@@ -7,6 +7,7 @@ import { useRouter } from 'next/router';
 
 
 export default function Base() {
+  
   const router = useRouter();
   const [user, setUser] = useState(null);
   const [topics, setTopics] = useState([]);
@@ -14,6 +15,8 @@ export default function Base() {
   const [categories, setCategories] = useState([]);
 
   const [pendingComments, setPendingComments] = useState([]);
+
+  const [favorites, setFavorites] = useState([]);
   
 
   const [q, setQ] = useState('');
@@ -46,6 +49,27 @@ export default function Base() {
 const [editingTopic, setEditingTopic] = useState(null);
 const [editingTopicTitle, setEditingTopicTitle] = useState('');
 const [editingTopicDesc, setEditingTopicDesc] = useState('');
+
+  const [editingTopicDesc, setEditingTopicDesc] = useState('');
+
+// 👇 AQUI você coloca favoritos
+const [favorites, setFavorites] = useState([]);
+
+function isFav(topicId) {
+  return favorites.includes(topicId);
+}
+
+function addFavorite(topicId) {
+  setFavorites(prev =>
+    prev.includes(topicId) ? prev : [...prev, topicId]
+  );
+}
+
+function removeFavorite(topicId) {
+  setFavorites(prev =>
+    prev.filter(id => id !== topicId)
+  );
+}
 const sortedCategories = useMemo(() => {
   return [...categories].sort((a, b) =>
     a.nome.localeCompare(b.nome, 'pt-BR', { sensitivity: 'base' })
