@@ -805,73 +805,88 @@ return (
   return (
     <div key={topic.id} style={styles.card} className="mobileCard">
 
-      <div style={styles.header} className="mobileHeader">
-        
-        <div>
-          {editingTopic === topic.id ? (
-            <>
-              <input
-                value={editingTopicTitle}
-                onChange={(e) => setEditingTopicTitle(e.target.value)}
-                style={styles.input}
-              />
+     <div style={styles.header} className="mobileHeader">
 
-              <textarea
-                rows={6}
-                value={editingTopicDesc}
-                onChange={(e) => setEditingTopicDesc(e.target.value)}
-                style={{ ...styles.input, marginTop: 10 }}
-              />
+  <div>
+    {editingTopic === topic.id ? (
+      <>
+        <input
+          value={editingTopicTitle}
+          onChange={(e) => setEditingTopicTitle(e.target.value)}
+          style={styles.input}
+        />
 
-              <div style={{ marginTop: 10 }}>
-                <button style={styles.mainBtn} onClick={updateTopic}>
-                  salvar
-                </button>
+        <textarea
+          rows={6}
+          value={editingTopicDesc}
+          onChange={(e) => setEditingTopicDesc(e.target.value)}
+          style={{ ...styles.input, marginTop: 10 }}
+        />
 
-                <button
-                  style={{ ...styles.smallBtn, marginLeft: 10 }}
-                  onClick={() => setEditingTopic(null)}
-                >
-                  cancelar
-                </button>
-              </div>
-            </>
-          ) : (
-            <>
-              <h2 style={styles.title}>{topic.titulo}</h2>
-              <div style={styles.category}>{topic.categorias?.nome}</div>
-            </>
-          )}
+        <div style={{ marginTop: 10 }}>
+          <button style={styles.mainBtn} onClick={updateTopic}>
+            salvar
+          </button>
+
+          <button
+            style={{ ...styles.smallBtn, marginLeft: 10 }}
+            onClick={() => setEditingTopic(null)}
+          >
+            cancelar
+          </button>
         </div>
+      </>
+    ) : (
+      <>
+        <h2 style={styles.title}>{topic.titulo}</h2>
 
-        {/* BOTÕES EDITAR / EXCLUIR (NÃO REMOVER ISSO) */}
-        {(
-          user?.role === 'admin' ||
-          user?.role === 'supervisor' ||
-          topic.user_email === user?.email
-        ) && (
-          <div style={{ display: 'flex', gap: 8 }}>
-            <button
-              style={styles.smallBtn}
-              onClick={() => {
-                setEditingTopic(topic.id);
-                setEditingTopicTitle(topic.titulo);
-                setEditingTopicDesc(topic.descricao);
-              }}
-            >
-              editar tópico
-            </button>
+        {/* ⭐⭐ BOTÃO FAVORITO VOLTOU AQUI */}
+        <button
+          style={styles.smallBtn}
+          onClick={() =>
+            isFav(topic.id)
+              ? removeFavorite(topic.id)
+              : addFavorite(topic.id)
+          }
+        >
+          {isFav(topic.id) ? '⭐ Favorito' : '☆ Favoritar'}
+        </button>
 
-            <button
-              style={styles.smallBtnDanger}
-              onClick={() => deleteTopic(topic.id)}
-            >
-              excluir tópico
-            </button>
-          </div>
-        )}
+        <div style={styles.category}>
+          {topic.categorias?.nome}
+        </div>
+      </>
+    )}
+  </div>
 
-      </div>
+  {/* BOTÕES EDITAR / EXCLUIR */}
+  {(
+    user?.role === 'admin' ||
+    user?.role === 'supervisor' ||
+    topic.user_email === user?.email
+  ) && (
+    <div style={{ display: 'flex', gap: 8 }}>
+      <button
+        style={styles.smallBtn}
+        onClick={() => {
+          setEditingTopic(topic.id);
+          setEditingTopicTitle(topic.titulo);
+          setEditingTopicDesc(topic.descricao);
+        }}
+      >
+        editar tópico
+      </button>
+
+      <button
+        style={styles.smallBtnDanger}
+        onClick={() => deleteTopic(topic.id)}
+      >
+        excluir tópico
+      </button>
+    </div>
+  )}
+
+</div>
 
       {editingTopic !== topic.id && (
         <p style={{ ...styles.desc, whiteSpace: 'pre-line' }}>
