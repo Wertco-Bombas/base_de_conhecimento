@@ -856,7 +856,7 @@ return (
         }
       >
         {isFav(topic.id) ? '⭐ Favorito' : '☆ Favoritar'}
-      </button>
+<button
   style={styles.smallBtn}
   onClick={() =>
     isFav(topic.id)
