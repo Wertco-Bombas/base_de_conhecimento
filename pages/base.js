@@ -14,8 +14,6 @@ export default function Base() {
   const [categories, setCategories] = useState([]);
 
   const [pendingComments, setPendingComments] = useState([]);
-
-  const [favorites, setFavorites] = useState([]);
   
 
   const [q, setQ] = useState('');
@@ -53,9 +51,6 @@ const sortedCategories = useMemo(() => {
     a.nome.localeCompare(b.nome, 'pt-BR', { sensitivity: 'base' })
   );
 }, [categories]);
-  const isFav = useCallback((topicId) => {
-  return favorites.some(f => f.topic_id === topicId);
-}, [favorites]);
   
 useEffect(() => {
   async function init() {
@@ -134,14 +129,6 @@ async function load(currentRole = user?.role) {
   const { data: t } = await supabase
     .from('topicos')
     .select('*');
-const { data: favs } = await supabase
-  .from('favoritos')
-  .select('*')
-  .eq('user_id', user?.id);
-
-setFavorites(favs || []);
-
-setFavorites(favs || []);
 
   const { data: cats } = await supabase
     .from('categorias')
@@ -268,35 +255,6 @@ setCommentImage(prev => ({
 }));
 
 load(user?.role);
-}
-  async function addFavorite(topicId) {
-  if (!user) return alert('Faça login');
-
-  const { error } = await supabase.from('favoritos').insert({
-    user_id: user.id,
-    topic_id: topicId
-  });
-
-  if (error) {
-    alert(error.message);
-    return;
-  }
-
-  load(user?.role);
-}
-  async function removeFavorite(topicId) {
-  const { error } = await supabase
-    .from('favoritos')
-    .delete()
-    .eq('user_id', user.id)
-    .eq('topic_id', topicId);
-
-  if (error) {
-    alert(error.message);
-    return;
-  }
-
-  load(user?.role);
 }
   async function deleteTopic(id) {
     const confirmar = confirm('Excluir tópico?');
@@ -727,6 +685,7 @@ function CommentNode({
 }
 /* 🔥 MODAL DA IMAGEM (DEVE FICAR FORA DO COMPONENTE AUXILIAR, MAS DENTRO DO RETURN PRINCIPAL) */
 
+
 return (
   <Layout>
   {showPendingPopup && user?.role === 'supervisor' && (
@@ -840,54 +799,181 @@ return (
        
       </div>
 
-{visibleTopics?.map(topic => {
+     {visibleTopics?.map(topic => {
   const tree = commentTrees[topic.id] || [];
 
   return (
     <div key={topic.id} style={styles.card} className="mobileCard">
 
-      {/* BOTÃO FAVORITO */}
-      <button
-        style={styles.smallBtn}
-        onClick={() =>
-          isFav(topic.id)
-            ? removeFavorite(topic.id)
-            : addFavorite(topic.id)
-        }
-      >
-        {isFav(topic.id) ? '⭐ Favorito' : '☆ Favoritar'}
-      </button>
-
       <div style={styles.header} className="mobileHeader">
         <div>
-          <h2 style={styles.title}>{topic.titulo}</h2>
+       {editingTopic === topic.id ? (
+  <>
+    <input
+      value={editingTopicTitle}
+      onChange={(e) =>
+        setEditingTopicTitle(e.target.value)
+      }
+      style={styles.input}
+    />
+
+    <textarea
+      rows={6}
+      value={editingTopicDesc}
+      onChange={(e) =>
+        setEditingTopicDesc(e.target.value)
+      }
+      style={{
+        ...styles.input,
+        marginTop: 10
+      }}
+    />
+
+    <div style={{ marginTop: 10 }}>
+      <button
+        style={styles.mainBtn}
+        onClick={updateTopic}
+      >
+        salvar
+      </button>
+
+      <button
+        style={{
+          ...styles.smallBtn,
+          marginLeft: 10
+        }}
+        onClick={() => setEditingTopic(null)}
+      >
+        cancelar
+      </button>
+    </div>
+  </>
+) : (
+  <h2 style={styles.title}>
+    {topic.titulo}
+  </h2>
+)}
+          
 
           <div style={styles.category}>
             {topic.categorias?.nome}
           </div>
         </div>
+
+   {(
+  user?.role === 'admin' ||
+  user?.role === 'supervisor' ||
+  topic.user_email === user?.email
+) && (
+  <>
+    <button
+      style={styles.smallBtn}
+      onClick={() => {
+        setEditingTopic(topic.id);
+        setEditingTopicTitle(topic.titulo);
+        setEditingTopicDesc(topic.descricao);
+      }}
+    >
+      editar tópico
+    </button>
+
+    <button
+      style={styles.smallBtnDanger}
+      onClick={() => deleteTopic(topic.id)}
+    >
+      excluir tópico
+    </button>
+  </>
+)}
       </div>
 
-      <p style={styles.desc}>
-        {topic.descricao}
-      </p>
+     {editingTopic !== topic.id && (
+  <p
+    style={{
+      ...styles.desc,
+      whiteSpace: 'pre-line'
+    }}
+  >
+    {topic.descricao}
 
-      <div style={styles.meta}>
-        <span>{topic.user_email}</span>
-        <span>{formatDate(topic.created_at)}</span>
-      </div>
+    {topic.image_url && (
+      <img
+        src={topic.image_url}
+        alt=""
+        style={{
+          width: '100%',
+          marginTop: 10,
+          borderRadius: 10,
+          maxHeight: 500,
+          objectFit: 'contain',
+          background: '#000'
+        }}
+      />
+    )}
+  </p>
+)}
+ <div style={styles.meta}>
+  <span>{topic.user_email}</span>
+  <span>{formatDate(topic.created_at)}</span>
+</div>
 
-      <div style={{ marginTop: 20 }}>
-        {tree?.map(comment => (
-          <CommentNode
-            key={comment.id}
-            comment={comment}
-            setOpenImage={setOpenImage}
-          />
-        ))}
-      </div>
+<div style={{ marginTop: 20 }}>
+  {tree?.map(comment => (
+    <CommentNode
+      key={comment.id}
+      comment={comment}
+      setOpenImage={setOpenImage}
+    />
+  ))}
+</div>
 
-    </div>
+<div style={styles.row} className="mobileRow">
+
+  <textarea
+  className="mobileInput"
+  rows={4}
+  placeholder="Escreva um comentário..."
+  value={commentInput[topic.id] || ''}
+  onChange={(e) =>
+    setCommentInput(prev => ({
+      ...prev,
+      [topic.id]: e.target.value
+    }))
+  }
+  style={styles.input}
+/>
+  <label style={styles.iconFileBtn}>
+  📷
+  <input
+    type="file"
+    accept="image/*"
+    onChange={(e) =>
+      setCommentImage(prev => ({
+        ...prev,
+        [topic.id]: e.target.files[0]
+      }))
+    }
+    style={{ display: 'none' }}
+  />
+</label>
+
+  <button
+    style={styles.mainBtn}
+    onClick={() =>
+      addComment(
+        topic.id,
+        null,
+        commentInput[topic.id],
+        commentImage?.[topic.id]
+      )
+    }
+  >
+    enviar
+  </button>
+
+</div>
+
+     </div>
   );
 })}
 {showTopic && (
