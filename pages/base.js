@@ -649,31 +649,27 @@ function CommentNode({
           responder
         </button>
 
-      {(
-  user?.role === 'admin' ||
-  user?.role === 'supervisor' ||
-  topic.user_email === user?.email
-) && (
-  <div style={styles.actionRow}>
-    <button
-      style={styles.smallBtn}
-      onClick={() => {
-        setEditingTopic(topic.id);
-        setEditingTopicTitle(topic.titulo);
-        setEditingTopicDesc(topic.descricao);
-      }}
-    >
-      editar tópico
-    </button>
+        {(
+          user?.role === 'admin' ||
+          user?.role === 'supervisor' ||
+          comment.user_email === user?.email
+        ) && (
+          <button
+            style={styles.smallBtnDanger}
+            onClick={() => deleteComment(comment.id)}
+          >
+            excluir
+          </button>
+        )}
+      </div>
 
-    <button
-      style={styles.smallBtnDanger}
-      onClick={() => deleteTopic(topic.id)}
-    >
-      excluir tópico
-    </button>
-  </div>
-)}
+      {replyInput[comment.id] && (
+        <ReplyBox
+          commentId={comment.id}
+          topicId={comment.topic_id}
+          addComment={addComment}
+        />
+      )}
 
       {comment.children?.length > 0 &&
         comment.children.map(child => (
@@ -1239,15 +1235,14 @@ const styles = {
     marginBottom: 20
   },
 
-card: {
-  background: 'linear-gradient(180deg, #121212, #0b0b0b)',
-  border: '1px solid #1f1f1f',
-  borderRadius: 16,
-  padding: 20,
-  marginBottom: 18,
-  color: '#fff',
-  boxShadow: '0 6px 18px rgba(0,0,0,0.35)'
-},
+  card: {
+    background: '#111',
+    border: '1px solid #222',
+    borderRadius: 18,
+    padding: 20,
+    marginBottom: 18,
+    color: '#fff'
+  },
 
   header: {
     display: 'flex',
@@ -1257,31 +1252,24 @@ card: {
     flexWrap: 'wrap'
   },
 
-title: {
-  margin: 0,
-  fontSize: 22,
-  fontWeight: 700,
-  letterSpacing: 0.3,
-  color: '#fff'
-},
+  title: {
+    margin: 0,
+    fontSize: 24
+  },
 
-category: {
-  display: 'inline-block',
-  marginTop: 10,
-  background: 'rgba(255, 214, 0, 0.12)',
-  color: '#FFD600',
-  padding: '5px 12px',
-  borderRadius: 999,
-  fontSize: 12,
-  border: '1px solid rgba(255,214,0,0.25)'
-},
+  category: {
+    display: 'inline-block',
+    marginTop: 8,
+    background: '#FFD600',
+    color: '#000',
+    padding: '5px 10px',
+    borderRadius: 999
+  },
 
-desc: {
-  color: '#cfcfcf',
-  marginTop: 14,
-  lineHeight: 1.6,
-  fontSize: 14
-},
+  desc: {
+    color: '#bbb',
+    marginTop: 16
+  },
 
   meta: {
     display: 'flex',
@@ -1356,12 +1344,6 @@ desc: {
     color: '#eee',
     wordBreak: 'break-word'
   },
-  actionRow: {
-  display: 'flex',
-  gap: 8,
-  marginTop: 10,
-  flexWrap: 'wrap'
-},
 
   commentActions: {
     display: 'flex',
