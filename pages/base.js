@@ -7,7 +7,6 @@ import { useRouter } from 'next/router';
 
 
 export default function Base() {
-  
   const router = useRouter();
   const [user, setUser] = useState(null);
   const [topics, setTopics] = useState([]);
@@ -15,8 +14,6 @@ export default function Base() {
   const [categories, setCategories] = useState([]);
 
   const [pendingComments, setPendingComments] = useState([]);
-
-  const [favorites, setFavorites] = useState([]);
   
 
   const [q, setQ] = useState('');
@@ -49,27 +46,6 @@ export default function Base() {
 const [editingTopic, setEditingTopic] = useState(null);
 const [editingTopicTitle, setEditingTopicTitle] = useState('');
 const [editingTopicDesc, setEditingTopicDesc] = useState('');
-
-  const [editingTopicDesc, setEditingTopicDesc] = useState('');
-
-// 👇 AQUI você coloca favoritos
-const [favorites, setFavorites] = useState([]);
-
-function isFav(topicId) {
-  return favorites.includes(topicId);
-}
-
-function addFavorite(topicId) {
-  setFavorites(prev =>
-    prev.includes(topicId) ? prev : [...prev, topicId]
-  );
-}
-
-function removeFavorite(topicId) {
-  setFavorites(prev =>
-    prev.filter(id => id !== topicId)
-  );
-}
 const sortedCategories = useMemo(() => {
   return [...categories].sort((a, b) =>
     a.nome.localeCompare(b.nome, 'pt-BR', { sensitivity: 'base' })
@@ -829,88 +805,73 @@ return (
   return (
     <div key={topic.id} style={styles.card} className="mobileCard">
 
-     <div style={styles.header} className="mobileHeader">
+      <div style={styles.header} className="mobileHeader">
+        
+        <div>
+          {editingTopic === topic.id ? (
+            <>
+              <input
+                value={editingTopicTitle}
+                onChange={(e) => setEditingTopicTitle(e.target.value)}
+                style={styles.input}
+              />
 
-  <div>
-    {editingTopic === topic.id ? (
-      <>
-        <input
-          value={editingTopicTitle}
-          onChange={(e) => setEditingTopicTitle(e.target.value)}
-          style={styles.input}
-        />
+              <textarea
+                rows={6}
+                value={editingTopicDesc}
+                onChange={(e) => setEditingTopicDesc(e.target.value)}
+                style={{ ...styles.input, marginTop: 10 }}
+              />
 
-        <textarea
-          rows={6}
-          value={editingTopicDesc}
-          onChange={(e) => setEditingTopicDesc(e.target.value)}
-          style={{ ...styles.input, marginTop: 10 }}
-        />
+              <div style={{ marginTop: 10 }}>
+                <button style={styles.mainBtn} onClick={updateTopic}>
+                  salvar
+                </button>
 
-        <div style={{ marginTop: 10 }}>
-          <button style={styles.mainBtn} onClick={updateTopic}>
-            salvar
-          </button>
-
-          <button
-            style={{ ...styles.smallBtn, marginLeft: 10 }}
-            onClick={() => setEditingTopic(null)}
-          >
-            cancelar
-          </button>
+                <button
+                  style={{ ...styles.smallBtn, marginLeft: 10 }}
+                  onClick={() => setEditingTopic(null)}
+                >
+                  cancelar
+                </button>
+              </div>
+            </>
+          ) : (
+            <>
+              <h2 style={styles.title}>{topic.titulo}</h2>
+              <div style={styles.category}>{topic.categorias?.nome}</div>
+            </>
+          )}
         </div>
-      </>
-    ) : (
-      <>
-        <h2 style={styles.title}>{topic.titulo}</h2>
 
-        {/* ⭐⭐ BOTÃO FAVORITO VOLTOU AQUI */}
-        <button
-          style={styles.smallBtn}
-          onClick={() =>
-            isFav(topic.id)
-              ? removeFavorite(topic.id)
-              : addFavorite(topic.id)
-          }
-        >
-          {isFav(topic.id) ? '⭐ Favorito' : '☆ Favoritar'}
-        </button>
+        {/* BOTÕES EDITAR / EXCLUIR (NÃO REMOVER ISSO) */}
+        {(
+          user?.role === 'admin' ||
+          user?.role === 'supervisor' ||
+          topic.user_email === user?.email
+        ) && (
+          <div style={{ display: 'flex', gap: 8 }}>
+            <button
+              style={styles.smallBtn}
+              onClick={() => {
+                setEditingTopic(topic.id);
+                setEditingTopicTitle(topic.titulo);
+                setEditingTopicDesc(topic.descricao);
+              }}
+            >
+              editar tópico
+            </button>
 
-        <div style={styles.category}>
-          {topic.categorias?.nome}
-        </div>
-      </>
-    )}
-  </div>
+            <button
+              style={styles.smallBtnDanger}
+              onClick={() => deleteTopic(topic.id)}
+            >
+              excluir tópico
+            </button>
+          </div>
+        )}
 
-  {/* BOTÕES EDITAR / EXCLUIR */}
-  {(
-    user?.role === 'admin' ||
-    user?.role === 'supervisor' ||
-    topic.user_email === user?.email
-  ) && (
-    <div style={{ display: 'flex', gap: 8 }}>
-      <button
-        style={styles.smallBtn}
-        onClick={() => {
-          setEditingTopic(topic.id);
-          setEditingTopicTitle(topic.titulo);
-          setEditingTopicDesc(topic.descricao);
-        }}
-      >
-        editar tópico
-      </button>
-
-      <button
-        style={styles.smallBtnDanger}
-        onClick={() => deleteTopic(topic.id)}
-      >
-        excluir tópico
-      </button>
-    </div>
-  )}
-
-</div>
+      </div>
 
       {editingTopic !== topic.id && (
         <p style={{ ...styles.desc, whiteSpace: 'pre-line' }}>
