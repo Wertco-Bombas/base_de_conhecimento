@@ -158,7 +158,7 @@ export default function Layout({ children }) {
           <div style={styles.modalBox}>
             <h2 style={{ color: '#FFD600' }}>📢 Nova Informação</h2>
             <h3>{latestInfo.titulo}</h3>
-            <p style={{ whiteSpace: 'pre-line' }}>{latestInfo.conteudo}</p>
+            
 
             <div style={{ display: 'flex', gap: 10 }}>
               <button
