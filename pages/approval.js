@@ -45,11 +45,19 @@ export default function Approval() {
       .eq('status', 'pending')
       .order('id', { ascending: false });
 
-    const { data: c } = await supabase
-      .from('comentarios')
-      .select('*')
-      .eq('status', 'pending')
-      .order('id', { ascending: false });
+const { data: c } = await supabase
+  .from('comentarios')
+  .select(`
+    *,
+    topicos (
+      id,
+      titulo,
+      descricao,
+      image_url
+    )
+  `)
+  .eq('status', 'pending')
+  .order('id', { ascending: false });
 
     setTopics(t || []);
     setComments(c || []);
