@@ -840,13 +840,13 @@ return (
        
       </div>
 
-    {visibleTopics?.map(topic => {
+{visibleTopics?.map(topic => {
   const tree = commentTrees[topic.id] || [];
 
   return (
     <div key={topic.id} style={styles.card} className="mobileCard">
 
-      {/* 🔥 BOTÃO FAVORITO (COLOQUE AQUI NO TOPO DO CARD) */}
+      {/* 🔥 BOTÃO FAVORITO */}
       <button
         style={styles.smallBtn}
         onClick={() =>
@@ -856,6 +856,10 @@ return (
         }
       >
         {isFav(topic.id) ? '⭐ Favorito' : '☆ Favoritar'}
+      </button>
+
+      <div style={styles.header} className="mobileHeader">
+        <div>
 <button
   style={styles.smallBtn}
   onClick={() =>
