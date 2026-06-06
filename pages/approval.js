@@ -53,7 +53,8 @@ const { data: c } = await supabase
       id,
       titulo,
       descricao,
-      image_url
+      image_url,
+      user_email
     )
   `)
   .eq('status', 'pending')
@@ -239,7 +240,42 @@ const { data: c } = await supabase
             borderRadius: 10
           }}
         >
-          <p>{c.texto}</p>
+         <div
+  style={{
+    background: '#1a1a1a',
+    padding: 12,
+    borderRadius: 10,
+    marginBottom: 12,
+    border: '1px solid #333'
+  }}
+>
+  <h3 style={{ color: '#FFD600' }}>
+    {c.topicos?.titulo}
+  </h3>
+
+  <p style={{ color: '#aaa' }}>
+    {c.topicos?.descricao}
+  </p>
+
+  {c.topicos?.image_url && (
+    <img
+      src={c.topicos.image_url}
+      style={{
+        width: '100%',
+        maxHeight: 220,
+        objectFit: 'contain',
+        borderRadius: 10,
+        marginTop: 10
+      }}
+    />
+  )}
+</div>
+
+<h4 style={{ color: '#FFD600' }}>
+  Comentário aguardando aprovação
+</h4>
+
+<p>{c.texto}</p>
 
           {c.image_url && (
             <img
