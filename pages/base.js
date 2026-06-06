@@ -14,6 +14,8 @@ export default function Base() {
   const [categories, setCategories] = useState([]);
 
   const [pendingComments, setPendingComments] = useState([]);
+
+  const [favorites, setFavorites] = useState([]);
   
 
   const [q, setQ] = useState('');
@@ -51,6 +53,9 @@ const sortedCategories = useMemo(() => {
     a.nome.localeCompare(b.nome, 'pt-BR', { sensitivity: 'base' })
   );
 }, [categories]);
+  const isFav = useCallback((topicId) => {
+  return favorites.some(f => f.topic_id === topicId);
+}, [favorites]);
   
 useEffect(() => {
   async function init() {
@@ -129,6 +134,14 @@ async function load(currentRole = user?.role) {
   const { data: t } = await supabase
     .from('topicos')
     .select('*');
+const { data: favs } = await supabase
+  .from('favoritos')
+  .select('*')
+  .eq('user_id', user?.id);
+
+setFavorites(favs || []);
+
+setFavorites(favs || []);
 
   const { data: cats } = await supabase
     .from('categorias')
@@ -255,6 +268,35 @@ setCommentImage(prev => ({
 }));
 
 load(user?.role);
+}
+  async function addFavorite(topicId) {
+  if (!user) return alert('Faça login');
+
+  const { error } = await supabase.from('favoritos').insert({
+    user_id: user.id,
+    topic_id: topicId
+  });
+
+  if (error) {
+    alert(error.message);
+    return;
+  }
+
+  load(user?.role);
+}
+  async function removeFavorite(topicId) {
+  const { error } = await supabase
+    .from('favoritos')
+    .delete()
+    .eq('user_id', user.id)
+    .eq('topic_id', topicId);
+
+  if (error) {
+    alert(error.message);
+    return;
+  }
+
+  load(user?.role);
 }
   async function deleteTopic(id) {
     const confirmar = confirm('Excluir tópico?');
@@ -685,7 +727,6 @@ function CommentNode({
 }
 /* 🔥 MODAL DA IMAGEM (DEVE FICAR FORA DO COMPONENTE AUXILIAR, MAS DENTRO DO RETURN PRINCIPAL) */
 
-
 return (
   <Layout>
   {showPendingPopup && user?.role === 'supervisor' && (
@@ -799,7 +840,32 @@ return (
        
       </div>
 
-     {visibleTopics?.map(topic => {
+    {visibleTopics?.map(topic => {
+  const tree = commentTrees[topic.id] || [];
+
+  return (
+    <div key={topic.id} style={styles.card} className="mobileCard">
+
+      {/* 🔥 BOTÃO FAVORITO (COLOQUE AQUI NO TOPO DO CARD) */}
+      <button
+        style={styles.smallBtn}
+        onClick={() =>
+          isFav(topic.id)
+            ? removeFavorite(topic.id)
+            : addFavorite(topic.id)
+        }
+      >
+        {isFav(topic.id) ? '⭐ Favorito' : '☆ Favoritar'}
+      </button>
+  style={styles.smallBtn}
+  onClick={() =>
+    isFav(topic.id)
+      ? removeFavorite(topic.id)
+      : addFavorite(topic.id)
+  }
+>
+  {isFav(topic.id) ? '⭐ Favorito' : '☆ Favoritar'}
+</button>
   const tree = commentTrees[topic.id] || [];
 
   return (
