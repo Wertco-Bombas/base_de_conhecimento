@@ -347,27 +347,42 @@ export default function AnalisadorLog(){
 
 
 
-        const agrupado={};
+       const agrupado={};
+
+
+eventos.forEach(evento=>{
+
+
+    if(!agrupado[evento.data]){
+
+        agrupado[evento.data]={
+
+            abastecimentos:[],
+            erros:[]
+
+        };
+
+    }
 
 
 
+    if(evento.tipo==="abastecimento"){
 
-        eventos.forEach(evento=>{
+        agrupado[evento.data].abastecimentos.push(evento);
 
-
-            if(!agrupado[evento.data]){
-
-                agrupado[evento.data]=[];
-
-            }
+    }
 
 
 
-            agrupado[evento.data].push(evento);
+    if(evento.tipo==="erro"){
+
+        agrupado[evento.data].erros.push(evento);
+
+    }
 
 
 
-        });
+});
 
 
 
@@ -382,8 +397,14 @@ export default function AnalisadorLog(){
 
 
 
-    }
-            {Object.keys(grupos).length > 0 && (
+      }
+
+
+    return (
+
+        <Layout>
+
+            <div style={styles.container}>
 
             <div style={styles.card}>
 
@@ -403,19 +424,19 @@ export default function AnalisadorLog(){
 
                             onClick={()=>{
 
-                                setDatasAbertas(prev=>({
+                                setAbertos(prev=>({
 
-                                    ...prev,
+    ...prev,
 
-                                    [data]: !prev[data]
+    [data]: !prev[data]
 
-                                }));
+}));
 
                             }}
 
                         >
 
-                            {datasAbertas[data] ? "▼" : "▶"}
+                            {abertos[data] ? "▼" : "▶"}
 
                             {" "}
 
@@ -437,7 +458,7 @@ export default function AnalisadorLog(){
 
 
 
-                        {datasAbertas[data] && (
+{abertos[data] && (
 
 
                             <div style={styles.expandArea}>
@@ -642,14 +663,13 @@ export default function AnalisadorLog(){
 
 
 
-    </div>
+            </div>
 
-
-    </Layout>
+        </Layout>
 
     );
 
-}
+
 
 
 
