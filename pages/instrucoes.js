@@ -12,16 +12,45 @@ export default function Instrucoes() {
 
     const [isSupervisor, setIsSupervisor] = useState(false);
 
+
     useEffect(() => {
+
         carregar();
         verificarPermissao();
+
     }, []);
 
-    async function verificarPermissao() {
+
+
+    async function carregar() {
+
+        const { data, error } = await supabase
+            .from("instrucoes_trabalho")
+            .select("*")
+            .order("titulo");
+
+
+        if(error){
+            console.log(error);
+            return;
+        }
+
+
+        setLista(data || []);
+
+    }
+
+
+
+
+    async function verificarPermissao(){
 
         const { data } = await supabase.auth.getUser();
 
-        if (!data?.user) return;
+
+        if(!data?.user)
+            return;
+
 
         const { data: profile } = await supabase
             .from("profiles")
@@ -29,197 +58,306 @@ export default function Instrucoes() {
             .eq("id", data.user.id)
             .maybeSingle();
 
-        if (profile?.role === "Supervisor") {
+
+
+        if(profile?.role === "Supervisor"){
+
             setIsSupervisor(true);
+
         }
 
     }
 
-    async function carregar() {
 
-        const { data } = await supabase
-            .from("instrucoes_trabalho")
-            .select("*")
-            .order("titulo");
 
-        setLista(data || []);
 
-    }
 
-    async function salvar() {
+    async function salvar(){
 
-        if (!titulo || !caminho) {
-            alert("Preencha o título e o caminho.");
+
+        if(!titulo || !caminho){
+
+            alert("Informe o título e o caminho do PDF.");
+
             return;
+
         }
+
+
 
         const { error } = await supabase
             .from("instrucoes_trabalho")
             .insert({
+
                 titulo,
                 caminho,
                 categoria
+
             });
 
-        if (error) {
+
+
+        if(error){
+
             alert(error.message);
+
             return;
+
         }
+
+
 
         setTitulo("");
-        setCategoria("");
         setCaminho("");
+        setCategoria("");
 
         carregar();
 
-    }
-
-    async function excluir(id) {
-
-        if (!confirm("Deseja realmente excluir esta instrução?"))
-            return;
-
-        const { error } = await supabase
-            .from("instrucoes_trabalho")
-            .delete()
-            .eq("id", id);
-
-        if (error) {
-            alert(error.message);
-            return;
-        }
-
-        carregar();
 
     }
 
-    async function copiar(texto) {
+
+
+
+
+    async function copiar(texto){
 
         await navigator.clipboard.writeText(texto);
 
-        alert("Caminho copiado com sucesso!");
+        alert("Caminho copiado.");
 
     }
+
+
+
 
     return (
 
         <Layout>
 
-            <div style={{ padding: 25 }}>
 
-                <h1>Instruções de Trabalho</h1>
+            <div style={{padding:20}}>
+
+
+                <h1>
+                    📄 Instruções de Trabalho
+                </h1>
+
+
 
                 {isSupervisor && (
 
-                    <div
-                        style={{
-                            border: "1px solid #DDD",
-                            borderRadius: 8,
-                            padding: 20,
-                            marginBottom: 30
-                        }}
-                    >
+                    <div style={styles.card}>
 
-                        <h2>Novo Link</h2>
+
+                        <h2>
+                            Nova Instrução
+                        </h2>
+
+
 
                         <input
-                            placeholder="Título"
+
+                            style={styles.input}
+
+                            placeholder="Título da instrução"
+
                             value={titulo}
-                            onChange={(e) => setTitulo(e.target.value)}
-                            style={{
-                                width: "100%",
-                                padding: 10,
-                                marginBottom: 10
-                            }}
+
+                            onChange={(e)=>setTitulo(e.target.value)}
+
                         />
 
+
+
                         <input
-                            placeholder="Categoria"
+
+                            style={styles.input}
+
+                            placeholder="Categoria (opcional)"
+
                             value={categoria}
-                            onChange={(e) => setCategoria(e.target.value)}
-                            style={{
-                                width: "100%",
-                                padding: 10,
-                                marginBottom: 10
-                            }}
+
+                            onChange={(e)=>setCategoria(e.target.value)}
+
                         />
+
+
 
                         <input
-                            placeholder="Caminho de Rede"
+
+                            style={styles.input}
+
+                            placeholder="Caminho do PDF"
+
                             value={caminho}
-                            onChange={(e) => setCaminho(e.target.value)}
-                            style={{
-                                width: "100%",
-                                padding: 10,
-                                marginBottom: 15
-                            }}
+
+                            onChange={(e)=>setCaminho(e.target.value)}
+
                         />
 
-                        <button onClick={salvar}>
-                            Salvar
+
+
+                        <button
+
+                            style={styles.button}
+
+                            onClick={salvar}
+
+                        >
+
+                            Salvar Instrução
+
                         </button>
+
 
                     </div>
 
                 )}
 
-                {lista.map((item) => (
+
+
+
+
+
+                <h2>
+                    Lista de Instruções
+                </h2>
+
+
+
+
+                {lista.map(item=>(
+
 
                     <div
+
                         key={item.id}
-                        style={{
-                            border: "1px solid #DDD",
-                            borderRadius: 8,
-                            padding: 20,
-                            marginBottom: 15
-                        }}
+
+                        style={styles.card}
+
                     >
 
-                        <h3>{item.titulo}</h3>
+
+                        <h3>
+                            📄 {item.titulo}
+                        </h3>
+
+
 
                         {item.categoria && (
+
                             <p>
-                                <strong>Categoria:</strong> {item.categoria}
+                                Categoria: {item.categoria}
                             </p>
+
                         )}
+
+
 
                         <input
-                            readOnly
+
+                            style={styles.input}
+
                             value={item.caminho}
-                            style={{
-                                width: "100%",
-                                padding: 10,
-                                marginBottom: 15
-                            }}
+
+                            readOnly
+
                         />
 
-                        <button onClick={() => copiar(item.caminho)}>
+
+
+                        <button
+
+                            style={styles.button}
+
+                            onClick={()=>copiar(item.caminho)}
+
+                        >
+
                             📋 Copiar Caminho
+
                         </button>
 
-                        {isSupervisor && (
 
-                            <button
-                                onClick={() => excluir(item.id)}
-                                style={{
-                                    marginLeft: 10,
-                                    background: "#d32f2f",
-                                    color: "#FFF"
-                                }}
-                            >
-                                Excluir
-                            </button>
-
-                        )}
 
                     </div>
 
+
                 ))}
 
+
             </div>
+
 
         </Layout>
 
     );
 
 }
+
+
+
+
+
+const styles={
+
+
+    card:{
+
+
+        background:"#111",
+
+        border:"1px solid #333",
+
+        padding:20,
+
+        borderRadius:10,
+
+        marginBottom:20
+
+
+    },
+
+
+    input:{
+
+
+        width:"100%",
+
+        padding:10,
+
+        marginBottom:10,
+
+        background:"#222",
+
+        color:"#fff",
+
+        border:"1px solid #444",
+
+        borderRadius:5
+
+
+    },
+
+
+    button:{
+
+
+        background:"#FFD600",
+
+        color:"#000",
+
+        border:"none",
+
+        padding:"10px 15px",
+
+        borderRadius:8,
+
+        cursor:"pointer"
+
+
+    }
+
+
+};
