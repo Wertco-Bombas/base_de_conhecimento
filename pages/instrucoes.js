@@ -142,6 +142,48 @@ export default function Instrucoes() {
 
 
 
+    async function excluir(id){
+
+
+        const confirmar = confirm(
+            "Deseja realmente excluir esta instrução de trabalho?"
+        );
+
+
+        if(!confirmar)
+            return;
+
+
+
+        const { error } = await supabase
+            .from("instrucoes_trabalho")
+            .delete()
+            .eq("id", id);
+
+
+
+        if(error){
+
+            alert("Erro ao excluir: " + error.message);
+
+            return;
+
+        }
+
+
+
+        alert("Instrução excluída com sucesso!");
+
+
+        carregar();
+
+
+    }
+
+
+
+
+
     async function copiar(texto){
 
         await navigator.clipboard.writeText(texto);
@@ -303,6 +345,25 @@ export default function Instrucoes() {
 
 
 
+
+                        {isSupervisor && (
+
+                            <button
+
+                                style={styles.deleteButton}
+
+                                onClick={()=>excluir(item.id)}
+
+                            >
+
+                                🗑️ Excluir
+
+                            </button>
+
+                        )}
+
+
+
                     </div>
 
 
@@ -372,6 +433,25 @@ const styles={
         borderRadius:8,
 
         cursor:"pointer"
+
+    },
+
+
+    deleteButton:{
+
+        background:"#d32f2f",
+
+        color:"#fff",
+
+        border:"none",
+
+        padding:"10px 15px",
+
+        borderRadius:8,
+
+        cursor:"pointer",
+
+        marginLeft:10
 
     }
 
