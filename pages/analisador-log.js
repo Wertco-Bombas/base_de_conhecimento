@@ -76,38 +76,40 @@ export default function AnalisadorLog(){
 
 
 
-    function converterData(dataTxt){
+  function converterData(dataTxt){
+
+    if(!dataTxt)
+        return "Data desconhecida";
 
 
-        const meses = {
+    const meses = {
 
-            JAN:"01",
-            FEB:"02",
-            MAR:"03",
-            APR:"04",
-            MAY:"05",
-            JUN:"06",
-            JUL:"07",
-            AUG:"08",
-            SEP:"09",
-            OCT:"10",
-            NOV:"11",
-            DEC:"12"
+        JAN:"01",
+        FEB:"02",
+        MAR:"03",
+        APR:"04",
+        MAY:"05",
+        JUN:"06",
+        JUL:"07",
+        AUG:"08",
+        SEP:"09",
+        OCT:"10",
+        NOV:"11",
+        DEC:"12"
 
-        };
-
-
-        const dia = dataTxt.substring(0,2);
-
-        const mes = meses[dataTxt.substring(2,5)];
-
-        const ano = "20" + dataTxt.substring(5);
+    };
 
 
-        return `${dia}/${mes}/${ano}`;
+    const dia = dataTxt.substring(0,2);
 
-    }
+    const mes = meses[dataTxt.substring(2,5)] || "01";
 
+    const ano = "20" + dataTxt.substring(5);
+
+
+    return `${dia}/${mes}/${ano}`;
+
+}
 
 
 
@@ -404,22 +406,25 @@ export default function AnalisadorLog(){
 eventos.forEach(evento=>{
 
 
-    if(!agrupado[evento.data]){
+const chaveData = evento.data || "Data desconhecida";
 
-        agrupado[evento.data]={
 
-            abastecimentos:[],
-            erros:[]
+if(!agrupado[chaveData]){
 
-        };
+    agrupado[chaveData]={
 
-    }
+        abastecimentos:[],
+        erros:[]
+
+    };
+
+}
 
 
 
     if(evento.tipo==="abastecimento"){
 
-        agrupado[evento.data].abastecimentos.push(evento);
+        agrupado[chaveData].abastecimentos.push(evento);
 
     }
 
@@ -427,7 +432,7 @@ eventos.forEach(evento=>{
 
     if(evento.tipo==="erro"){
 
-        agrupado[evento.data].erros.push(evento);
+        agrupado[chaveData].erros.push(evento);
 
     }
 
@@ -465,17 +470,14 @@ eventos.forEach(evento=>{
         📝 Analisador de Log
     </h2>
 
-
     <input
         type="file"
         accept=".txt"
         onChange={selecionarArquivo}
     />
 
-
     <br/>
     <br/>
-
 
     <button
         style={styles.button}
@@ -484,9 +486,7 @@ eventos.forEach(evento=>{
         📂 Carregar Log
     </button>
 
-
 </div>
-
 
 
 <div style={styles.card}>
