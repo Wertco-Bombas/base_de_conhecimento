@@ -393,7 +393,57 @@ eventos.forEach(evento=>{
 
         setErros(errosEncontrados);
 
-        setGrupos(agrupado);
+        const agrupadoFiltrado={};
+
+
+Object.keys(agrupado).forEach(data=>{
+
+
+    const abastecimentosFiltrados =
+    agrupado[data].abastecimentos.filter(item=>
+
+        (!bicoFiltro || item.bico===bicoFiltro) &&
+
+        (!horaFiltro || item.hora.startsWith(horaFiltro)) &&
+
+        (!dataFiltro || item.data===dataFiltro)
+
+    );
+
+
+    const errosFiltrados =
+    agrupado[data].erros.filter(item=>
+
+        (!horaFiltro || item.hora.startsWith(horaFiltro)) &&
+
+        (!dataFiltro || item.data===dataFiltro)
+
+    );
+
+
+
+    if(
+        abastecimentosFiltrados.length ||
+        errosFiltrados.length
+    ){
+
+        agrupadoFiltrado[data]={
+
+            abastecimentos:abastecimentosFiltrados,
+
+            erros:errosFiltrados
+
+        };
+
+    }
+
+
+});
+
+
+setGrupos(agrupadoFiltrado);
+
+        
 
 
 
@@ -407,7 +457,28 @@ eventos.forEach(evento=>{
             <div style={styles.container}>
 
             <div style={styles.card}>
+<input
+    style={styles.input}
+    placeholder="Data DD/MM/AAAA"
+    value={dataFiltro}
+    onChange={e=>setDataFiltro(e.target.value)}
+/>
 
+
+<input
+    style={styles.input}
+    placeholder="Hora HH:MM"
+    value={horaFiltro}
+    onChange={e=>setHoraFiltro(e.target.value)}
+/>
+
+
+<input
+    style={styles.input}
+    placeholder="Bico"
+    value={bicoFiltro}
+    onChange={e=>setBicoFiltro(e.target.value)}
+/>
                 <h2>
                     📅 Eventos por data
                 </h2>
@@ -655,17 +726,11 @@ eventos.forEach(evento=>{
 
                 ))}
 
-
             </div>
 
+        </div>
 
-        )}
-
-
-
-            </div>
-
-        </Layout>
+    </Layout>
 
     );
 
