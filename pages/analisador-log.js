@@ -22,37 +22,37 @@ export default function AnalisadorLog(){
     const [abertos,setAbertos] = useState({});
     function aplicarFiltros(grupos){
 
-    const resultado={};
+    const resultado = {};
 
 
     Object.keys(grupos).forEach(data=>{
 
 
-        const abastecimentos =
-        aplicarFiltros(grupos)[data].abastecimentos.filter(item=>
+        const grupo = grupos[data];
 
-            (!bicoFiltro || item.bico===bicoFiltro) &&
+
+        const abastecimentos = grupo.abastecimentos.filter(item =>
+
+            (!bicoFiltro || item.bico === bicoFiltro) &&
 
             (!horaFiltro || item.hora.startsWith(horaFiltro)) &&
 
-            (!dataFiltro || item.data===dataFiltro)
+            (!dataFiltro || item.data === dataFiltro)
 
         );
 
 
-
-        const erros =
-        aplicarFiltros(grupos)[data].erros.filter(item=>
+        const erros = grupo.erros.filter(item =>
 
             (!horaFiltro || item.hora.startsWith(horaFiltro)) &&
 
-            (!dataFiltro || item.data===dataFiltro)
+            (!dataFiltro || item.data === dataFiltro)
 
         );
 
 
+        if(abastecimentos.length > 0 || erros.length > 0){
 
-        if(abastecimentos.length || erros.length){
 
             resultado[data]={
 
@@ -61,6 +61,7 @@ export default function AnalisadorLog(){
                 erros
 
             };
+
 
         }
 
@@ -71,7 +72,6 @@ export default function AnalisadorLog(){
     return resultado;
 
 }
-
 
 
 
@@ -531,10 +531,7 @@ if(!agrupado[chaveData]){
 <div style={styles.card}>
 
 
-    <h2>
-        📅 Eventos por data
-    </h2>
-                <h2>
+                   <h2>
                     📅 Eventos por data
                 </h2>
 
