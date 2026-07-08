@@ -1,7 +1,6 @@
 import { useEffect, useState } from "react";
 import Layout from "../components/Layout";
 import { supabase } from "../lib/supabaseClient";
-import RoleGuard from "../components/RoleGuard";
 
 export default function Instrucoes() {
 
@@ -11,24 +10,50 @@ export default function Instrucoes() {
     const [caminho, setCaminho] = useState("");
     const [categoria, setCategoria] = useState("");
 
-    const carregar = async () => {
+    const [isSupervisor, setIsSupervisor] = useState(false);
+
+    useEffect(() => {
+        carregar();
+        verificarPermissao();
+    }, []);
+
+    async function verificarPermissao() {
+
+        const { data } = await supabase.auth.getUser();
+
+        if (!data?.user) return;
+
+        const { data: profile } = await supabase
+            .from("profiles")
+            .select("role")
+            .eq("id", data.user.id)
+            .maybeSingle();
+
+        if (profile?.role === "Supervisor") {
+            setIsSupervisor(true);
+        }
+
+    }
+
+    async function carregar() {
+
         const { data } = await supabase
             .from("instrucoes_trabalho")
             .select("*")
             .order("titulo");
 
         setLista(data || []);
-    };
 
-    useEffect(() => {
-        carregar();
-    }, []);
+    }
 
     async function salvar() {
 
-        if (!titulo || !caminho) return;
+        if (!titulo || !caminho) {
+            alert("Preencha o título e o caminho.");
+            return;
+        }
 
-        await supabase
+        const { error } = await supabase
             .from("instrucoes_trabalho")
             .insert({
                 titulo,
@@ -36,131 +61,162 @@ export default function Instrucoes() {
                 categoria
             });
 
+        if (error) {
+            alert(error.message);
+            return;
+        }
+
         setTitulo("");
-        setCaminho("");
         setCategoria("");
+        setCaminho("");
 
         carregar();
+
     }
 
-    async function excluir(id){
+    async function excluir(id) {
 
-        if(!confirm("Excluir?"))
+        if (!confirm("Deseja realmente excluir esta instrução?"))
             return;
 
-        await supabase
+        const { error } = await supabase
             .from("instrucoes_trabalho")
             .delete()
-            .eq("id",id);
+            .eq("id", id);
+
+        if (error) {
+            alert(error.message);
+            return;
+        }
 
         carregar();
+
     }
 
-    async function copiar(texto){
+    async function copiar(texto) {
 
         await navigator.clipboard.writeText(texto);
 
-        alert("Caminho copiado.");
+        alert("Caminho copiado com sucesso!");
+
     }
 
     return (
 
         <Layout>
 
-            <h1>Instruções de Trabalho</h1>
+            <div style={{ padding: 25 }}>
 
-            <RoleGuard roles={["Supervisor"]}>
+                <h1>Instruções de Trabalho</h1>
 
-                <div style={{
-                    border:"1px solid #DDD",
-                    padding:20,
-                    marginBottom:30,
-                    borderRadius:10
-                }}>
+                {isSupervisor && (
 
-                    <h2>Novo Link</h2>
-
-                    <input
-                        placeholder="Título"
-                        value={titulo}
-                        onChange={(e)=>setTitulo(e.target.value)}
-                    />
-
-                    <br/><br/>
-
-                    <input
-                        placeholder="Categoria"
-                        value={categoria}
-                        onChange={(e)=>setCategoria(e.target.value)}
-                    />
-
-                    <br/><br/>
-
-                    <input
-                        placeholder="Caminho de Rede"
-                        value={caminho}
-                        onChange={(e)=>setCaminho(e.target.value)}
-                        style={{width:"100%"}}
-                    />
-
-                    <br/><br/>
-
-                    <button onClick={salvar}>
-                        Salvar
-                    </button>
-
-                </div>
-
-            </RoleGuard>
-
-            {lista.map(item=>(
-
-                <div
-                    key={item.id}
-                    style={{
-                        border:"1px solid #DDD",
-                        marginBottom:20,
-                        padding:20,
-                        borderRadius:10
-                    }}
-                >
-
-                    <h3>{item.titulo}</h3>
-
-                    <p>{item.categoria}</p>
-
-                    <input
-                        readOnly
-                        value={item.caminho}
-                        style={{width:"100%"}}
-                    />
-
-                    <br/><br/>
-
-                    <button
-                        onClick={()=>copiar(item.caminho)}
+                    <div
+                        style={{
+                            border: "1px solid #DDD",
+                            borderRadius: 8,
+                            padding: 20,
+                            marginBottom: 30
+                        }}
                     >
-                        Copiar Caminho
-                    </button>
 
-                    <RoleGuard roles={["Supervisor"]}>
+                        <h2>Novo Link</h2>
 
-                        <button
+                        <input
+                            placeholder="Título"
+                            value={titulo}
+                            onChange={(e) => setTitulo(e.target.value)}
                             style={{
-                                marginLeft:10,
-                                background:"red",
-                                color:"#FFF"
+                                width: "100%",
+                                padding: 10,
+                                marginBottom: 10
                             }}
-                            onClick={()=>excluir(item.id)}
-                        >
-                            Excluir
+                        />
+
+                        <input
+                            placeholder="Categoria"
+                            value={categoria}
+                            onChange={(e) => setCategoria(e.target.value)}
+                            style={{
+                                width: "100%",
+                                padding: 10,
+                                marginBottom: 10
+                            }}
+                        />
+
+                        <input
+                            placeholder="Caminho de Rede"
+                            value={caminho}
+                            onChange={(e) => setCaminho(e.target.value)}
+                            style={{
+                                width: "100%",
+                                padding: 10,
+                                marginBottom: 15
+                            }}
+                        />
+
+                        <button onClick={salvar}>
+                            Salvar
                         </button>
 
-                    </RoleGuard>
+                    </div>
 
-                </div>
+                )}
 
-            ))}
+                {lista.map((item) => (
+
+                    <div
+                        key={item.id}
+                        style={{
+                            border: "1px solid #DDD",
+                            borderRadius: 8,
+                            padding: 20,
+                            marginBottom: 15
+                        }}
+                    >
+
+                        <h3>{item.titulo}</h3>
+
+                        {item.categoria && (
+                            <p>
+                                <strong>Categoria:</strong> {item.categoria}
+                            </p>
+                        )}
+
+                        <input
+                            readOnly
+                            value={item.caminho}
+                            style={{
+                                width: "100%",
+                                padding: 10,
+                                marginBottom: 15
+                            }}
+                        />
+
+                        <button onClick={() => copiar(item.caminho)}>
+                            📋 Copiar Caminho
+                        </button>
+
+                        {isSupervisor && (
+
+                            <button
+                                onClick={() => excluir(item.id)}
+                                style={{
+                                    marginLeft: 10,
+                                    background: "#d32f2f",
+                                    color: "#FFF"
+                                }}
+                            >
+                                Excluir
+                            </button>
+
+                        )}
+
+                    </div>
+
+                ))}
+
+            </div>
 
         </Layout>
 
