@@ -1,22 +1,19 @@
 import { useState } from "react";
 import Layout from "../components/Layout";
 
-export default function AnalisadorLog() {
+export default function AnalisadorLog(){
 
-    const [arquivo, setArquivo] = useState(null);
-    const [conteudo, setConteudo] = useState("");
-    const [resultado, setResultado] = useState("");
+    const [arquivo,setArquivo] = useState(null);
+    const [conteudo,setConteudo] = useState("");
+    const [resultado,setResultado] = useState([]);
 
 
-
-    function lerArquivo(e) {
+    function lerArquivo(e){
 
         const file = e.target.files[0];
 
-
-        if(!file){
+        if(!file)
             return;
-        }
 
 
         setArquivo(file);
@@ -25,11 +22,14 @@ export default function AnalisadorLog() {
         const reader = new FileReader();
 
 
-        reader.onload = (evento)=>{
+        reader.onload = function(event){
 
-            setConteudo(evento.target.result);
+            const texto = event.target.result;
 
-            setResultado("");
+            setConteudo(texto);
+
+
+            analisar(texto);
 
         };
 
@@ -41,31 +41,23 @@ export default function AnalisadorLog() {
 
 
 
+    function analisar(texto){
 
-    function analisar(){
-
-
-        if(!conteudo){
-
-            alert("Selecione um arquivo TXT primeiro.");
-
-            return;
-
-        }
+        const linhas = texto.split("\n");
 
 
-        /*
-            Aqui entraremos futuramente
-            a lógica de análise do log.
-        */
+        const eventos = linhas.map((linha)=>{
+
+            return {
+                original: linha
+            }
+
+        });
 
 
-        setResultado(
-            "Arquivo carregado com sucesso. A análise será adicionada nesta etapa."
-        );
+        setResultado(eventos);
 
     }
-
 
 
 
@@ -88,44 +80,15 @@ export default function AnalisadorLog() {
 
 
                     <h2>
-                        Selecionar arquivo de Log
+                        Selecionar arquivo TXT
                     </h2>
 
 
-
                     <input
-
                         type="file"
-
                         accept=".txt"
-
                         onChange={lerArquivo}
-
                     />
-
-
-
-                    {arquivo && (
-
-                        <p>
-                            Arquivo selecionado: {arquivo.name}
-                        </p>
-
-                    )}
-
-
-
-                    <button
-
-                        style={styles.button}
-
-                        onClick={analisar}
-
-                    >
-
-                        🔍 Analisar Log
-
-                    </button>
 
 
                 </div>
@@ -133,26 +96,18 @@ export default function AnalisadorLog() {
 
 
 
-
-                {conteudo && (
+                {arquivo && (
 
                     <div style={styles.card}>
 
+                        <h3>
+                            Arquivo carregado:
+                        </h3>
 
-                        <h2>
-                            Conteúdo do Log
-                        </h2>
 
-
-                        <textarea
-
-                            style={styles.textarea}
-
-                            value={conteudo}
-
-                            readOnly
-
-                        />
+                        <p>
+                            {arquivo.name}
+                        </p>
 
 
                     </div>
@@ -164,22 +119,44 @@ export default function AnalisadorLog() {
 
 
 
-                {resultado && (
+                {resultado.length > 0 && (
 
-                    <div style={styles.resultado}>
+                    <div style={styles.card}>
 
 
                         <h2>
-                            Resultado da Análise
+                            Resultado da análise
                         </h2>
 
 
+
                         <p>
-                            {resultado}
+                            Linhas encontradas: {resultado.length}
                         </p>
 
 
+
+
+                        {resultado.slice(0,50).map((item,index)=>(
+
+
+                            <div
+                                key={index}
+                                style={styles.linha}
+                            >
+
+                                {item.original}
+
+
+                            </div>
+
+
+                        ))}
+
+
+
                     </div>
+
 
                 )}
 
@@ -197,7 +174,8 @@ export default function AnalisadorLog() {
 
 
 
-const styles = {
+
+const styles={
 
 
     container:{
@@ -209,6 +187,7 @@ const styles = {
 
     card:{
 
+
         background:"#111",
 
         border:"1px solid #333",
@@ -219,56 +198,27 @@ const styles = {
 
         marginBottom:20
 
-    },
-
-
-    button:{
-
-        marginTop:20,
-
-        background:"#FFD600",
-
-        color:"#000",
-
-        border:"none",
-
-        padding:"12px 20px",
-
-        borderRadius:8,
-
-        cursor:"pointer"
 
     },
 
 
-    textarea:{
+    linha:{
 
-        width:"100%",
 
-        height:300,
-
-        background:"#222",
-
-        color:"#fff",
-
-        border:"1px solid #444",
+        background:"#000",
 
         padding:10,
 
-        borderRadius:8
+        marginBottom:5,
 
-    },
+        borderRadius:5,
 
+        fontFamily:"monospace",
 
-    resultado:{
+        fontSize:13,
 
-        background:"#0f3",
+        color:"#FFD600"
 
-        color:"#000",
-
-        padding:20,
-
-        borderRadius:10
 
     }
 
