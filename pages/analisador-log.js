@@ -20,6 +20,57 @@ export default function AnalisadorLog(){
     const [grupos,setGrupos] = useState({});
 
     const [abertos,setAbertos] = useState({});
+    function aplicarFiltros(grupos){
+
+    const resultado={};
+
+
+    Object.keys(grupos).forEach(data=>{
+
+
+        const abastecimentos =
+        aplicarFiltros(grupos)[data].abastecimentos.filter(item=>
+
+            (!bicoFiltro || item.bico===bicoFiltro) &&
+
+            (!horaFiltro || item.hora.startsWith(horaFiltro)) &&
+
+            (!dataFiltro || item.data===dataFiltro)
+
+        );
+
+
+
+        const erros =
+        aplicarFiltros(grupos)[data].erros.filter(item=>
+
+            (!horaFiltro || item.hora.startsWith(horaFiltro)) &&
+
+            (!dataFiltro || item.data===dataFiltro)
+
+        );
+
+
+
+        if(abastecimentos.length || erros.length){
+
+            resultado[data]={
+
+                abastecimentos,
+
+                erros
+
+            };
+
+        }
+
+
+    });
+
+
+    return resultado;
+
+}
 
 
 
@@ -393,55 +444,7 @@ eventos.forEach(evento=>{
 
         setErros(errosEncontrados);
 
-        const agrupadoFiltrado={};
-
-
-Object.keys(agrupado).forEach(data=>{
-
-
-    const abastecimentosFiltrados =
-    agrupado[data].abastecimentos.filter(item=>
-
-        (!bicoFiltro || item.bico===bicoFiltro) &&
-
-        (!horaFiltro || item.hora.startsWith(horaFiltro)) &&
-
-        (!dataFiltro || item.data===dataFiltro)
-
-    );
-
-
-    const errosFiltrados =
-    agrupado[data].erros.filter(item=>
-
-        (!horaFiltro || item.hora.startsWith(horaFiltro)) &&
-
-        (!dataFiltro || item.data===dataFiltro)
-
-    );
-
-
-
-    if(
-        abastecimentosFiltrados.length ||
-        errosFiltrados.length
-    ){
-
-        agrupadoFiltrado[data]={
-
-            abastecimentos:abastecimentosFiltrados,
-
-            erros:errosFiltrados
-
-        };
-
-    }
-
-
-});
-
-
-setGrupos(agrupadoFiltrado);
+     setGrupos(agrupado);
 
         
 
@@ -456,35 +459,87 @@ setGrupos(agrupadoFiltrado);
 
             <div style={styles.container}>
 
-            <div style={styles.card}>
-<input
-    style={styles.input}
-    placeholder="Data DD/MM/AAAA"
-    value={dataFiltro}
-    onChange={e=>setDataFiltro(e.target.value)}
-/>
+<div style={styles.card}>
+
+    <h2>
+        📝 Analisador de Log
+    </h2>
 
 
-<input
-    style={styles.input}
-    placeholder="Hora HH:MM"
-    value={horaFiltro}
-    onChange={e=>setHoraFiltro(e.target.value)}
-/>
+    <input
+        type="file"
+        accept=".txt"
+        onChange={selecionarArquivo}
+    />
 
 
-<input
-    style={styles.input}
-    placeholder="Bico"
-    value={bicoFiltro}
-    onChange={e=>setBicoFiltro(e.target.value)}
-/>
+    <br/>
+    <br/>
+
+
+    <button
+        style={styles.button}
+        onClick={carregar}
+    >
+        📂 Carregar Log
+    </button>
+
+
+</div>
+
+
+
+<div style={styles.card}>
+
+
+    <h2>
+        🔎 Filtros
+    </h2>
+
+
+
+    <input
+        style={styles.input}
+        placeholder="Data DD/MM/AAAA"
+        value={dataFiltro}
+        onChange={e=>setDataFiltro(e.target.value)}
+    />
+
+
+
+    <input
+        style={styles.input}
+        placeholder="Hora HH:MM"
+        value={horaFiltro}
+        onChange={e=>setHoraFiltro(e.target.value)}
+    />
+
+
+
+    <input
+        style={styles.input}
+        placeholder="Bico"
+        value={bicoFiltro}
+        onChange={e=>setBicoFiltro(e.target.value)}
+    />
+
+
+</div>
+
+
+
+<div style={styles.card}>
+
+
+    <h2>
+        📅 Eventos por data
+    </h2>
                 <h2>
                     📅 Eventos por data
                 </h2>
 
 
-                {Object.keys(grupos).map((data)=>(
+                {Object.keys(aplicarFiltros(grupos)).map((data)=>(
 
                     <div key={data}>
 
@@ -515,11 +570,11 @@ setGrupos(agrupadoFiltrado);
 
                             {" - "}
 
-                            {grupos[data].abastecimentos.length}
+                            {aplicarFiltros(grupos)[data].abastecimentos.length}
 
                             {" abastecimentos / "}
 
-                            {grupos[data].erros.length}
+                            {aplicarFiltros(grupos)[data].erros.length}
 
                             {" erros"}
 
@@ -535,7 +590,7 @@ setGrupos(agrupadoFiltrado);
                             <div style={styles.expandArea}>
 
 
-                                {grupos[data].abastecimentos.length > 0 && (
+                                {aplicarFiltros(grupos)[data].abastecimentos.length > 0 && (
 
 
                                     <>
@@ -546,7 +601,7 @@ setGrupos(agrupadoFiltrado);
 
 
 
-                                    {grupos[data].abastecimentos.map((item,index)=>(
+                                    {aplicarFiltros(grupos)[data].abastecimentos.map((item,index)=>(
 
 
                                         <div
@@ -627,7 +682,7 @@ setGrupos(agrupadoFiltrado);
 
 
 
-                                {grupos[data].erros.length > 0 && (
+                                {aplicarFiltros(grupos)[data].erros.length > 0 && (
 
 
                                     <>
@@ -642,7 +697,7 @@ setGrupos(agrupadoFiltrado);
 
 
 
-                                    {grupos[data].erros.map((erro,index)=>(
+                                    {aplicarFiltros(grupos)[data].erros.map((erro,index)=>(
 
 
                                         <div
