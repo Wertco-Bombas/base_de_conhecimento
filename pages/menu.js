@@ -46,6 +46,9 @@ export default function Menu() {
               <Link href="/admin" style={styles.card}>
                 👥 Usuários
               </Link>
+             <Link href="/instrucoes">
+    Instruções de Trabalho
+</Link>
             )}
 
            
