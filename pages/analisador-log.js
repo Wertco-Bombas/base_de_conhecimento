@@ -6,18 +6,18 @@ const ERROS = {
 
     "01":"Bico bloqueado pelo console ou console não autorizou",
     "02":"Preço zerado",
-    "03":"Transbordamento na operação de predeterminação",
-    "04":"Falha no encoder magnético do transdutor",
-    "05":"Falha de retrocesso irregular no dispositivo transdutor",
+    "03":"Transbordamento na operação",
+    "04":"Falha no encoder magnético",
+    "05":"Falha de retrocesso irregular",
     "06":"Campo magnético externo detectado",
     "07":"Bico bloqueado por limite de volume",
     "0B":"Número de bico não cadastrado",
-    "0D":"Fluxo de produto com bico no descanso",
+    "0D":"Fluxo com bico no descanso",
     "EJ":"Bomba bloqueada por motivo metrológico",
-    "EE":"Erro memória EEPROM ausente",
+    "EE":"Erro memória EEPROM",
     "F0":"Sobrecarga na fonte",
     "F9":"Bateria ausente ou baixa",
-    "FF":"Falha comunicação Controladora/interface"
+    "FF":"Falha comunicação Controladora"
 
 };
 
@@ -26,194 +26,212 @@ const ERROS = {
 export default function AnalisadorLog(){
 
 
-    const [arquivo,setArquivo] = useState(null);
+const [arquivo,setArquivo]=useState(null);
 
-    const [resultado,setResultado] = useState([]);
+const [texto,setTexto]=useState("");
 
-    const [filtroBico,setFiltroBico] = useState("");
+const [resultado,setResultado]=useState([]);
 
-    const [somenteErro,setSomenteErro] = useState(false);
 
-    const [valorMin,setValorMin] = useState("");
+const [filtroBico,setFiltroBico]=useState("");
 
-    const [volumeMin,setVolumeMin] = useState("");
-
+const [somenteErro,setSomenteErro]=useState(false);
 
 
 
+function selecionarArquivo(e){
 
-    function lerArquivo(e){
+    const file=e.target.files[0];
 
-
-        const file = e.target.files[0];
-
-
-        if(!file)
-            return;
+    if(!file)
+        return;
 
 
-        setArquivo(file);
+    setArquivo(file);
 
 
-
-        const reader = new FileReader();
-
+    const reader=new FileReader();
 
 
-        reader.onload=function(event){
+    reader.onload=(event)=>{
+
+        setTexto(event.target.result);
+
+    };
 
 
-            analisar(event.target.result);
+    reader.readAsText(file);
 
-
-        };
+}
 
 
 
-        reader.readAsText(file);
 
+
+function carregarLog(){
+
+
+    if(!texto){
+
+        alert("Selecione um arquivo primeiro.");
+
+        return;
 
     }
 
 
+    analisar(texto);
 
 
+}
 
-    function analisar(texto){
 
 
-        const linhas = texto.split("\n");
 
-        let eventos=[];
 
 
 
-        linhas.forEach(linha=>{
+function analisar(texto){
 
 
-            linha=linha.trim();
+const linhas=texto.split(/\r?\n/);
 
 
+let eventos=[];
 
-            // Registro de abastecimento
 
-            if(linha.startsWith("&")){
 
+linhas.forEach(linha=>{
 
-                let venda = linha.match(/Sale N:(\d+)/);
 
-                let valor = linha.match(/\$\:([\d.]+)/);
+linha=linha.trim();
 
-                let volume = linha.match(/V\:([\d.]+)/);
 
-                let bico = linha.match(/B:(\d+)/);
 
-                let preco = linha.match(/PA:\s*([\d.]+)/);
+if(linha.startsWith("&")){
 
-                let total = linha.match(/Vt:\s*([\d,\.]+)/);
 
+const venda =
+linha.match(/Sale\s*N\s*:\s*(\d+)/i);
 
 
-                eventos.push({
+const valor =
+linha.match(/\$\s*:\s*([\d.,]+)/);
 
-                    tipo:"Abastecimento",
 
-                    original:linha,
 
-                    hora:linha.substring(1,9),
+const volume =
+linha.match(/\bV\s*:\s*([\d.,]+)/);
 
-                    venda:venda ? venda[1] : "",
 
-                    valor:valor ? Number(valor[1]) : 0,
 
-                    volume:volume ? Number(volume[1]) : 0,
+const bico =
+linha.match(/\bB\s*:\s*(\d+)/);
 
-                    bico:bico ? bico[1] : "",
 
-                    preco:preco ? preco[1] : "",
 
-                    total:total ? total[1] : "",
+const preco =
+linha.match(/PA\s*:\s*([\d.,]+)/);
 
-                    erro:null
 
-                });
 
+const total =
+linha.match(/Vt\s*:\s*([\d.,]+)/);
 
-            }
 
 
 
 
-            // Procura erros
+eventos.push({
 
-            Object.keys(ERROS).forEach(codigo=>{
+tipo:"Abastecimento",
 
+original:linha,
 
-                if(linha.includes(codigo)){
+hora:linha.substring(1,9),
 
+venda:venda ? venda[1] : "",
 
-                    eventos.push({
+valor:valor ? Number(valor[1].replace(",",".")) : 0,
 
-                        tipo:"Erro",
+volume:volume ? Number(volume[1].replace(",",".")) : 0,
 
-                        original:linha,
+bico:bico ? bico[1] : "",
 
-                        codigo,
+preco:preco ? preco[1] : "",
 
-                        descricao:ERROS[codigo],
+total:total ? total[1] : ""
 
-                        erro:true
+});
 
-                    });
 
+}
 
-                }
 
 
-            });
 
 
 
-        });
+Object.keys(ERROS).forEach(codigo=>{
 
 
+if(linha.includes(codigo)){
 
-        setResultado(eventos);
 
+eventos.push({
 
-    }
+tipo:"Erro",
 
+erro:true,
 
+codigo,
 
+descricao:ERROS[codigo],
 
+original:linha
 
 
-    const filtrados = resultado.filter(item=>{
+});
 
 
-        if(filtroBico && item.bico !== filtroBico)
-            return false;
+}
 
 
-        if(somenteErro && !item.erro)
-            return false;
+});
 
 
 
-        if(valorMin && item.valor < Number(valorMin))
-            return false;
+});
 
 
 
-        if(volumeMin && item.volume < Number(volumeMin))
-            return false;
+setResultado(eventos);
 
 
+}
 
-        return true;
 
 
-    });
+
+
+
+
+const filtrados=resultado.filter(item=>{
+
+
+if(filtroBico && item.bico!==filtroBico)
+return false;
+
+
+if(somenteErro && !item.erro)
+return false;
+
+
+return true;
+
+
+});
+
 
 
 
@@ -246,20 +264,29 @@ Selecionar arquivo TXT
 <input
 type="file"
 accept=".txt"
-onChange={lerArquivo}
+onChange={selecionarArquivo}
 />
 
 
-{arquivo && (
 
-<p>
-Arquivo: {arquivo.name}
-</p>
+<br/><br/>
 
-)}
+
+
+<button
+style={styles.button}
+onClick={carregarLog}
+>
+
+Carregar Log
+
+</button>
+
 
 
 </div>
+
+
 
 
 
@@ -276,29 +303,50 @@ Filtros
 </h2>
 
 
+
+
 <select
+
 style={styles.input}
+
 value={filtroBico}
-onChange={e=>setFiltroBico(e.target.value)}
+
+onChange={(e)=>setFiltroBico(e.target.value)}
+
 >
+
 
 <option value="">
 Todos os bicos
 </option>
 
 
-{[...new Set(
+{
+
+[...new Set(
+
 resultado
+
 .filter(x=>x.bico)
+
 .map(x=>x.bico)
+
 )]
+
 .map(b=>(
 
-<option key={b}>
+<option key={b} value={b}>
+
 Bico {b}
+
 </option>
 
-))}
+
+))
+
+
+}
+
 
 
 </select>
@@ -308,40 +356,55 @@ Bico {b}
 
 <label>
 
+
 <input
+
 type="checkbox"
+
 checked={somenteErro}
-onChange={e=>setSomenteErro(e.target.checked)}
+
+onChange={(e)=>setSomenteErro(e.target.checked)}
+
 />
 
- Mostrar somente erros
+
+Somente erros
+
 
 </label>
 
 
 
-<input
-style={styles.input}
-placeholder="Valor mínimo"
-value={valorMin}
-onChange={e=>setValorMin(e.target.value)}
-/>
+<br/><br/>
 
 
 
+<button
 
-<input
-style={styles.input}
-placeholder="Volume mínimo"
-value={volumeMin}
-onChange={e=>setVolumeMin(e.target.value)}
-/>
+style={styles.button}
+
+onClick={()=>{
+
+setFiltroBico("");
+
+setSomenteErro(false);
+
+}}
+
+>
+
+Limpar filtros
+
+</button>
 
 
 
 </div>
 
+
 )}
+
+
 
 
 
@@ -361,56 +424,87 @@ Resultado
 
 
 <p>
-Eventos encontrados: {filtrados.length}
+Encontrados: {filtrados.length}
 </p>
 
 
 
-{filtrados.map((item,index)=>(
+
+{
+
+filtrados.map((item,index)=>(
 
 
-<div key={index} style={styles.linha}>
+<div
+
+key={index}
+
+style={styles.linha}
+
+>
 
 
 {
-item.erro ? (
+
+item.erro ?
+
 
 <>
+
 ⚠️ ERRO {item.codigo}
+
 <br/>
+
 {item.descricao}
+
 <br/>
+
 {item.original}
+
 </>
 
-)
 
-:(
+:
+
 
 <>
+
 ⛽ Bico: {item.bico}
+
 <br/>
+
 Venda: {item.venda}
+
 <br/>
-Valor: R$ {item.valor}
-<br/>
-Volume: {item.volume} L
-<br/>
-Preço: {item.preco}
-<br/>
+
 Hora: {item.hora}
+
+<br/>
+
+Valor: R$ {item.valor}
+
+<br/>
+
+Volume: {item.volume} L
+
+<br/>
+
+Preço: {item.preco}
+
 </>
 
-)
 
 }
-
 
 
 </div>
 
 
-))}
+))
+
+
+}
+
 
 
 </div>
@@ -446,7 +540,6 @@ padding:20
 
 card:{
 
-
 background:"#111",
 
 border:"1px solid #333",
@@ -462,26 +555,37 @@ marginBottom:20
 
 input:{
 
-
 width:"100%",
 
 padding:10,
-
-marginBottom:10,
 
 background:"#222",
 
 color:"#fff",
 
-border:"1px solid #444",
+marginBottom:10
 
-borderRadius:5
+},
+
+
+button:{
+
+background:"#FFD600",
+
+color:"#000",
+
+border:"none",
+
+padding:"10px 20px",
+
+borderRadius:8,
+
+cursor:"pointer"
 
 },
 
 
 linha:{
-
 
 background:"#000",
 
@@ -492,8 +596,6 @@ marginBottom:10,
 borderRadius:5,
 
 fontFamily:"monospace",
-
-fontSize:13,
 
 color:"#FFD600"
 
