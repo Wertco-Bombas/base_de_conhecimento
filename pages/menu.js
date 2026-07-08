@@ -42,16 +42,15 @@ export default function Menu() {
               🎓 Treinamento
             </Link>
 
+            <Link href="/instrucoes" style={styles.card}>
+              📄 Instruções de Trabalho
+            </Link>
+
             {(user?.role === 'admin' || user?.role === 'supervisor') && (
               <Link href="/admin" style={styles.card}>
                 👥 Usuários
               </Link>
-             <Link href="/instrucoes">
-    Instruções de Trabalho
-</Link>
             )}
-
-           
 
           </div>
 
