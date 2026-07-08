@@ -7,18 +7,55 @@ export default function AnalisadorLog(){
 
     const [arquivo,setArquivo] = useState(null);
 
-    const [linhas,setLinhas] = useState([]);
-
     const [dados,setDados] = useState([]);
 
     const [erros,setErros] = useState([]);
-
 
     const [bicoFiltro,setBicoFiltro] = useState("");
 
     const [horaFiltro,setHoraFiltro] = useState("");
 
     const [dataFiltro,setDataFiltro] = useState("");
+
+    const [grupos,setGrupos] = useState({});
+
+    const [abertos,setAbertos] = useState({});
+
+
+
+
+
+    function converterData(dataTxt){
+
+
+        const meses = {
+
+            JAN:"01",
+            FEB:"02",
+            MAR:"03",
+            APR:"04",
+            MAY:"05",
+            JUN:"06",
+            JUL:"07",
+            AUG:"08",
+            SEP:"09",
+            OCT:"10",
+            NOV:"11",
+            DEC:"12"
+
+        };
+
+
+        const dia = dataTxt.substring(0,2);
+
+        const mes = meses[dataTxt.substring(2,5)];
+
+        const ano = "20" + dataTxt.substring(5);
+
+
+        return `${dia}/${mes}/${ano}`;
+
+    }
 
 
 
@@ -54,10 +91,7 @@ export default function AnalisadorLog(){
         reader.onload = (evento)=>{
 
 
-            const texto = evento.target.result;
-
-
-            analisar(texto);
+            analisar(evento.target.result);
 
 
         };
@@ -68,6 +102,8 @@ export default function AnalisadorLog(){
 
 
     }
+
+
 
 
 
@@ -86,9 +122,14 @@ export default function AnalisadorLog(){
 
         let errosEncontrados=[];
 
+        let eventos=[];
+
+
+
 
 
         linhasTxt.forEach(linha=>{
+
 
 
             if(linha.startsWith("@")){
@@ -99,13 +140,18 @@ export default function AnalisadorLog(){
                 );
 
 
+
                 if(data){
 
-                    dataAtual=data[1];
+                    dataAtual = converterData(data[1]);
 
                 }
 
+
             }
+
+
+
 
 
 
@@ -120,7 +166,7 @@ export default function AnalisadorLog(){
 
 
                 const bico =
-                linha.match(/B:(\d+)/);
+                linha.match(/B:\s*(\d+)/);
 
 
 
@@ -130,17 +176,17 @@ export default function AnalisadorLog(){
 
 
                 const valor =
-                linha.match(/\$\:([0-9.]+)/);
+                linha.match(/\$:\s*([\d.]+)/);
 
 
 
                 const volume =
-                linha.match(/V:(\d+\.\d+)/);
+                linha.match(/V:\s*([\d.]+)/);
 
 
 
                 const preco =
-                linha.match(/PA:\s?([0-9.]+)/);
+                linha.match(/PA:\s*([\d.]+)/);
 
 
 
@@ -151,8 +197,11 @@ export default function AnalisadorLog(){
 
 
 
-                abastecimentos.push({
 
+                const abastecimento = {
+
+
+                    tipo:"abastecimento",
 
                     data:dataAtual,
 
@@ -173,10 +222,19 @@ export default function AnalisadorLog(){
                     original:linha
 
 
-                });
+                };
+
+
+
+                abastecimentos.push(abastecimento);
+
+                eventos.push(abastecimento);
+
 
 
             }
+
+
 
 
 
@@ -187,6 +245,7 @@ export default function AnalisadorLog(){
             if(linha.startsWith("#")){
 
 
+
                 const hora =
                 linha.match(
                     /#(\d{2}:\d{2}:\d{2})/
@@ -194,22 +253,36 @@ export default function AnalisadorLog(){
 
 
 
+
+
                 const codigo =
                 linha.match(
-                    /\s([A-Z0-9]{2,3})\s/
+                    /^#\d{2}:\d{2}:\d{2}\s+([A-Z0-9]{1,3})/
                 );
+
+
 
 
 
                 if(codigo){
 
 
-                    const cod=codigo[1];
+
+                    let cod=codigo[1];
 
 
 
-                    errosEncontrados.push({
+                    if(cod.startsWith("EP"))
+                        cod="EP";
 
+
+
+                    const erro = {
+
+
+                        tipo:"erro",
+
+                        data:dataAtual,
 
                         hora:hora ? hora[1]:"",
 
@@ -217,17 +290,28 @@ export default function AnalisadorLog(){
 
 
                         descricao:
+
                         codigosErros[cod] ||
+
                         "Código não cadastrado",
 
 
                         linha
 
 
-                    });
+                    };
+
+
+
+
+                    errosEncontrados.push(erro);
+
+                    eventos.push(erro);
+
 
 
                 }
+
 
 
             }
@@ -238,224 +322,323 @@ export default function AnalisadorLog(){
 
 
 
+
+
+
+
+        eventos.sort((a,b)=>{
+
+
+            if(a.data !== b.data){
+
+                return a.data.localeCompare(b.data);
+
+            }
+
+
+            return a.hora.localeCompare(b.hora);
+
+
+        });
+
+
+
+
+
+
+
+        const agrupado={};
+
+
+
+
+        eventos.forEach(evento=>{
+
+
+            if(!agrupado[evento.data]){
+
+                agrupado[evento.data]=[];
+
+            }
+
+
+
+            agrupado[evento.data].push(evento);
+
+
+
+        });
+
+
+
+
+
+
         setDados(abastecimentos);
 
         setErros(errosEncontrados);
 
+        setGrupos(agrupado);
+
+
+
     }
+            {Object.keys(grupos).length > 0 && (
 
+            <div style={styles.card}>
 
+                <h2>
+                    📅 Eventos por data
+                </h2>
 
 
+                {Object.keys(grupos).map((data)=>(
 
-    const filtrados = dados.filter(item=>{
+                    <div key={data}>
 
 
-        return (
+                        <button
 
-            (!bicoFiltro || item.bico===bicoFiltro)
+                            style={styles.dataButton}
 
-            &&
+                            onClick={()=>{
 
-            (!horaFiltro || item.hora.startsWith(horaFiltro))
+                                setDatasAbertas(prev=>({
 
-            &&
+                                    ...prev,
 
-            (!dataFiltro || item.data===dataFiltro)
+                                    [data]: !prev[data]
 
-        );
+                                }));
 
+                            }}
 
-    });
+                        >
 
+                            {datasAbertas[data] ? "▼" : "▶"}
 
+                            {" "}
 
+                            {data}
 
+                            {" - "}
 
+                            {grupos[data].abastecimentos.length}
 
-    return (
+                            {" abastecimentos / "}
 
-    <Layout>
+                            {grupos[data].erros.length}
 
+                            {" erros"}
 
-    <div style={styles.container}>
+                        </button>
 
 
-        <h1>
-            📝 Analisador de Log
-        </h1>
 
 
 
-        <div style={styles.card}>
+                        {datasAbertas[data] && (
 
 
-            <input
-                type="file"
-                accept=".txt"
-                onChange={selecionarArquivo}
-            />
+                            <div style={styles.expandArea}>
 
 
-            <br/><br/>
+                                {grupos[data].abastecimentos.length > 0 && (
 
 
-            <button
-                style={styles.button}
-                onClick={carregar}
-            >
+                                    <>
 
-                📂 Carregar Log
+                                    <h3>
+                                        ⛽ Abastecimentos
+                                    </h3>
 
-            </button>
 
 
-        </div>
+                                    {grupos[data].abastecimentos.map((item,index)=>(
 
 
+                                        <div
 
+                                            key={index}
 
+                                            style={styles.linha}
 
-        {dados.length>0 && (
+                                        >
 
-        <div style={styles.card}>
 
+                                            ⏰ Hora:
+                                            {" "}
+                                            {item.hora}
 
-            <h2>
-                Filtros
-            </h2>
+                                            <br/>
 
 
-            <input
-                style={styles.input}
-                placeholder="Dia (ex:30JUL17)"
-                value={dataFiltro}
-                onChange={e=>setDataFiltro(e.target.value)}
-            />
+                                            ⛽ Bico:
+                                            {" "}
+                                            {item.bico}
 
 
-            <input
-                style={styles.input}
-                placeholder="Hora (ex:11:20)"
-                value={horaFiltro}
-                onChange={e=>setHoraFiltro(e.target.value)}
-            />
+                                            <br/>
 
 
-            <input
-                style={styles.input}
-                placeholder="Bico"
-                value={bicoFiltro}
-                onChange={e=>setBicoFiltro(e.target.value)}
-            />
+                                            🧾 Venda:
+                                            {" "}
+                                            {item.venda}
 
 
-        </div>
+                                            <br/>
 
-        )}
 
+                                            💰 Valor:
+                                            {" "}
+                                            {item.valor}
 
 
+                                            <br/>
 
 
+                                            🛢 Volume:
+                                            {" "}
+                                            {item.volume}
 
-        {erros.length>0 && (
 
-        <div style={styles.card}>
+                                            <br/>
 
 
-            <h2>
-                🚨 Erros encontrados
-            </h2>
+                                            💵 Preço:
+                                            {" "}
+                                            {item.preco}
 
 
-            {erros.map((e,i)=>(
+                                            <br/>
 
-            <div key={i} style={styles.erro}>
 
+                                            📊 Total:
+                                            {" "}
+                                            {item.total}
 
-                <b>
-                    {e.codigo}
-                </b>
 
-                <br/>
 
-                Hora:
-                {e.hora}
+                                        </div>
 
-                <br/>
 
-                {e.descricao}
+                                    ))}
 
-                <br/>
 
-                <small>
-                    {e.linha}
-                </small>
+                                    </>
+
+                                )}
+
+
+
+
+
+
+
+                                {grupos[data].erros.length > 0 && (
+
+
+                                    <>
+
+
+                                    <h3 style={{color:"#ff5555"}}>
+
+                                        🚨 Erros
+
+                                    </h3>
+
+
+
+
+                                    {grupos[data].erros.map((erro,index)=>(
+
+
+                                        <div
+
+                                            key={index}
+
+                                            style={styles.erro}
+
+                                        >
+
+
+                                            <b>
+
+                                                Código:
+                                                {" "}
+                                                {erro.codigo}
+
+                                            </b>
+
+
+                                            <br/>
+
+                                            📅 Data:
+                                            {" "}
+                                            {erro.data}
+
+
+                                            <br/>
+
+
+                                            ⏰ Hora:
+                                            {" "}
+                                            {erro.hora}
+
+
+
+                                            <br/>
+
+
+                                            📌
+
+                                            {" "}
+
+                                            {erro.descricao}
+
+
+
+                                            <br/>
+
+
+                                            <small>
+
+                                                {erro.linha}
+
+                                            </small>
+
+
+
+                                        </div>
+
+
+                                    ))}
+
+
+
+                                    </>
+
+                                )}
+
+
+
+
+                            </div>
+
+
+                        )}
+
+
+                    </div>
+
+
+                ))}
 
 
             </div>
 
 
-            ))}
-
-
-
-        </div>
-
         )}
-
-
-
-
-
-
-        <div style={styles.card}>
-
-
-            <h2>
-                Abastecimentos encontrados: {filtrados.length}
-            </h2>
-
-
-
-            {filtrados.map((item,i)=>(
-
-
-            <div key={i} style={styles.linha}>
-
-
-                📅 {item.data}
-
-                <br/>
-
-                ⏰ {item.hora}
-
-                <br/>
-
-                ⛽ Bico: {item.bico}
-
-                <br/>
-
-                Venda: {item.venda}
-
-                <br/>
-
-                Valor: {item.valor}
-
-                <br/>
-
-                Volume: {item.volume}
-
-
-            </div>
-
-
-            ))}
-
-
-
-        </div>
 
 
 
@@ -465,7 +648,6 @@ export default function AnalisadorLog(){
     </Layout>
 
     );
-
 
 }
 
@@ -477,52 +659,155 @@ const styles={
 
 
 container:{
-padding:20
+
+    padding:20
+
 },
+
 
 
 card:{
-background:"#111",
-border:"1px solid #333",
-padding:20,
-borderRadius:10,
-marginBottom:20
+
+
+    background:"#111",
+
+    border:"1px solid #333",
+
+    padding:20,
+
+    borderRadius:10,
+
+    marginBottom:20
+
+
 },
+
+
 
 
 input:{
-width:"100%",
-padding:10,
-marginBottom:10,
-background:"#222",
-color:"#fff",
-border:"1px solid #555"
+
+
+    width:"100%",
+
+    padding:10,
+
+    marginBottom:10,
+
+    background:"#222",
+
+    color:"#fff",
+
+    border:"1px solid #555"
+
+
 },
+
+
 
 
 button:{
-background:"#FFD600",
-padding:"10px 20px",
-border:"none",
-cursor:"pointer"
+
+
+    background:"#FFD600",
+
+    padding:"10px 20px",
+
+    border:"none",
+
+    cursor:"pointer",
+
+    borderRadius:8
+
+
 },
+
+
+
+
+dataButton:{
+
+
+    width:"100%",
+
+    textAlign:"left",
+
+    background:"#222",
+
+    color:"#FFD600",
+
+    padding:15,
+
+    border:"1px solid #444",
+
+    cursor:"pointer",
+
+    marginBottom:10,
+
+    borderRadius:8,
+
+    fontSize:16
+
+
+},
+
+
+
+
+expandArea:{
+
+
+    paddingLeft:20,
+
+    borderLeft:"2px solid #FFD600",
+
+    marginBottom:20
+
+
+},
+
+
 
 
 linha:{
-background:"#000",
-padding:10,
-marginBottom:8,
-fontFamily:"monospace"
+
+
+    background:"#000",
+
+    padding:15,
+
+    marginBottom:10,
+
+    borderRadius:8,
+
+    fontFamily:"monospace",
+
+    color:"#fff"
+
+
 },
 
 
+
+
 erro:{
-background:"#400",
-padding:15,
-marginBottom:10,
-borderRadius:8,
-color:"#fff"
+
+
+    background:"#450000",
+
+    border:"1px solid #ff4444",
+
+    padding:15,
+
+    marginBottom:10,
+
+    borderRadius:8,
+
+    color:"#fff"
+
+
 }
+
 
 
 };
