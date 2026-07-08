@@ -31,14 +31,18 @@ export default function Instrucoes() {
 
 
         if(error){
-            console.log(error);
+
+            console.error("Erro ao carregar instruções:", error);
+
             return;
+
         }
 
 
         setLista(data || []);
 
     }
+
 
 
 
@@ -52,7 +56,8 @@ export default function Instrucoes() {
             return;
 
 
-        const { data: profile } = await supabase
+
+        const { data: profile, error } = await supabase
             .from("profiles")
             .select("role")
             .eq("id", data.user.id)
@@ -60,7 +65,21 @@ export default function Instrucoes() {
 
 
 
-        if(profile?.role === "Supervisor"){
+        if(error){
+
+            console.error("Erro ao buscar perfil:", error);
+
+            return;
+
+        }
+
+
+
+        const role = profile?.role?.toLowerCase();
+
+
+
+        if(role === "supervisor" || role === "admin"){
 
             setIsSupervisor(true);
 
@@ -99,12 +118,15 @@ export default function Instrucoes() {
 
         if(error){
 
-            alert(error.message);
+            alert("Erro ao salvar: " + error.message);
 
             return;
 
         }
 
+
+
+        alert("Instrução cadastrada com sucesso!");
 
 
         setTitulo("");
@@ -151,7 +173,7 @@ export default function Instrucoes() {
 
 
                         <h2>
-                            Nova Instrução
+                            Nova Instrução de Trabalho
                         </h2>
 
 
@@ -305,7 +327,6 @@ const styles={
 
     card:{
 
-
         background:"#111",
 
         border:"1px solid #333",
@@ -316,12 +337,10 @@ const styles={
 
         marginBottom:20
 
-
     },
 
 
     input:{
-
 
         width:"100%",
 
@@ -337,12 +356,10 @@ const styles={
 
         borderRadius:5
 
-
     },
 
 
     button:{
-
 
         background:"#FFD600",
 
@@ -355,7 +372,6 @@ const styles={
         borderRadius:8,
 
         cursor:"pointer"
-
 
     }
 
