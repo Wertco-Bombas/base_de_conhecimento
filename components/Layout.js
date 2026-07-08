@@ -178,6 +178,17 @@ export default function Layout({ children }) {
 
 
             <a style={styles.link} href="/instrucoes">
+                  <a style={styles.link} href="/analisador-log">
+
+  <span style={{ fontSize: 18, minWidth: 24, textAlign: 'center' }}>
+    📝
+  </span>
+
+  <span className="menu-text">
+    Analisador de Log
+  </span>
+
+</a>
 
               <span style={{ fontSize: 18, minWidth: 24, textAlign: 'center' }}>
                 📄
