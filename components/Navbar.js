@@ -8,11 +8,22 @@ export default function Navbar() {
     <div style={styles.nav}>
       <h3 style={{ color: '#f5c400' }}>Sistema</h3>
 
-      <Link href="/menu">Menu</Link>
-      <Link href="/base">Base</Link>
+      <Link href="/menu">
+        Menu
+      </Link>
+
+      <Link href="/base">
+        Base
+      </Link>
+
+      <Link href="/instrucoes">
+        Instruções de Trabalho
+      </Link>
 
       {(user?.role === 'admin' || user?.role === 'supervisor') && (
-        <Link href="/admin">Admin</Link>
+        <Link href="/admin">
+          Admin
+        </Link>
       )}
 
       <div style={{ marginTop: 'auto' }}>
