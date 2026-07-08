@@ -20,7 +20,8 @@ export default function AnalisadorLog(){
     const [grupos,setGrupos] = useState({});
 
     const [abertos,setAbertos] = useState({});
-    function aplicarFiltros(grupos){
+    const gruposFiltrados;
+    function gruposFiltrados{
 
     const resultado = {};
 
@@ -185,24 +186,24 @@ export default function AnalisadorLog(){
 
 
 
-            if(linha.startsWith("@")){
+           if(linha.trim().startsWith("@")){
 
 
-                const data = linha.match(
-                    /@(\d{2}[A-Z]{3}\d{2})/
-                );
+    const data = linha.match(
+        /@(\d{2}[A-Z]{3}\d{2})/
+    );
 
 
+    if(data){
 
-                if(data){
+        dataAtual = converterData(data[1]);
 
-                    dataAtual = converterData(data[1]);
-
-                }
+    }
 
 
-            }
+    return; // ignora a linha @, ela é apenas marcador de data
 
+}
 
 
 
@@ -399,47 +400,46 @@ export default function AnalisadorLog(){
 
 
 
+const agrupado = {};
 
-       const agrupado={};
 
 
 eventos.forEach(evento=>{
 
 
-const chaveData = evento.data || "Data desconhecida";
+    const data = evento.data || "SEM DATA";
 
 
-if(!agrupado[chaveData]){
+    if(!agrupado[data]){
 
-    agrupado[chaveData]={
+        agrupado[data]={
 
-        abastecimentos:[],
-        erros:[]
+            abastecimentos:[],
+            erros:[]
 
-    };
-
-}
-
-
-
-    if(evento.tipo==="abastecimento"){
-
-        agrupado[chaveData].abastecimentos.push(evento);
+        };
 
     }
 
 
 
-    if(evento.tipo==="erro"){
+    if(evento.tipo === "abastecimento"){
 
-        agrupado[chaveData].erros.push(evento);
+        agrupado[data].abastecimentos.push(evento);
+
+    }
+
+
+
+    if(evento.tipo === "erro"){
+
+        agrupado[data].erros.push(evento);
 
     }
 
 
 
 });
-
 
 
 
@@ -536,7 +536,7 @@ if(!agrupado[chaveData]){
                 </h2>
 
 
-                {Object.keys(aplicarFiltros(grupos)).map((data)=>(
+                {Object.keysgruposFiltrados).map((data)=>(
 
                     <div key={data}>
 
@@ -567,11 +567,11 @@ if(!agrupado[chaveData]){
 
                             {" - "}
 
-                            {aplicarFiltros(grupos)[data].abastecimentos.length}
+                            {gruposFiltrados[data].abastecimentos.length}
 
                             {" abastecimentos / "}
 
-                            {aplicarFiltros(grupos)[data].erros.length}
+                            {gruposFiltrados[data].erros.length}
 
                             {" erros"}
 
@@ -587,7 +587,7 @@ if(!agrupado[chaveData]){
                             <div style={styles.expandArea}>
 
 
-                                {aplicarFiltros(grupos)[data].abastecimentos.length > 0 && (
+                                {gruposFiltrados[data].abastecimentos.length > 0 && (
 
 
                                     <>
@@ -598,7 +598,7 @@ if(!agrupado[chaveData]){
 
 
 
-                                    {aplicarFiltros(grupos)[data].abastecimentos.map((item,index)=>(
+                                    {gruposFiltrados[data].abastecimentos.map((item,index)=>(
 
 
                                         <div
@@ -679,7 +679,7 @@ if(!agrupado[chaveData]){
 
 
 
-                                {aplicarFiltros(grupos)[data].erros.length > 0 && (
+                                {gruposFiltrados[data].erros.length > 0 && (
 
 
                                     <>
@@ -694,7 +694,7 @@ if(!agrupado[chaveData]){
 
 
 
-                                    {aplicarFiltros(grupos)[data].erros.map((erro,index)=>(
+                                    {gruposFiltrados[data].erros.map((erro,index)=>(
 
 
                                         <div
