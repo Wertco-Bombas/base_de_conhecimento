@@ -20,14 +20,13 @@ export default function AnalisadorLog(){
     const [grupos,setGrupos] = useState({});
 
     const [abertos,setAbertos] = useState({});
-    const gruposFiltrados;
-    function gruposFiltrados{
+    
+   function aplicarFiltros(grupos){
 
     const resultado = {};
 
 
     Object.keys(grupos).forEach(data=>{
-
 
         const grupo = grupos[data];
 
@@ -52,17 +51,12 @@ export default function AnalisadorLog(){
         );
 
 
-        if(abastecimentos.length > 0 || erros.length > 0){
+        if(abastecimentos.length || erros.length){
 
-
-            resultado[data]={
-
+            resultado[data] = {
                 abastecimentos,
-
                 erros
-
             };
-
 
         }
 
@@ -73,8 +67,7 @@ export default function AnalisadorLog(){
     return resultado;
 
 }
-
-
+const gruposFiltrados = aplicarFiltros(grupos);
 
 
   function converterData(dataTxt){
@@ -456,7 +449,7 @@ eventos.forEach(evento=>{
 
 
       }
-
+const gruposFiltrados = aplicarFiltros(grupos);
 
     return (
 
@@ -536,7 +529,7 @@ eventos.forEach(evento=>{
                 </h2>
 
 
-                {Object.keysgruposFiltrados).map((data)=>(
+                {Object.keys(gruposFiltrados).map((data)=>(
 
                     <div key={data}>
 
