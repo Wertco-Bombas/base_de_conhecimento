@@ -67,7 +67,7 @@ export default function AnalisadorLog(){
     return resultado;
 
 }
-const gruposFiltrados = aplicarFiltros(grupos);
+
 
 
   function converterData(dataTxt){
