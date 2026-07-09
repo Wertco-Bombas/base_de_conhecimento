@@ -86,7 +86,7 @@ const {error}= await supabase
 
 tecnico_id:id,
 
-usuario_id:user.email,
+usuario_id:user.id,
 
 nota:nota
 
