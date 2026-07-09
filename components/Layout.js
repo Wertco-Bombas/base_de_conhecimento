@@ -278,7 +278,17 @@ export default function Layout({ children }) {
               </span>
 
             </a>
+<a style={styles.link} href="/tecnicos">
 
+  <span style={{fontSize:18,minWidth:24,textAlign:'center'}}>
+    ⭐
+  </span>
+
+  <span className="menu-text">
+    Avaliação de Técnicos
+  </span>
+
+</a>
 
 
 
