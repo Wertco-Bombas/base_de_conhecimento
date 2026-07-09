@@ -96,9 +96,9 @@ nota:nota
 
 if(error){
 
-console.log(error);
+console.log("ERRO SUPABASE:", error);
 
-alert("Erro ao salvar avaliação");
+alert(error.message);
 
 return;
 
