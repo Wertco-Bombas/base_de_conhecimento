@@ -961,7 +961,7 @@ erro:{
     color:"#fff"
 
 
-}
+},
 
 gridErros:{
 
