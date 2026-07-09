@@ -542,83 +542,7 @@ const gruposFiltrados = aplicarFiltros(grupos);
 
 
 
-<div style={styles.card}>
-
-<h2>📊 Resumo Geral dos Erros</h2>
-
-{Object.values(resumoErros)
-.sort((a,b)=>b.quantidade-a.quantidade)
-.map((erro)=>(
-    <div key={erro.codigo}>
-
-        <button
-            style={styles.dataButton}
-            onClick={()=>{
-                setErrosAbertos(prev=>({
-                    ...prev,
-                    [erro.codigo]: !prev[erro.codigo]
-                }));
-            }}
-        >
-
-            {errosAbertos[erro.codigo] ? "▼" : "▶"}
-
-            {" "}
-
-            {erro.codigo}
-
-            {" - "}
-
-            {erro.quantidade}
-
-            {" ocorrências"}
-
-        </button>
-
-        {errosAbertos[erro.codigo] && (
-
-            <div style={styles.expandArea}>
-
-                <h3>{erro.descricao}</h3>
-
-                {erro.ocorrencias.map((item,index)=>(
-
-                    <div
-                        key={index}
-                        style={styles.erro}
-                    >
-
-                        <b>{item.codigo}</b>
-
-                        <br/>
-
-                        📅 {item.data}
-
-                        <br/>
-
-                        ⏰ {item.hora}
-
-                        <br/>
-
-                        {item.descricao}
-
-                        <br/>
-
-                        <small>{item.linha}</small>
-
-                    </div>
-
-                ))}
-
-            </div>
-
-        )}
-
-    </div>
-))}
-
-</div>
-
+Resumo Geral dos Erros
 <div style={styles.card}>
 
     <h2>
@@ -887,6 +811,10 @@ const styles={
 
 container:{
 
+    maxWidth:1300,
+
+    margin:"0 auto",
+
     padding:20
 
 },
@@ -1035,6 +963,52 @@ erro:{
 
 }
 
+gridErros:{
 
+    display:"flex",
+
+    flexWrap:"wrap",
+
+    justifyContent:"center",
+
+    gap:20,
+
+    marginTop:20
+
+},
+
+cardErro:{
+
+    width:220
+
+},
+
+cardResumo:{
+
+    background:"#222",
+
+    border:"2px solid #FFD600",
+
+    borderRadius:12,
+
+    padding:20,
+
+    textAlign:"center",
+
+    cursor:"pointer",
+
+    color:"#fff",
+
+    transition:"0.2s",
+
+    minHeight:120,
+
+    display:"flex",
+
+    flexDirection:"column",
+
+    justifyContent:"center"
+
+},
 
 };
