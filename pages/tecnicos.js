@@ -67,7 +67,7 @@ setTecnicos(lista);
 
 
 
-async function avaliar(id, nota){
+
 
  async function avaliar(id,nota){
 
@@ -106,7 +106,7 @@ const { data, error } = await supabase
 .insert({
 
     tecnico_id: id,
-    usuario_id: user.id,
+    usuario_id: usuario,
     nota: nota
 
 })
