@@ -1,101 +1,75 @@
-
-import { useEffect, useState } from 'react';
-import Layout from '../components/Layout';
-import ProtectedRoute from '../components/ProtectedRoute';
-import { supabase } from '../lib/supabaseClient';
-import useUser from '../lib/useUser';
-
-
-export default function Tecnicos() {
-
-  const user = useUser();
-
-  const [tecnicos,setTecnicos] = useState([]);
-  const [busca,setBusca] = useState('');
+import { useEffect, useState } from "react";
+import Layout from "../components/Layout";
+import ProtectedRoute from "../components/ProtectedRoute";
+import { supabase } from "../lib/supabaseClient";
+import useUser from "../lib/useUser";
 
 
-  async function carregarTecnicos(){
+export default function Tecnicos(){
 
-    const {data,error}=await supabase
-    .from('tecnicos')
-    .select(`
-      id,
-      nome,
-      empresa,
-      estado,
-      avaliacoes_tecnicos(nota)
-    `)
-    .order('nome');
+const user = useUser();
+
+const [tecnicos,setTecnicos] = useState([]);
+const [busca,setBusca] = useState("");
+const [estado,setEstado] = useState("");
 
 
-    if(!error){
-
-      const lista=data.map(t=>{
-
-        let media=0;
-
-        if(t.avaliacoes_tecnicos.length){
-
-          media=
-          t.avaliacoes_tecnicos
-          .reduce((a,b)=>a+b.nota,0)
-          /
-          t.avaliacoes_tecnicos.length;
-
-        }
-
-
-        return {
-          ...t,
-          media:media.toFixed(1)
-        }
-
-      });
-
-
-      setTecnicos(lista);
-
-    }
-
-  }
-
-
-  useEffect(()=>{
-    carregarTecnicos();
-  },[]);
+useEffect(()=>{
+ carregarTecnicos();
+},[]);
 
 
 
-  async function avaliar(id,nota){
+async function carregarTecnicos(){
 
-    await supabase
-    .from('avaliacoes_tecnicos')
-    .insert({
-
-      tecnico_id:id,
-      usuario_email:user.email,
-      nota
-
-    });
+const {data,error}= await supabase
+.from("tecnicos")
+.select("*")
+.order("nome");
 
 
-    carregarTecnicos();
+if(!error){
+setTecnicos(data);
+}
 
-  }
+}
 
 
 
-  const filtrados=tecnicos.filter(t=>
+async function avaliar(id,nota){
 
-    t.nome.toLowerCase()
-    .includes(busca.toLowerCase())
+await supabase
+.from("avaliacoes_tecnicos")
+.insert({
 
-    ||
+tecnico_id:id,
+usuario_id:user?.email,
+nota:nota
 
-    t.empresa.toLowerCase()
-    .includes(busca.toLowerCase())
+});
 
-  );
+
+carregarTecnicos();
+
+}
+
+
+
+const filtrados = tecnicos.filter(t=>{
+
+return (
+
+t.nome.toLowerCase()
+.includes(busca.toLowerCase())
+
+&&
+
+(estado==="" || t.estado===estado)
+
+)
+
+});
+
 
 
 return (
@@ -103,7 +77,6 @@ return (
 <ProtectedRoute>
 
 <Layout>
-
 
 <div style={styles.container}>
 
@@ -115,25 +88,56 @@ return (
 
 <input
 
-placeholder="Pesquisar técnico ou empresa"
+placeholder="Buscar técnico..."
 
 value={busca}
 
-onChange={e=>setBusca(e.target.value)}
+onChange={(e)=>setBusca(e.target.value)}
 
 style={styles.input}
 
 />
 
 
-<table style={styles.table}>
 
+<select
+
+style={styles.input}
+
+value={estado}
+
+onChange={(e)=>setEstado(e.target.value)}
+
+>
+
+<option value="">
+Todos estados
+</option>
+
+{
+
+[...new Set(tecnicos.map(t=>t.estado))]
+
+.map(e=>(
+
+<option key={e}>
+{e}
+</option>
+
+))
+
+}
+
+</select>
+
+
+
+<table style={styles.table}>
 
 <thead>
 
 <tr>
 
-<th>ID</th>
 <th>Nome</th>
 <th>Empresa</th>
 <th>Estado</th>
@@ -148,13 +152,13 @@ style={styles.input}
 <tbody>
 
 
-{filtrados.map(t=>(
+{
+
+filtrados.map(t=>(
 
 
 <tr key={t.id}>
 
-
-<td>{t.id}</td>
 
 <td>{t.nome}</td>
 
@@ -165,15 +169,22 @@ style={styles.input}
 
 <td>
 
-⭐ {t.media}
+{"⭐".repeat(Math.round(t.nota_media || 0))}
+
+<br/>
+
+{t.nota_media || 0}
 
 </td>
+
 
 
 <td>
 
 
-{[1,2,3,4,5].map(n=>(
+{
+
+[1,2,3,4,5].map(n=>(
 
 <button
 
@@ -190,7 +201,9 @@ style={styles.star}
 </button>
 
 
-))}
+))
+
+}
 
 
 </td>
@@ -199,14 +212,15 @@ style={styles.star}
 </tr>
 
 
-))}
+))
+
+}
 
 
 </tbody>
 
 
 </table>
-
 
 
 </div>
@@ -216,8 +230,8 @@ style={styles.star}
 
 </ProtectedRoute>
 
-
 )
+
 
 }
 
@@ -227,36 +241,35 @@ const styles={
 
 container:{
 padding:20,
-color:'#fff'
+color:"#fff"
 },
-
 
 title:{
-color:'#f5c400'
+color:"#f5c400"
 },
-
 
 input:{
-width:'100%',
 padding:10,
-marginBottom:20,
-background:'#111',
-border:'1px solid #333',
-color:'#fff'
+margin:5,
+background:"#111",
+color:"#fff",
+border:"1px solid #333",
+borderRadius:5
 },
-
 
 table:{
-width:'100%',
-background:'#111',
-borderCollapse:'collapse'
+width:"100%",
+marginTop:20,
+background:"#111",
+color:"#fff",
+borderCollapse:"collapse"
 },
 
-
 star:{
-background:'transparent',
+background:"transparent",
 border:0,
-cursor:'pointer'
+cursor:"pointer",
+fontSize:18
 }
 
 
