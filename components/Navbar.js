@@ -13,7 +13,7 @@ export default function Navbar() {
 
 
       <Link href="/menu">
-        Menu
+        🏠 Menu
       </Link>
 
 
@@ -23,7 +23,7 @@ export default function Navbar() {
 
 
       <Link href="/informacoes">
-        ℹ️ Informações
+        📢 Informações
       </Link>
 
 
@@ -38,10 +38,11 @@ export default function Navbar() {
 
 
       <Link href="/analisador-log">
-        🔍 Analisador de Log
+        📑 Analisador de Log
       </Link>
 
 
+      {/* NOVO MENU */}
       <Link href="/tecnicos">
         ⭐ Avaliação de Técnicos
       </Link>
@@ -56,11 +57,11 @@ export default function Navbar() {
       )}
 
 
-      <div style={{ marginTop: 'auto' }}>
+      <div style={{ marginTop:'auto' }}>
 
         {user && (
 
-          <p style={{ fontSize:12 }}>
+          <p style={{fontSize:12}}>
             {user.name || user.email}
           </p>
 
@@ -73,23 +74,15 @@ export default function Navbar() {
 }
 
 
-
 const styles = {
 
-  nav: {
-
+  nav:{
     width:200,
-
     background:'#111',
-
     padding:15,
-
     display:'flex',
-
     flexDirection:'column',
-
     gap:10
-
   }
 
 };
