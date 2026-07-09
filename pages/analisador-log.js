@@ -20,6 +20,9 @@ export default function AnalisadorLog(){
     const [grupos,setGrupos] = useState({});
 
     const [abertos,setAbertos] = useState({});
+
+    const [resumoErros, setResumoErros] = useState({});
+const [errosAbertos, setErrosAbertos] = useState({});
     
    function aplicarFiltros(grupos){
 
@@ -27,6 +30,7 @@ export default function AnalisadorLog(){
 
 
     Object.keys(grupos).forEach(data=>{
+        
 
         const grupo = grupos[data];
 
@@ -394,6 +398,7 @@ export default function AnalisadorLog(){
 
 
 const agrupado = {};
+        const resumo = {};
 
 
 
@@ -424,11 +429,24 @@ eventos.forEach(evento=>{
 
 
 
-    if(evento.tipo === "erro"){
+if(evento.tipo === "erro"){
 
-        agrupado[data].erros.push(evento);
+    agrupado[data].erros.push(evento);
 
+    if(!resumo[evento.codigo]){
+        resumo[evento.codigo] = {
+            codigo: evento.codigo,
+            descricao: evento.descricao,
+            quantidade: 0,
+            ocorrencias: []
+        };
     }
+
+    resumo[evento.codigo].quantidade++;
+
+    resumo[evento.codigo].ocorrencias.push(evento);
+
+}
 
 
 
@@ -438,12 +456,13 @@ eventos.forEach(evento=>{
 
 
 
-        setDados(abastecimentos);
+setDados(abastecimentos);
 
-        setErros(errosEncontrados);
+setErros(errosEncontrados);
 
-     setGrupos(agrupado);
+setGrupos(agrupado);
 
+setResumoErros(resumo);
         
 
 
@@ -521,9 +540,84 @@ const gruposFiltrados = aplicarFiltros(grupos);
 
 
 
+
+
 <div style={styles.card}>
 
+<h2>📊 Resumo Geral dos Erros</h2>
 
+{Object.values(resumoErros)
+.sort((a,b)=>b.quantidade-a.quantidade)
+.map((erro)=>(
+    <div key={erro.codigo}>
+
+        <button
+            style={styles.dataButton}
+            onClick={()=>{
+                setErrosAbertos(prev=>({
+                    ...prev,
+                    [erro.codigo]: !prev[erro.codigo]
+                }));
+            }}
+        >
+
+            {errosAbertos[erro.codigo] ? "▼" : "▶"}
+
+            {" "}
+
+            {erro.codigo}
+
+            {" - "}
+
+            {erro.quantidade}
+
+            {" ocorrências"}
+
+        </button>
+
+        {errosAbertos[erro.codigo] && (
+
+            <div style={styles.expandArea}>
+
+                <h3>{erro.descricao}</h3>
+
+                {erro.ocorrencias.map((item,index)=>(
+
+                    <div
+                        key={index}
+                        style={styles.erro}
+                    >
+
+                        <b>{item.codigo}</b>
+
+                        <br/>
+
+                        📅 {item.data}
+
+                        <br/>
+
+                        ⏰ {item.hora}
+
+                        <br/>
+
+                        {item.descricao}
+
+                        <br/>
+
+                        <small>{item.linha}</small>
+
+                    </div>
+
+                ))}
+
+            </div>
+
+        )}
+
+    </div>
+))}
+
+</div>
                    <h2>
                     📅 Eventos por data
                 </h2>
