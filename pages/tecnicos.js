@@ -69,6 +69,24 @@ setTecnicos(lista);
 
 async function avaliar(id, nota){
 
+ async function avaliar(id,nota){
+
+console.log("USER ATUAL:", user);
+
+const {data:session} = await supabase.auth.getSession();
+
+console.log("SESSION:", session);
+
+
+if(!user){
+
+alert("Usuário não identificado");
+
+return;
+
+}
+
+
 console.log("CLIQUE NA ESTRELA");
 console.log("Técnico:", id);
 console.log("Nota:", nota);
