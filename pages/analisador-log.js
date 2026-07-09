@@ -542,7 +542,82 @@ const gruposFiltrados = aplicarFiltros(grupos);
 
 
 
-Resumo Geral dos Erros
+<div style={styles.card}>
+
+    <h2>📊 Resumo Geral dos Erros</h2>
+
+    <div style={styles.gridErros}>
+
+        {Object.values(resumoErros)
+            .sort((a,b)=>b.quantidade-a.quantidade)
+            .map((erro)=>(
+
+                <div key={erro.codigo} style={styles.cardErro}>
+
+                    <div
+                        style={styles.cardResumo}
+                        onClick={()=>{
+                            setErrosAbertos(prev=>({
+                                ...prev,
+                                [erro.codigo]: !prev[erro.codigo]
+                            }));
+                        }}
+                    >
+
+                        <h2>{erro.codigo}</h2>
+
+                        <p>{erro.quantidade} ocorrências</p>
+
+                        <small>Clique para visualizar</small>
+
+                    </div>
+
+                    {errosAbertos[erro.codigo] && (
+
+                        <div style={styles.expandArea}>
+
+                            <h3>{erro.descricao}</h3>
+
+                            {erro.ocorrencias.map((item,index)=>(
+
+                                <div
+                                    key={index}
+                                    style={styles.erro}
+                                >
+
+                                    <b>{item.codigo}</b>
+
+                                    <br/>
+
+                                    📅 {item.data}
+
+                                    <br/>
+
+                                    ⏰ {item.hora}
+
+                                    <br/>
+
+                                    {item.descricao}
+
+                                    <br/>
+
+                                    <small>{item.linha}</small>
+
+                                </div>
+
+                            ))}
+
+                        </div>
+
+                    )}
+
+                </div>
+
+            ))}
+
+    </div>
+
+</div>
 <div style={styles.card}>
 
     <h2>
