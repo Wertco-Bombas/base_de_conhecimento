@@ -45,6 +45,9 @@ export default function Menu() {
             <Link href="/instrucoes" style={styles.card}>
               📄 Instruções de Trabalho
             </Link>
+          <Link href="/tecnicos" style={styles.card}>
+          ⭐ Avaliação de Técnicos
+          </Link>
 
             {(user?.role === 'admin' || user?.role === 'supervisor') && (
               <Link href="/admin" style={styles.card}>
