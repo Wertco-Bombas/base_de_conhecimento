@@ -106,7 +106,7 @@ const { data, error } = await supabase
 .insert({
 
     tecnico_id: id,
-    usuario_id: usuario,
+    usuario_id: user.id,
     nota: nota
 
 })
