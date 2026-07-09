@@ -69,18 +69,45 @@ setTecnicos(lista);
 
 async function avaliar(id,nota){
 
-await supabase
+
+if(!user){
+
+alert("Usuário não identificado");
+
+return;
+
+}
+
+
+
+const {error}= await supabase
 .from("avaliacoes_tecnicos")
 .insert({
 
 tecnico_id:id,
-usuario_id:user?.email,
+
+usuario_id:user.email,
+
 nota:nota
 
 });
 
 
+
+if(error){
+
+console.log(error);
+
+alert("Erro ao salvar avaliação");
+
+return;
+
+}
+
+
+
 carregarTecnicos();
+
 
 }
 
