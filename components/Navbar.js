@@ -20,6 +20,10 @@ export default function Navbar() {
         Instruções de Trabalho
       </Link>
 
+      <Link href="/tecnicos">
+      Técnicos ⭐
+      </Link>
+
       {(user?.role === 'admin' || user?.role === 'supervisor') && (
         <Link href="/admin">
           Admin
