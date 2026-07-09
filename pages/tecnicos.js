@@ -24,12 +24,43 @@ async function carregarTecnicos(){
 
 const {data,error}= await supabase
 .from("tecnicos")
-.select("*")
+.select(`
+  *,
+  avaliacoes_tecnicos(
+    nota
+  )
+`)
 .order("nome");
 
 
 if(!error){
-setTecnicos(data);
+
+const lista = data.map(t=>{
+
+const notas = t.avaliacoes_tecnicos || [];
+
+
+const media = notas.length > 0
+
+? notas.reduce((a,b)=>a+b.nota,0) / notas.length
+
+: 0;
+
+
+return {
+
+...t,
+
+nota_media: media.toFixed(1)
+
+};
+
+
+});
+
+
+setTecnicos(lista);
+
 }
 
 }
@@ -169,7 +200,7 @@ filtrados.map(t=>(
 
 <td>
 
-{"⭐".repeat(Math.round(t.nota_media || 0))}
+{"⭐".repeat(Math.floor(Number(t.nota_media || 0)))}
 
 <br/>
 
