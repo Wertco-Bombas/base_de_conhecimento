@@ -618,9 +618,12 @@ const gruposFiltrados = aplicarFiltros(grupos);
 ))}
 
 </div>
-                   <h2>
-                    📅 Eventos por data
-                </h2>
+
+<div style={styles.card}>
+
+    <h2>
+        📅 Eventos por data
+    </h2>
 
 
                 {Object.keys(gruposFiltrados).map((data)=>(
@@ -865,13 +868,13 @@ const gruposFiltrados = aplicarFiltros(grupos);
 
                 ))}
 
-            </div>
+            </div> {/* Fecha o card "Eventos por data" */}
 
-        </div>
+        </div> {/* Fecha o container */}
 
     </Layout>
 
-    );
+);
 
 
 
