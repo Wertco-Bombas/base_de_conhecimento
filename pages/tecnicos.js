@@ -67,43 +67,50 @@ setTecnicos(lista);
 
 
 
-async function avaliar(id,nota){
+async function avaliar(id, nota){
+
+console.log("CLIQUE NA ESTRELA");
+console.log("Técnico:", id);
+console.log("Nota:", nota);
+console.log("Usuário:", user);
 
 
 if(!user){
 
 alert("Usuário não identificado");
-
 return;
 
 }
 
 
-
-const {error}= await supabase
+const { data, error } = await supabase
 .from("avaliacoes_tecnicos")
 .insert({
 
-tecnico_id:id,
+    tecnico_id: id,
+    usuario_id: user.id,
+    nota: nota
 
-usuario_id:user.id,
-
-nota:nota
-
-});
-
+})
+.select();
 
 
 if(error){
 
 console.log("ERRO SUPABASE:", error);
 
-alert(error.message);
+alert(
+"Erro ao salvar avaliação:\n" + error.message
+);
 
 return;
 
 }
 
+
+console.log("SALVO COM SUCESSO:", data);
+
+alert("Avaliação salva ⭐");
 
 
 carregarTecnicos();
