@@ -100,13 +100,13 @@ async function avaliar(id, nota){
 
   const { data, error } = await supabase
     .from("avaliacoes_tecnicos")
-    .insert({
-
-      tecnico_id: id,
-      usuario_id: usuario.id,
-      nota: nota
-
-    })
+.insert({
+    tecnico_id: id,
+    usuario_id: usuario.id,
+    nota_eletronica: 5,
+    nota_hidraulica: 4,
+    nota_comprometimento: 5
+})
     .select();
 
 
