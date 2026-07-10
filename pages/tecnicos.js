@@ -279,7 +279,7 @@ return (
 <h1 style={styles.title}>
 ⭐ Avaliação de Técnicos
 </h1>
-{user?.role === "supervisor" && (
+{(user?.role === "supervisor" || user?.role === "admin") && (
 
 <button
 
@@ -289,7 +289,15 @@ onClick={()=>setMostrarCadastro(true)}
 
 >
 
+{(user?.role === "supervisor" || user?.role === "admin") && (
+
+
+
 ➕ Novo Técnico
+
+</button>
+
+
 {mostrarCadastro && (
 
 <div style={styles.card}>
@@ -301,9 +309,7 @@ Novo Técnico
 
 
 <input
-
 style={styles.input}
-
 placeholder="Nome do técnico"
 
 value={novoTecnico.nome}
@@ -319,14 +325,11 @@ nome:e.target.value
 })
 
 }
-
 />
 
 
 <input
-
 style={styles.input}
-
 placeholder="Empresa + CNPJ"
 
 value={novoTecnico.empresa}
@@ -342,14 +345,11 @@ empresa:e.target.value
 })
 
 }
-
 />
 
 
 <input
-
 style={styles.input}
-
 placeholder="Estado"
 
 value={novoTecnico.estado}
@@ -365,14 +365,11 @@ estado:e.target.value
 })
 
 }
-
 />
 
 
 <input
-
 style={styles.input}
-
 placeholder="Região"
 
 value={novoTecnico.regiao}
@@ -388,11 +385,7 @@ regiao:e.target.value
 })
 
 }
-
 />
-
-
-<br/>
 
 
 <button
@@ -406,6 +399,15 @@ onClick={cadastrarTecnico}
 Salvar Técnico
 
 </button>
+
+
+</div>
+
+)}
+
+</div>
+
+)}
 
 
 </div>
@@ -746,27 +748,6 @@ justifyContent:"center",
 transition:"0.2s"
 },
 
-salvar:{
-
-marginTop:10,
-
-padding:"12px 25px",
-
-background:"#f5c400",
-
-color:"#000",
-
-border:0,
-
-borderRadius:8,
-
-cursor:"pointer",
-
-fontWeight:"bold",
-
-fontSize:15,
-
-},
  salvar:{
 
 marginTop:15,
