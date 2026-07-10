@@ -101,7 +101,15 @@ console.log("Usuário:", user);
 
 if(!user){
 
+const { data: authData } = await supabase.auth.getUser();
+
+const usuario = authData.user;
+
+
+if(!usuario){
+
 alert("Usuário não identificado");
+
 return;
 
 }
@@ -112,12 +120,11 @@ const { data, error } = await supabase
 .insert({
 
     tecnico_id: id,
-    usuario_id: user.id,
+    usuario_id: usuario.id,
     nota: nota
 
 })
 .select();
-
 
 if(error){
 
