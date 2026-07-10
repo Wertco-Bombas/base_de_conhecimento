@@ -78,6 +78,11 @@ const {data:session} = await supabase.auth.getSession();
 
 console.log("SESSION:", session);
 
+  const { data: authUser } = await supabase.auth.getUser();
+
+console.log("AUTH USER:", authUser.user);
+console.log("AUTH UID:", authUser.user?.id);
+console.log("USE USER ID:", user.id);
 
 if(!user){
 
