@@ -70,85 +70,66 @@ setTecnicos(lista);
 
 
 
- async function avaliar(id,nota){
+async function avaliar(id, nota){
 
-console.log("USER ATUAL:", user);
+  console.log("USER ATUAL:", user);
 
-const {data:session} = await supabase.auth.getSession();
+  const { data: authData } = await supabase.auth.getUser();
 
-console.log("SESSION:", session);
+  const usuario = authData.user;
 
-  const { data: authUser } = await supabase.auth.getUser();
-
-console.log("AUTH USER:", authUser.user);
-console.log("AUTH UID:", authUser.user?.id);
-console.log("USE USER ID:", user.id);
-
-if(!user){
-
-alert("Usuário não identificado");
-
-return;
-
-}
+  console.log("AUTH USER:", usuario);
+  console.log("AUTH UID:", usuario?.id);
 
 
-console.log("CLIQUE NA ESTRELA");
-console.log("Técnico:", id);
-console.log("Nota:", nota);
-console.log("Usuário:", user);
+  if(!usuario){
+
+    alert("Usuário não identificado");
+
+    return;
+
+  }
 
 
-if(!user){
-
-const { data: authData } = await supabase.auth.getUser();
-
-const usuario = authData.user;
-
-
-if(!usuario){
-
-alert("Usuário não identificado");
-
-return;
-
-}
+  console.log("CLIQUE NA ESTRELA");
+  console.log("Técnico:", id);
+  console.log("Nota:", nota);
+  console.log("Usuário:", usuario);
 
 
-const { data, error } = await supabase
-.from("avaliacoes_tecnicos")
-.insert({
+  const { data, error } = await supabase
+    .from("avaliacoes_tecnicos")
+    .insert({
 
-    tecnico_id: id,
-    usuario_id: usuario.id,
-    nota: nota
+      tecnico_id: id,
+      usuario_id: usuario.id,
+      nota: nota
 
-})
-.select();
+    })
+    .select();
 
-if(error){
 
-console.log("ERRO SUPABASE:", error);
+  if(error){
 
-alert(
-"Erro ao salvar avaliação:\n" + error.message
-);
+    console.log("ERRO SUPABASE:", error);
 
-return;
+    alert(
+      "Erro ao salvar avaliação:\n" + error.message
+    );
+
+    return;
+
+  }
+
+
+  console.log("SALVO COM SUCESSO:", data);
+
+  alert("Avaliação salva ⭐");
+
+
+  carregarTecnicos();
 
 }
-
-
-console.log("SALVO COM SUCESSO:", data);
-
-alert("Avaliação salva ⭐");
-
-
-carregarTecnicos();
-
-
-}
-
 
 
 const filtrados = tecnicos.filter((t) => {
