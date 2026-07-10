@@ -12,6 +12,7 @@ const user = useUser();
 const [tecnicos,setTecnicos] = useState([]);
 const [busca,setBusca] = useState("");
 const [estado,setEstado] = useState("");
+const [regiao, setRegiao] = useState("");
 
 
 useEffect(()=>{
@@ -138,19 +139,12 @@ carregarTecnicos();
 
 
 
-const filtrados = tecnicos.filter(t=>{
-
-return (
-
-t.nome.toLowerCase()
-.includes(busca.toLowerCase())
-
-&&
-
-(estado==="" || t.estado===estado)
-
-)
-
+const filtrados = tecnicos.filter((t) => {
+  return (
+    t.nome.toLowerCase().includes(busca.toLowerCase()) &&
+    (estado === "" || t.estado === estado) &&
+    (regiao === "" || t.regiao === regiao)
+  );
 });
 
 
@@ -170,47 +164,44 @@ return (
 
 
 <input
-
-placeholder="Buscar técnico..."
-
-value={busca}
-
-onChange={(e)=>setBusca(e.target.value)}
-
-style={styles.input}
-
+  placeholder="Buscar técnico..."
+  value={busca}
+  onChange={(e)=>setBusca(e.target.value)}
+  style={styles.input}
 />
 
+<select
+  style={styles.input}
+  value={estado}
+  onChange={(e)=>setEstado(e.target.value)}
+>
+  <option value="">Todos estados</option>
 
+  {[...new Set(tecnicos.map(t=>t.estado))]
+    .sort()
+    .map(e=>(
+      <option key={e} value={e}>
+        {e}
+      </option>
+    ))
+  }
+</select>
 
 <select
-
-style={styles.input}
-
-value={estado}
-
-onChange={(e)=>setEstado(e.target.value)}
-
+  style={styles.input}
+  value={regiao}
+  onChange={(e)=>setRegiao(e.target.value)}
 >
+  <option value="">Todas regiões</option>
 
-<option value="">
-Todos estados
-</option>
-
-{
-
-[...new Set(tecnicos.map(t=>t.estado))]
-
-.map(e=>(
-
-<option key={e}>
-{e}
-</option>
-
-))
-
-}
-
+  {[...new Set(tecnicos.map(t=>t.regiao))]
+    .sort()
+    .map(r=>(
+      <option key={r} value={r}>
+        {r}
+      </option>
+    ))
+  }
 </select>
 
 
@@ -224,6 +215,7 @@ Todos estados
 <th>Nome</th>
 <th>Empresa</th>
 <th>Estado</th>
+<th>Região</th>
 <th>Média</th>
 <th>Avaliar</th>
 
@@ -244,10 +236,9 @@ filtrados.map(t=>(
 
 
 <td>{t.nome}</td>
-
 <td>{t.empresa}</td>
-
 <td>{t.estado}</td>
+<td>{t.regiao}</td>
 
 
 <td>
