@@ -14,6 +14,7 @@ const [busca,setBusca] = useState("");
 const [estado,setEstado] = useState("");
 const [regiao, setRegiao] = useState("");
  const [notaFiltro, setNotaFiltro] = useState("");
+ const [avaliacoes, setAvaliacoes] = useState({});
 
 
 useEffect(()=>{
@@ -90,10 +91,26 @@ setTecnicos(lista);
 }
 
 
+function selecionarNota(tecnicoId, criterio, nota){
+
+  setAvaliacoes(prev=>({
+
+    ...prev,
+
+    [tecnicoId]:{
+
+      ...prev[tecnicoId],
+
+      [criterio]:nota
+
+    }
+
+  }));
+
+}
 
 
-
-async function avaliar(id, criterio, nota)
+async function avaliar(id){
 
   console.log("USER ATUAL:", user);
 
@@ -112,7 +129,20 @@ async function avaliar(id, criterio, nota)
     return;
 
   }
+const notas = avaliacoes[id];
 
+if(
+!notas ||
+!notas.eletronica ||
+!notas.hidraulica ||
+!notas.comprometimento
+){
+
+   alert("Preencha as três avaliações.");
+
+   return;
+
+}
 
   console.log("CLIQUE NA ESTRELA");
   console.log("Técnico:", id);
@@ -123,11 +153,17 @@ async function avaliar(id, criterio, nota)
   const { data, error } = await supabase
     .from("avaliacoes_tecnicos")
 .insert({
+
     tecnico_id: id,
+
     usuario_id: usuario.id,
-    nota_eletronica: 5,
-    nota_hidraulica: 4,
-    nota_comprometimento: 5
+
+    nota_eletronica: notas.eletronica,
+
+    nota_hidraulica: notas.hidraulica,
+
+    nota_comprometimento: notas.comprometimento
+
 })
     .select();
 
@@ -334,7 +370,7 @@ Avaliar técnico
 
 <button
 key={n}
-onClick={()=>avaliar(t.id,"eletronica",n)}
+onClick={()=>selecionarNota(t.id,"eletronica",n)}
 style={styles.star}
 >
 
@@ -355,7 +391,7 @@ style={styles.star}
 
 <button
 key={n}
-onClick={()=>avaliar(t.id,"hidraulica",n)}
+onClick={()=>selecionarNota(t.id,"hidraulica",n)}
 style={styles.star}
 >
 
@@ -376,7 +412,7 @@ style={styles.star}
 
 <button
 key={n}
-onClick={()=>avaliar(t.id,"comprometimento",n)}
+onClick={()=>selecionarNota(t.id,"comprometimento",n)}
 style={styles.star}
 >
 
@@ -385,6 +421,21 @@ style={styles.star}
 </button>
 
 ))}
+</div>
+ <div style={{textAlign:"center",marginTop:20}}>
+
+<button
+
+style={styles.salvar}
+
+onClick={()=>avaliar(t.id)}
+
+>
+
+Salvar Avaliação
+
+</button>
+
 </div>
 
 </div>
@@ -497,7 +548,29 @@ height:42,
 display:"flex",
 alignItems:"center",
 justifyContent:"center",
-transition:"0.2s"
+transition:"0.2s",
+}
+ 
+ salvar:{
+
+marginTop:10,
+
+padding:"12px 25px",
+
+background:"#f5c400",
+
+color:"#000",
+
+border:0,
+
+borderRadius:8,
+
+cursor:"pointer",
+
+fontWeight:"bold",
+
+fontSize:15,
+
 }
 
 }
