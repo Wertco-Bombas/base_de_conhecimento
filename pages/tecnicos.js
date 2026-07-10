@@ -16,6 +16,17 @@ const [regiao, setRegiao] = useState("");
  const [notaFiltro, setNotaFiltro] = useState("");
  const [avaliacoes, setAvaliacoes] = useState({});
 
+ const [mostrarCadastro, setMostrarCadastro] = useState(false);
+
+const [novoTecnico, setNovoTecnico] = useState({
+
+nome:"",
+empresa:"",
+estado:"",
+regiao:""
+
+});
+
 
 useEffect(()=>{
  carregarTecnicos();
@@ -108,6 +119,58 @@ function selecionarNota(tecnicoId, criterio, nota){
   }));
 
 }
+ async function cadastrarTecnico(){
+
+const {error}= await supabase
+.from("tecnicos")
+.insert({
+
+nome: novoTecnico.nome,
+
+empresa: novoTecnico.empresa,
+
+estado: novoTecnico.estado,
+
+regiao: novoTecnico.regiao
+
+});
+
+
+if(error){
+
+console.log(error);
+
+alert(
+"Erro ao cadastrar técnico: " + error.message
+);
+
+return;
+
+}
+
+
+alert("Técnico cadastrado com sucesso ⭐");
+
+
+setNovoTecnico({
+
+nome:"",
+empresa:"",
+estado:"",
+regiao:""
+
+});
+
+
+setMostrarCadastro(false);
+
+
+carregarTecnicos();
+
+}
+ <h1 style={styles.title}>
+⭐ Avaliação de Técnicos
+</h1>
 
 
 async function avaliar(id){
@@ -216,7 +279,141 @@ return (
 <h1 style={styles.title}>
 ⭐ Avaliação de Técnicos
 </h1>
+{user?.role === "supervisor" && (
 
+<button
+
+style={styles.salvar}
+
+onClick={()=>setMostrarCadastro(true)}
+
+>
+
+➕ Novo Técnico
+{mostrarCadastro && (
+
+<div style={styles.card}>
+
+
+<h2>
+Novo Técnico
+</h2>
+
+
+<input
+
+style={styles.input}
+
+placeholder="Nome do técnico"
+
+value={novoTecnico.nome}
+
+onChange={(e)=>
+
+setNovoTecnico({
+
+...novoTecnico,
+
+nome:e.target.value
+
+})
+
+}
+
+/>
+
+
+<input
+
+style={styles.input}
+
+placeholder="Empresa + CNPJ"
+
+value={novoTecnico.empresa}
+
+onChange={(e)=>
+
+setNovoTecnico({
+
+...novoTecnico,
+
+empresa:e.target.value
+
+})
+
+}
+
+/>
+
+
+<input
+
+style={styles.input}
+
+placeholder="Estado"
+
+value={novoTecnico.estado}
+
+onChange={(e)=>
+
+setNovoTecnico({
+
+...novoTecnico,
+
+estado:e.target.value
+
+})
+
+}
+
+/>
+
+
+<input
+
+style={styles.input}
+
+placeholder="Região"
+
+value={novoTecnico.regiao}
+
+onChange={(e)=>
+
+setNovoTecnico({
+
+...novoTecnico,
+
+regiao:e.target.value
+
+})
+
+}
+
+/>
+
+
+<br/>
+
+
+<button
+
+style={styles.salvar}
+
+onClick={cadastrarTecnico}
+
+>
+
+Salvar Técnico
+
+</button>
+
+
+</div>
+
+)}
+</button>
+
+)}
 
 <input
   placeholder="Buscar técnico..."
@@ -567,7 +764,26 @@ cursor:"pointer",
 
 fontWeight:"bold",
 
-fontSize:15
+fontSize:15,
+
+},
+ salvar:{
+
+marginTop:15,
+
+padding:"12px 25px",
+
+background:"#f5c400",
+
+color:"#000",
+
+border:0,
+
+borderRadius:8,
+
+cursor:"pointer",
+
+fontWeight:"bold"
 
 }
 
