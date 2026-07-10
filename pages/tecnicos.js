@@ -199,58 +199,47 @@ return (
 
 
 
-<table style={styles.table}>
-
-<thead>
-
-<tr>
-
-<th>Nome</th>
-<th>Empresa</th>
-<th>Estado</th>
-<th>Região</th>
-<th>Média</th>
-<th>Avaliar</th>
-
-</tr>
-
-</thead>
-
-
-<tbody>
-
+<div style={styles.grid}>
 
 {
-
 filtrados.map(t=>(
 
+<div key={t.id} style={styles.card}>
 
-<tr key={t.id}>
+<div style={styles.nome}>
+{t.nome}
+</div>
+
+<div style={styles.info}>
+🏢 {t.empresa || "Sem empresa"}
+</div>
+
+<div style={styles.info}>
+📍 {t.estado} - {t.regiao}
+</div>
 
 
-<td>{t.nome}</td>
-<td>{t.empresa}</td>
-<td>{t.estado}</td>
-<td>{t.regiao}</td>
+<div style={styles.mediaBox}>
 
+<div>
+⭐ Média
+</div>
 
-<td>
-
-{"⭐".repeat(Math.floor(Number(t.nota_media || 0)))}
-
-<br/>
-
+<strong>
 {t.nota_media || 0}
+</strong>
 
-</td>
+</div>
 
 
+<div style={styles.avaliarTitulo}>
+Avaliar técnico
+</div>
 
-<td>
 
+<div style={styles.estrelas}>
 
 {
-
 [1,2,3,4,5].map(n=>(
 
 <button
@@ -267,27 +256,19 @@ style={styles.star}
 
 </button>
 
+))
+}
+
+</div>
+
+
+</div>
 
 ))
 
 }
 
-
-</td>
-
-
-</tr>
-
-
-))
-
-}
-
-
-</tbody>
-
-
-</table>
+</div>
 
 
 </div>
@@ -308,36 +289,90 @@ const styles={
 
 container:{
 padding:20,
-color:"#fff"
+color:"#fff",
+maxWidth:1200,
+margin:"auto"
 },
 
 title:{
-color:"#f5c400"
+color:"#f5c400",
+textAlign:"center",
+marginBottom:25
 },
 
 input:{
-padding:10,
+padding:12,
 margin:5,
 background:"#111",
 color:"#fff",
 border:"1px solid #333",
-borderRadius:5
+borderRadius:8,
+width:220
 },
 
-table:{
-width:"100%",
+grid:{
+display:"grid",
+gridTemplateColumns:"repeat(auto-fill,minmax(280px,1fr))",
+gap:20,
+marginTop:25
+},
+
+card:{
+background:"#161616",
+border:"1px solid #333",
+borderRadius:15,
+padding:20,
+boxShadow:"0 5px 15px rgba(0,0,0,.3)"
+},
+
+nome:{
+fontSize:20,
+fontWeight:"bold",
+color:"#f5c400",
+marginBottom:12
+},
+
+info:{
+color:"#ccc",
+marginBottom:8,
+fontSize:14
+},
+
+mediaBox:{
+marginTop:15,
+padding:15,
+background:"#0d0d0d",
+borderRadius:10,
+textAlign:"center",
+fontSize:16
+},
+
+avaliarTitulo:{
 marginTop:20,
-background:"#111",
-color:"#fff",
-borderCollapse:"collapse"
+marginBottom:10,
+textAlign:"center",
+color:"#aaa"
+},
+
+estrelas:{
+display:"flex",
+justifyContent:"center",
+gap:8,
+flexWrap:"nowrap"
 },
 
 star:{
-background:"transparent",
-border:0,
+background:"#222",
+border:"1px solid #444",
+borderRadius:50,
 cursor:"pointer",
-fontSize:18
+fontSize:22,
+width:42,
+height:42,
+display:"flex",
+alignItems:"center",
+justifyContent:"center",
+transition:"0.2s"
 }
-
 
 }
