@@ -546,10 +546,10 @@ height:42,
 display:"flex",
 alignItems:"center",
 justifyContent:"center",
-transition:"0.2s",
-}
- 
- salvar:{
+transition:"0.2s"
+},
+
+salvar:{
 
 marginTop:10,
 
@@ -567,7 +567,7 @@ cursor:"pointer",
 
 fontWeight:"bold",
 
-fontSize:15,
+fontSize:15
 
 }
 
