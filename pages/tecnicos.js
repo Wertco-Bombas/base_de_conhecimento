@@ -13,6 +13,7 @@ const [tecnicos,setTecnicos] = useState([]);
 const [busca,setBusca] = useState("");
 const [estado,setEstado] = useState("");
 const [regiao, setRegiao] = useState("");
+ const [notaFiltro, setNotaFiltro] = useState("");
 
 
 useEffect(()=>{
@@ -133,11 +134,14 @@ async function avaliar(id, nota){
 
 
 const filtrados = tecnicos.filter((t) => {
+
   return (
     t.nome.toLowerCase().includes(busca.toLowerCase()) &&
     (estado === "" || t.estado === estado) &&
-    (regiao === "" || t.regiao === regiao)
+    (regiao === "" || t.regiao === regiao) &&
+    (notaFiltro === "" || Number(t.nota_media) >= Number(notaFiltro))
   );
+
 });
 
 
@@ -196,7 +200,33 @@ return (
     ))
   }
 </select>
+<select
+  style={styles.input}
+  value={notaFiltro}
+  onChange={(e)=>setNotaFiltro(e.target.value)}
+>
 
+  <option value="">
+    Todas as notas
+  </option>
+
+  <option value="5">
+    ⭐ 5 estrelas
+  </option>
+
+  <option value="4">
+    ⭐ 4 ou mais
+  </option>
+
+  <option value="3">
+    ⭐ 3 ou mais
+  </option>
+
+  <option value="2">
+    ⭐ 2 ou mais
+  </option>
+
+</select>
 
 
 <div style={styles.grid}>
