@@ -349,11 +349,9 @@ filtrados.map(t=>(
 </strong>
 
 </div>
-</div>
 
 
 
-</div>
 
 
 <div style={styles.avaliarTitulo}>
