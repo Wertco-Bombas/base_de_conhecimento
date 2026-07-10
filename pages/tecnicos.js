@@ -27,9 +27,12 @@ async function carregarTecnicos(){
 const {data,error}= await supabase
 .from("tecnicos")
 .select(`
+
   *,
   avaliacoes_tecnicos(
-    nota
+    nota_eletronica,
+    nota_hidraulica,
+    nota_comprometimento
   )
 `)
 .order("nome");
@@ -41,21 +44,40 @@ const lista = data.map(t=>{
 
 const notas = t.avaliacoes_tecnicos || [];
 
+const mediaEletronica =
+notas.length > 0
+? notas.reduce((a,b)=>a+b.nota_eletronica,0)/notas.length
+:0;
 
-const media = notas.length > 0
+const mediaHidraulica =
+notas.length > 0
+? notas.reduce((a,b)=>a+b.nota_hidraulica,0)/notas.length
+:0;
 
-? notas.reduce((a,b)=>a+b.nota,0) / notas.length
+const mediaComprometimento =
+notas.length > 0
+? notas.reduce((a,b)=>a+b.nota_comprometimento,0)/notas.length
+:0;
 
-: 0;
+const media =
+(mediaEletronica +
+ mediaHidraulica +
+ mediaComprometimento)/3;
 
 
-return {
+return{
 
 ...t,
 
-nota_media: media.toFixed(1)
+media_eletronica:mediaEletronica.toFixed(1),
 
-};
+media_hidraulica:mediaHidraulica.toFixed(1),
+
+media_comprometimento:mediaComprometimento.toFixed(1),
+
+nota_media:media.toFixed(1)
+
+}
 
 
 });
@@ -71,7 +93,7 @@ setTecnicos(lista);
 
 
 
-async function avaliar(id, nota){
+async function avaliar(id, criterio, nota)
 
   console.log("USER ATUAL:", user);
 
@@ -249,15 +271,51 @@ filtrados.map(t=>(
 </div>
 
 
+
 <div style={styles.mediaBox}>
 
 <div>
-⭐ Média
+⭐ Média Geral
+</div>
+
+<h2 style={{margin:5}}>
+{t.nota_media}
+</h2>
+
+<hr style={{borderColor:"#333"}}/>
+
+<div>
+⚡ Eletrônica
 </div>
 
 <strong>
-{t.nota_media || 0}
+{t.media_eletronica}
 </strong>
+
+<br/><br/>
+
+<div>
+🚰 Hidráulica
+</div>
+
+<strong>
+{t.media_hidraulica}
+</strong>
+
+<br/><br/>
+
+<div>
+🤝 Comprometimento
+</div>
+
+<strong>
+{t.media_comprometimento}
+</strong>
+
+</div>
+</div>
+
+
 
 </div>
 
@@ -267,30 +325,67 @@ Avaliar técnico
 </div>
 
 
-<div style={styles.estrelas}>
+<div style={styles.avaliarTitulo}>
+⚡ Eletrônica
+</div>
 
-{
-[1,2,3,4,5].map(n=>(
+<div style={styles.estrelas}>
+{[1,2,3,4,5].map(n=>(
 
 <button
-
 key={n}
-
-onClick={()=>avaliar(t.id,n)}
-
+onClick={()=>avaliar(t.id,"eletronica",n)}
 style={styles.star}
-
 >
 
 ⭐
 
 </button>
 
-))
-}
-
+))}
 </div>
 
+
+<div style={styles.avaliarTitulo}>
+🚰 Hidráulica
+</div>
+
+<div style={styles.estrelas}>
+{[1,2,3,4,5].map(n=>(
+
+<button
+key={n}
+onClick={()=>avaliar(t.id,"hidraulica",n)}
+style={styles.star}
+>
+
+⭐
+
+</button>
+
+))}
+</div>
+
+
+<div style={styles.avaliarTitulo}>
+🤝 Comprometimento
+</div>
+
+<div style={styles.estrelas}>
+{[1,2,3,4,5].map(n=>(
+
+<button
+key={n}
+onClick={()=>avaliar(t.id,"comprometimento",n)}
+style={styles.star}
+>
+
+⭐
+
+</button>
+
+))}
+</div>
 
 </div>
 
