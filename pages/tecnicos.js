@@ -209,7 +209,7 @@ if(
 
   console.log("CLIQUE NA ESTRELA");
   console.log("Técnico:", id);
-  console.log("Nota:", nota);
+  console.log("Notas:", notas);
   console.log("Usuário:", usuario);
 
 
