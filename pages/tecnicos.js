@@ -54,21 +54,29 @@ if(!error){
 
 const lista = data.map(t=>{
 
-const notas = t.avaliacoes_tecnicos || [];
+const notas = (t.avaliacoes_tecnicos || []).filter(
+  n =>
+    n.nota_eletronica !== null &&
+    n.nota_hidraulica !== null &&
+    n.nota_comprometimento !== null
+);
+
 
 const mediaEletronica =
 notas.length > 0
-? notas.reduce((a,b)=>a+b.nota_eletronica,0)/notas.length
+? notas.reduce((a,b)=>a + Number(b.nota_eletronica),0) / notas.length
 :0;
+
 
 const mediaHidraulica =
 notas.length > 0
-? notas.reduce((a,b)=>a+b.nota_hidraulica,0)/notas.length
+? notas.reduce((a,b)=>a + Number(b.nota_hidraulica),0) / notas.length
 :0;
+
 
 const mediaComprometimento =
 notas.length > 0
-? notas.reduce((a,b)=>a+b.nota_comprometimento,0)/notas.length
+? notas.reduce((a,b)=>a + Number(b.nota_comprometimento),0) / notas.length
 :0;
 
 const media =
