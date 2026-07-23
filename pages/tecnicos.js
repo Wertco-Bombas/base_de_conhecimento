@@ -276,32 +276,18 @@ return (
 <div style={styles.container}>
 
 
-<h1 style={styles.title}>
-⭐ Avaliação de Técnicos
-</h1>
-{(user?.role === "supervisor" || user?.role === "admin") && (
-
-<button
-
-style={styles.salvar}
-
-onClick={()=>setMostrarCadastro(true)}
-
->
 
 {(user?.role === "supervisor" || user?.role === "admin") && (
+  <>
+    <button
+      style={styles.salvar}
+      onClick={() => setMostrarCadastro(true)}
+    >
+      ➕ Novo Técnico
+    </button>
 
-
-
-➕ Novo Técnico
-
-</button>
-
-
-{mostrarCadastro && (
-
-<div style={styles.card}>
-
+    {mostrarCadastro && (
+      <div style={styles.card}>
 
 <h2>
 Novo Técnico
@@ -401,20 +387,9 @@ Salvar Técnico
 </button>
 
 
-</div>
-
-)}
-
-</div>
-
-)}
-
-
-</div>
-
-)}
-</button>
-
+      </div>
+    )}
+  </>
 )}
 
 <input
