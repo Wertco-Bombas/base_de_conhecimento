@@ -231,17 +231,11 @@ if(
     .select();
 
 
-  if(error){
-
-    console.log("ERRO SUPABASE:", error);
-
-    alert(
-      "Erro ao salvar avaliação:\n" + error.message
-    );
-
-    return;
-
-  }
+if (error) {
+  console.log(error);
+  alert(JSON.stringify(error, null, 2));
+  return;
+}
 
 
   console.log("SALVO COM SUCESSO:", data);
