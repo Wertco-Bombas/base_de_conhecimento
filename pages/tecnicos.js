@@ -535,13 +535,17 @@ Avaliar técnico
 {[1,2,3,4,5].map(n=>(
 
 <button
-key={n}
-onClick={()=>selecionarNota(t.id,"eletronica",n)}
-style={styles.star}
+  key={n}
+  onClick={() => selecionarNota(t.id, "eletronica", n)}
+  style={{
+    ...styles.star,
+    background:
+      avaliacoes[t.id]?.eletronica === n
+        ? "#f5c400"
+        : "#222"
+  }}
 >
-
-⭐
-
+  ⭐
 </button>
 
 ))}
@@ -556,15 +560,18 @@ style={styles.star}
 {[1,2,3,4,5].map(n=>(
 
 <button
-key={n}
-onClick={()=>selecionarNota(t.id,"hidraulica",n)}
-style={styles.star}
+  key={n}
+  onClick={() => selecionarNota(t.id, "hidraulica", n)}
+  style={{
+    ...styles.star,
+    background:
+      avaliacoes[t.id]?.hidraulica === n
+        ? "#f5c400"
+        : "#222"
+  }}
 >
-
-⭐
-
+  ⭐
 </button>
-
 ))}
 </div>
 
@@ -577,13 +584,17 @@ style={styles.star}
 {[1,2,3,4,5].map(n=>(
 
 <button
-key={n}
-onClick={()=>selecionarNota(t.id,"comprometimento",n)}
-style={styles.star}
+  key={n}
+  onClick={() => selecionarNota(t.id, "comprometimento", n)}
+  style={{
+    ...styles.star,
+    background:
+      avaliacoes[t.id]?.comprometimento === n
+        ? "#f5c400"
+        : "#222"
+  }}
 >
-
-⭐
-
+  ⭐
 </button>
 
 ))}
