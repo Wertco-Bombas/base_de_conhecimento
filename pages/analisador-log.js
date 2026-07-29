@@ -23,6 +23,15 @@ export default function AnalisadorLog(){
 
     const [resumoErros, setResumoErros] = useState({});
 const [errosAbertos, setErrosAbertos] = useState({});
+
+    const [infoLog, setInfoLog] = useState({
+    cpu: "",
+    jsonModel: "",
+    chip: "",
+    pci: "",
+    paginas: [],
+    cartoes: []
+});
     
    function aplicarFiltros(grupos){
 
@@ -174,7 +183,14 @@ const [errosAbertos, setErrosAbertos] = useState({});
         let errosEncontrados=[];
 
         let eventos=[];
+let cpu = "";
+let jsonModel = "";
+let chip = "";
+let pci = "";
 
+const paginasNaoEncontradas = [];
+
+const cartoes = [];
 
 
 
@@ -209,6 +225,89 @@ const [errosAbertos, setErrosAbertos] = useState({});
 
 
             if(linha.startsWith("&")){
+                // =========================
+// Versão da CPU
+// =========================
+
+const ver = linha.match(/VER:\s*([A-Z0-9]+)/i);
+
+if(ver){
+    cpu = ver[1];
+}
+
+// =========================
+// Modelo JSON
+// =========================
+
+const modelo = linha.match(/Load Json model:\s*([A-Z0-9_]+)/i);
+
+if(modelo){
+    jsonModel = modelo[1];
+}
+
+// =========================
+// CHIP
+// =========================
+
+const chipMatch = linha.match(/CHIP:\s*([A-Z0-9_]+)/i);
+
+if(chipMatch){
+    chip = chipMatch[1];
+}
+
+// =========================
+// PCI
+// =========================
+
+const pciMatch = linha.match(/PCI([A-Z0-9]+)/i);
+
+if(pciMatch){
+    pci = pciMatch[1];
+}
+
+// =========================
+// Página não encontrada
+// =========================
+
+const pagina = linha.match(/tempo sem resposta página:\s*(\d+)/i);
+
+if(pagina){
+
+    if(!paginasNaoEncontradas.includes(pagina[1])){
+
+        paginasNaoEncontradas.push(pagina[1]);
+
+    }
+
+}
+
+// =========================
+// Cartão
+// =========================
+
+const cartao = linha.match(
+/&(\d{2}:\d{2}:\d{2})\s+Card\s+(Tecnico|Gerente|Gerencial)\s+(.+?)\s+\d+\s+(\d{2})\s+(\d{2})\s+(\d{2})/i
+);
+
+if(cartao){
+
+    cartoes.push({
+
+        hora: cartao[1],
+
+        tipo:
+            cartao[2].toLowerCase().includes("tec")
+            ? "Técnico"
+            : "Gerencial",
+
+        nome: cartao[3].trim(),
+
+        validade:
+            `${cartao[4]}/${cartao[5]}/20${cartao[6]}`
+
+    });
+
+}
 
 
                 const hora =
@@ -463,6 +562,21 @@ setErros(errosEncontrados);
 setGrupos(agrupado);
 
 setResumoErros(resumo);
+        setInfoLog({
+
+    cpu,
+
+    jsonModel,
+
+    chip,
+
+    pci,
+
+    paginas: paginasNaoEncontradas,
+
+    cartoes
+
+});
         
 
 
@@ -495,11 +609,93 @@ const gruposFiltrados = aplicarFiltros(grupos);
         style={styles.button}
         onClick={carregar}
     >
-        📂 Carregar Log
+                  📂 Carregar Log
     </button>
 
 </div>
+<div style={styles.card}>
 
+<h2>📋 Informações do Log</h2>
+
+<p><b>CPU:</b> {infoLog.cpu || "-"}</p>
+
+<p><b>Modelo JSON:</b> {infoLog.jsonModel || "-"}</p>
+
+<p><b>CHIP:</b> {infoLog.chip || "-"}</p>
+
+<p><b>PCI:</b> {infoLog.pci || "-"}</p>
+
+<hr/>
+
+<h3>💳 Cartões utilizados</h3>
+
+{infoLog.cartoes.length === 0 ? (
+
+<p>Nenhum cartão encontrado.</p>
+
+) : (
+
+infoLog.cartoes.map((c,i)=>(
+
+<div
+key={i}
+style={{
+background:"#222",
+padding:10,
+marginBottom:10,
+borderRadius:8
+}}
+>
+
+<p>
+
+<b>
+
+{c.tipo==="Técnico"
+? "🟢 Técnico"
+: "🔴 Gerencial"}
+
+</b>
+
+</p>
+
+<p><b>Nome:</b> {c.nome}</p>
+
+<p><b>Hora:</b> {c.hora}</p>
+
+<p><b>Validade:</b> {c.validade}</p>
+
+</div>
+
+))
+
+)}
+
+<hr/>
+
+<h3>📄 Páginas não carregadas</h3>
+
+{infoLog.paginas.length===0 ? (
+
+<p>Nenhuma.</p>
+
+) : (
+
+<ul>
+
+{infoLog.paginas.map((pagina)=>(
+
+<li key={pagina}>
+Página {pagina}
+</li>
+
+))}
+
+</ul>
+
+)}
+
+</div>
 
 <div style={styles.card}>
 
