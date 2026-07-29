@@ -730,7 +730,7 @@ Object.keys(infoLog.paginas).length===0 ?
 
 </div>  // fecha diagnosticoGrid
 
-</div>
+
 
 
 
