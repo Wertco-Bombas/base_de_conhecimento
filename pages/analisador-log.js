@@ -190,7 +190,7 @@ let jsonModel = "";
 let chip = "";
 let pci = "";
 
-const paginasNaoEncontradas = [];
+const paginasNaoEncontradas = {};
 
 const cartoes = [];
 const versoesCPU = [];
@@ -240,7 +240,7 @@ if(linha.trim().startsWith("@")){
     }
 
 
-    return;
+return;
 
 }
 // =========================
@@ -251,11 +251,17 @@ const pagina = linha.match(/tempo\s+sem\s+resposta\s+p[aá]gina[:\s]+(\d+)/i);
 
 if(pagina){
 
-    if(!paginasNaoEncontradas.includes(pagina[1])){
+    const numeroPagina = pagina[1];
 
-        paginasNaoEncontradas.push(pagina[1]);
+
+    if(!paginasNaoEncontradas[numeroPagina]){
+
+        paginasNaoEncontradas[numeroPagina]=0;
 
     }
+
+
+    paginasNaoEncontradas[numeroPagina]++;
 
 }
 
@@ -643,7 +649,7 @@ const gruposFiltrados = aplicarFiltros(grupos);
 
         <Layout>
 
-            <div style={styles.container}>
+<div style={styles.painel}>
 
 <div style={styles.card}>
 
@@ -892,7 +898,7 @@ Object.entries(
 
 <h3>📄 Páginas não carregadas</h3>
 
-{infoLog.paginas.length===0 ? (
+{Object.keys(infoLog.paginas).length===0 ? (
 
 <p>Nenhuma.</p>
 
@@ -900,10 +906,12 @@ Object.entries(
 
 <ul>
 
-{infoLog.paginas.map((pagina)=>(
+{Object.entries(infoLog.paginas).map(([pagina,quantidade])=>(
 
 <li key={pagina}>
-Página {pagina}
+
+Página {pagina} ({quantidade}x)
+
 </li>
 
 ))}
@@ -952,7 +960,169 @@ Página {pagina}
 </div>
 
 
+<div style={styles.diagnosticoGrid}>
 
+
+
+<div style={styles.card}>
+
+
+<h2>
+📋 Painel de Diagnóstico
+</h2>
+
+
+
+<div style={styles.infoGrid}>
+
+
+<div style={styles.infoBox}>
+
+<div style={styles.tituloInfo}>
+🖥 CPU
+</div>
+
+{infoLog.cpu || "-"}
+
+</div>
+
+
+
+<div style={styles.infoBox}>
+
+<div style={styles.tituloInfo}>
+📄 Modelo JSON
+</div>
+
+{infoLog.jsonModel || "-"}
+
+</div>
+
+
+
+<div style={styles.infoBox}>
+
+<div style={styles.tituloInfo}>
+💳 Cartões
+</div>
+
+
+Técnico:
+{" "}
+{infoLog.cartoes.filter(
+c=>c.tipo==="Técnico"
+).length}
+
+
+<br/>
+
+
+Gerencial:
+{" "}
+{infoLog.cartoes.filter(
+c=>c.tipo==="Gerencial"
+).length}
+
+
+
+</div>
+
+
+
+
+<div style={styles.infoBox}>
+
+<div style={styles.tituloInfo}>
+⚠ Páginas
+</div>
+
+
+{infoLog.paginas.length===0 ?
+
+"Nenhuma"
+
+:
+
+{infoLog.paginas.map((p,i)=>(
+
+<div key={i}>
+Página {p}
+</div>
+
+))}
+
+
+
+</div>
+
+
+</div>
+
+
+
+<h3>
+💳 Utilização dos Cartões
+</h3>
+
+
+{infoLog.cartoes.map((c,i)=>(
+
+<div
+key={i}
+style={styles.listaInfo}
+>
+
+
+<b>
+{c.tipo}
+</b>
+
+
+<br/>
+
+Nome:
+{c.nome || "Gerencial"}
+
+
+<br/>
+
+Data:
+{c.data}
+
+
+<br/>
+
+Hora:
+{c.hora}
+
+
+</div>
+
+))}
+
+
+
+</div>
+
+
+
+
+
+
+
+
+
+))}
+
+
+</div>
+
+
+</div>
+
+
+
+</div>
 
 
 <div style={styles.card}>
@@ -1498,5 +1668,66 @@ cardResumo:{
     justifyContent:"center"
 
 },
+diagnosticoGrid:{
+    display:"grid",
+    gridTemplateColumns:"1fr 1fr",
+    gap:20,
+    alignItems:"start"
+},
 
+
+.infoGrid:{
+    display:"grid",
+    gridTemplateColumns:"1fr 1fr",
+    gap:20
+},
+
+
+.infoBox:{
+
+    background:"#222",
+
+    border:"1px solid #555",
+
+    borderRadius:12,
+
+    padding:25,
+
+    color:"#fff",
+
+    fontSize:20,
+
+    textAlign:"center"
+
+},
+
+
+.tituloInfo:{
+    color:"#FFD600",
+    fontSize:22,
+    marginBottom:15
+},
+
+
+.listaInfo:{
+    background:"#000",
+    borderRadius:10,
+    padding:15,
+    marginTop:10,
+    cursor:"pointer",
+    fontSize:17
+},
+
+
+.painel:{
+
+    width:"100%",
+
+    maxWidth:1200,
+
+    margin:"0 auto",
+
+    padding:"20px"
+
+},
 };
