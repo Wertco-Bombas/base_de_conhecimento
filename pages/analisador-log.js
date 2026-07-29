@@ -285,25 +285,53 @@ if(pagina){
 // Cartão
 // =========================
 
-const cartao = linha.match(
-/&(\d{2}:\d{2}:\d{2})\s+Card\s+(Tecnico|Gerente|Gerencial)\s+(.+?)\s+\d+\s+(\d{2})\s+(\d{2})\s+(\d{2})/i
+// =========================
+// Cartão Técnico
+// =========================
+
+const cartaoTecnico = linha.match(
+/&(\d{2}:\d{2}:\d{2})\s+Card\s+Tecnico\s+(.+?)\s+\d+\s+(\d{2})\s+(\d{2})\s+(\d{2})/i
 );
 
-if(cartao){
+if(cartaoTecnico){
 
     cartoes.push({
 
-        hora: cartao[1],
+        hora: cartaoTecnico[1],
 
-        tipo:
-            cartao[2].toLowerCase().includes("tec")
-            ? "Técnico"
-            : "Gerencial",
+        data: dataAtual,
 
-        nome: cartao[3].trim(),
+        tipo: "Técnico",
 
-        validade:
-            `${cartao[4]}/${cartao[5]}/20${cartao[6]}`
+        nome: cartaoTecnico[2].trim(),
+
+        validade: `${cartaoTecnico[3]}/${cartaoTecnico[4]}/20${cartaoTecnico[5]}`
+
+    });
+
+}
+
+// =========================
+// Cartão Gerente
+// =========================
+
+const cartaoGerente = linha.match(
+/&(\d{2}:\d{2}:\d{2})\s+Card\s+(Gerente|Gerencial)/i
+);
+
+if(cartaoGerente){
+
+    cartoes.push({
+
+        hora: cartaoGerente[1],
+
+        data: dataAtual,
+
+        tipo: "Gerencial",
+
+        nome: "",
+
+        validade: ""
 
     });
 
@@ -659,11 +687,16 @@ borderRadius:8
 
 </p>
 
-<p><b>Nome:</b> {c.nome}</p>
+{c.nome && (
+    <p><b>Nome:</b> {c.nome}</p>
+)}
 
 <p><b>Hora:</b> {c.hora}</p>
+                    <p><b>Data:</b> {c.data}</p>
 
-<p><b>Validade:</b> {c.validade}</p>
+{c.validade && (
+    <p><b>Validade:</b> {c.validade}</p>
+)}
 
 </div>
 
