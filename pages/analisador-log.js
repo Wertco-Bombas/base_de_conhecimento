@@ -218,7 +218,21 @@ const cartoes = [];
     return; // ignora a linha @, ela é apenas marcador de data
 
 }
+// =========================
+// Página não encontrada
+// =========================
 
+const pagina = linha.match(/tempo\s+sem\s+resposta\s+p[aá]gina[:\s]+(\d+)/i);
+
+if(pagina){
+
+    if(!paginasNaoEncontradas.includes(pagina[1])){
+
+        paginasNaoEncontradas.push(pagina[1]);
+
+    }
+
+}
 
 
 
@@ -266,21 +280,6 @@ if(pciMatch){
     pci = pciMatch[1];
 }
 
-// =========================
-// Página não encontrada
-// =========================
-
-const pagina = linha.match(/tempo sem resposta página:\s*(\d+)/i);
-
-if(pagina){
-
-    if(!paginasNaoEncontradas.includes(pagina[1])){
-
-        paginasNaoEncontradas.push(pagina[1]);
-
-    }
-
-}
 
 // =========================
 // Cartão
