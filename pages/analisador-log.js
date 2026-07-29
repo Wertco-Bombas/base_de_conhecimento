@@ -734,9 +734,6 @@ Object.keys(infoLog.paginas).length===0 ?
 
 
 
-</div>
-
-
 <div style={styles.card}>
 
     <h2>📊 Resumo Geral dos Erros</h2>
