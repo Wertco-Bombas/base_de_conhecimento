@@ -300,6 +300,8 @@ export default function AnalisadorLog() {
 </div>
 <div style={styles.card}>
 
+            <div style={styles.diagnosticoGrid}>
+
 <h2>📋 Informações do Log</h2>
 
 <p><b>CPU:</b> {infoLog.cpu || "-"}</p>
@@ -321,33 +323,66 @@ export default function AnalisadorLog() {
 )}
 
 
-{infoLog.versoesCPU.map((v,index)=>(
+{
+Object.entries(
+    infoLog.versoesCPU.reduce((grupo, item)=>{
+
+        if(!grupo[item.versao]){
+            grupo[item.versao] = [];
+        }
+
+        grupo[item.versao].push(item);
+
+        return grupo;
+
+    },{})
+).map(([versao, lista])=>(
+
+<div
+key={versao}
+style={{
+background:"#222",
+padding:15,
+marginBottom:15,
+borderRadius:8,
+border:"1px solid #555"
+}}
+>
+
+<h3>
+⚙️ Versão {versao}
+</h3>
+
+<p>
+<b>Total de alterações:</b> {lista.length}
+</p>
+
+
+{lista.map((item,index)=>(
 
 <div
 key={index}
 style={{
-background:"#222",
+background:"#111",
 padding:10,
-marginBottom:10,
+marginTop:10,
 borderRadius:8
 }}
 >
 
-<p>
-<b>📅 Data:</b> {v.data}
-</p>
+📅 {item.data}
+<br/>
 
-<p>
-<b>⏰ Hora:</b> {v.hora}
-</p>
-
-<p>
-<b>⚙️ Versão CPU:</b> {v.versao}
-</p>
+⏰ {item.hora}
 
 </div>
 
 ))}
+
+</div>
+
+))
+}
 
 <hr/>
 
@@ -584,7 +619,7 @@ Página {pagina} ({quantidade}x)
 </div>
 
 
-<div style={styles.diagnosticoGrid}>
+
 
 
 
