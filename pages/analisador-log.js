@@ -25,13 +25,14 @@ export default function AnalisadorLog(){
 const [errosAbertos, setErrosAbertos] = useState({});
     const [cartoesAbertos, setCartoesAbertos] = useState({});
 
-    const [infoLog, setInfoLog] = useState({
+ const [infoLog, setInfoLog] = useState({
     cpu: "",
     jsonModel: "",
     chip: "",
     pci: "",
     paginas: [],
-    cartoes: []
+    cartoes: [],
+    versoesCPU: []
 });
     
    function aplicarFiltros(grupos){
@@ -192,7 +193,7 @@ let pci = "";
 const paginasNaoEncontradas = [];
 
 const cartoes = [];
-
+const versoesCPU = [];
 
 
 
@@ -200,7 +201,7 @@ const cartoes = [];
 
 
 
-           if(linha.trim().startsWith("@")){
+if(linha.trim().startsWith("@")){
 
 
     const data = linha.match(
@@ -215,7 +216,31 @@ const cartoes = [];
     }
 
 
-    return; // ignora a linha @, ela é apenas marcador de data
+    // =========================
+    // Registro versão CPU
+    // =========================
+
+    const versaoCPU = linha.match(
+        /@(\d{2}[A-Z]{3}\d{2})\s+(\d{2}:\d{2}:\d{2})\s+ON\s+V:(\d{2}\.\d{2}\.\d{2})/i
+    );
+
+
+    if(versaoCPU){
+
+        versoesCPU.push({
+
+            data: converterData(versaoCPU[1]),
+
+            hora: versaoCPU[2],
+
+            versao: versaoCPU[3]
+
+        });
+
+    }
+
+
+    return;
 
 }
 // =========================
@@ -590,7 +615,7 @@ setErros(errosEncontrados);
 setGrupos(agrupado);
 
 setResumoErros(resumo);
-        setInfoLog({
+setInfoLog({
 
     cpu,
 
@@ -602,9 +627,11 @@ setResumoErros(resumo);
 
     paginas: paginasNaoEncontradas,
 
-    cartoes
+    cartoes,
 
-});
+    versoesCPU
+
+});;
         
 
 
@@ -652,6 +679,45 @@ const gruposFiltrados = aplicarFiltros(grupos);
 <p><b>CHIP:</b> {infoLog.chip || "-"}</p>
 
 <p><b>PCI:</b> {infoLog.pci || "-"}</p>
+            <hr/>
+
+<h3>🖥️ Histórico de Versão da CPU</h3>
+
+
+{infoLog.versoesCPU.length === 0 && (
+
+<p>Nenhuma versão encontrada.</p>
+
+)}
+
+
+{infoLog.versoesCPU.map((v,index)=>(
+
+<div
+key={index}
+style={{
+background:"#222",
+padding:10,
+marginBottom:10,
+borderRadius:8
+}}
+>
+
+<p>
+<b>📅 Data:</b> {v.data}
+</p>
+
+<p>
+<b>⏰ Hora:</b> {v.hora}
+</p>
+
+<p>
+<b>⚙️ Versão CPU:</b> {v.versao}
+</p>
+
+</div>
+
+))}
 
 <hr/>
 
