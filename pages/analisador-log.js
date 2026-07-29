@@ -23,6 +23,7 @@ export default function AnalisadorLog(){
 
     const [resumoErros, setResumoErros] = useState({});
 const [errosAbertos, setErrosAbertos] = useState({});
+    const [cartoesAbertos, setCartoesAbertos] = useState({});
 
     const [infoLog, setInfoLog] = useState({
     cpu: "",
@@ -657,52 +658,170 @@ const gruposFiltrados = aplicarFiltros(grupos);
 
 <h3>💳 Cartões utilizados</h3>
 
-{infoLog.cartoes.length === 0 ? (
 
-<p>Nenhum cartão encontrado.</p>
+{
+Object.entries(
 
-) : (
+    infoLog.cartoes.reduce((grupo,cartao)=>{
 
-infoLog.cartoes.map((c,i)=>(
+        const chave = cartao.tipo + "_" + (cartao.nome || "Gerente");
 
-<div
-key={i}
-style={{
-background:"#222",
-padding:10,
-marginBottom:10,
-borderRadius:8
-}}
->
+        if(!grupo[chave]){
 
-<p>
+            grupo[chave]=[];
 
-<b>
+        }
 
-{c.tipo==="Técnico"
-? "🟢 Técnico"
-: "🔴 Gerencial"}
+        grupo[chave].push(cartao);
 
-</b>
+        return grupo;
 
-</p>
+    },{})
 
-{c.nome && (
-    <p><b>Nome:</b> {c.nome}</p>
-)}
+).map(([chave,lista])=>{
 
-<p><b>Hora:</b> {c.hora}</p>
-                    <p><b>Data:</b> {c.data}</p>
 
-{c.validade && (
-    <p><b>Validade:</b> {c.validade}</p>
-)}
+    const primeiro = lista[0];
 
-</div>
 
-))
+    return (
 
-)}
+        <div
+            key={chave}
+            style={{
+                background:"#222",
+                padding:10,
+                marginBottom:10,
+                borderRadius:8,
+                border:"1px solid #555"
+            }}
+        >
+
+
+            <div
+
+                style={{
+                    cursor:"pointer"
+                }}
+
+                onClick={()=>{
+
+                    setCartoesAbertos(prev=>({
+
+                        ...prev,
+
+                        [chave]: !prev[chave]
+
+                    }));
+
+                }}
+
+            >
+
+                <h3>
+
+                {primeiro.tipo==="Técnico"
+                    ? "🟢 Técnico"
+                    : "🔴 Gerencial"}
+
+                </h3>
+
+
+                <p>
+
+                <b>
+                    {primeiro.nome || "Cartão Gerente"}
+                </b>
+
+                </p>
+
+
+                <p>
+
+                Registros:
+                {" "}
+                {lista.length}
+
+                </p>
+
+
+                <small>
+                    Clique para visualizar
+                </small>
+
+
+            </div>
+
+
+            {cartoesAbertos[chave] && (
+
+                <div
+                    style={{
+                        marginTop:15,
+                        borderTop:"1px solid #555",
+                        paddingTop:10
+                    }}
+                >
+
+                {
+                    lista.map((c,index)=>(
+
+                        <div
+                            key={index}
+                            style={{
+                                background:"#111",
+                                padding:10,
+                                marginBottom:10,
+                                borderRadius:8
+                            }}
+                        >
+
+                            <p>
+                            📅 <b>Data:</b> {c.data}
+                            </p>
+
+                            <p>
+                            ⏰ <b>Hora:</b> {c.hora}
+                            </p>
+
+
+                            {c.nome && (
+
+                                <p>
+                                👤 <b>Nome:</b> {c.nome}
+                                </p>
+
+                            )}
+
+
+                            {c.validade && (
+
+                                <p>
+                                📆 <b>Validade:</b> {c.validade}
+                                </p>
+
+                            )}
+
+
+                        </div>
+
+                    ))
+
+                }
+
+                </div>
+
+            )}
+
+
+        </div>
+
+    );
+
+
+})
+
+}
 
 <hr/>
 
