@@ -13,6 +13,8 @@ export default function AnalisadorLog() {
     const [horaFiltro, setHoraFiltro] = useState("");
     const [dataFiltro, setDataFiltro] = useState("");
     const [grupos, setGrupos] = useState({});
+    const [cpuAberto, setCpuAberto] = useState(false);
+const [cartoesPainelAberto, setCartoesPainelAberto] = useState(false);
     const [abertos, setAbertos] = useState({});
     const [resumoErros, setResumoErros] = useState({});
     const [errosAbertos, setErrosAbertos] = useState({});
@@ -300,7 +302,7 @@ export default function AnalisadorLog() {
 </div>
 <div style={styles.card}>
 
-            <div style={styles.diagnosticoGrid}>
+            
 
 <h2>📋 Informações do Log</h2>
 
@@ -313,245 +315,132 @@ export default function AnalisadorLog() {
 <p><b>PCI:</b> {infoLog.pci || "-"}</p>
             <hr/>
 
-<h3>🖥️ Histórico de Versão da CPU</h3>
-
-
-{infoLog.versoesCPU.length === 0 && (
-
-<p>Nenhuma versão encontrada.</p>
-
-)}
-
-
-{
-Object.entries(
-    infoLog.versoesCPU.reduce((grupo, item)=>{
-
-        if(!grupo[item.versao]){
-            grupo[item.versao] = [];
-        }
-
-        grupo[item.versao].push(item);
-
-        return grupo;
-
-    },{})
-).map(([versao, lista])=>(
-
 <div
-key={versao}
-style={{
-background:"#222",
-padding:15,
-marginBottom:15,
-borderRadius:8,
-border:"1px solid #555"
-}}
+style={styles.botaoExpansao}
+onClick={()=>setCpuAberto(!cpuAberto)}
 >
 
-<h3>
-⚙️ Versão {versao}
-</h3>
+🖥️ Histórico de Versão da CPU
 
-<p>
-<b>Total de alterações:</b> {lista.length}
-</p>
-
-
-{lista.map((item,index)=>(
-
-<div
-key={index}
-style={{
-background:"#111",
-padding:10,
-marginTop:10,
-borderRadius:8
-}}
->
-
-📅 {item.data}
-<br/>
-
-⏰ {item.hora}
+<span>
+{infoLog.versoesCPU.length} registros
+{" "}
+{cpuAberto ? "▼" : "▶"}
+</span>
 
 </div>
 
-))}
+
+{cpuAberto && (
+
+<div style={styles.expandArea}>
+
+{
+infoLog.versoesCPU.length === 0 ?
+
+<p>Nenhuma versão encontrada.</p>
+
+:
+
+infoLog.versoesCPU.map((v,index)=>(
+
+<div
+key={index}
+style={styles.listaInfo}
+>
+
+<p>
+<b>📅 Data:</b> {v.data}
+</p>
+
+<p>
+<b>⏰ Hora:</b> {v.hora}
+</p>
+
+<p>
+<b>⚙️ Versão CPU:</b> {v.versao}
+</p>
 
 </div>
 
 ))
+
 }
+
+</div>
+
+)}
+
+
+
+))
+
 
 <hr/>
 
-<h3>💳 Cartões utilizados</h3>
+<div
+style={styles.botaoExpansao}
+onClick={()=>setCartoesPainelAberto(!cartoesPainelAberto)}
+>
 
+💳 Cartões utilizados
+
+<span>
+{infoLog.cartoes.length} registros
+{" "}
+{cartoesPainelAberto ? "▼" : "▶"}
+</span>
+
+</div>
+
+
+{cartoesPainelAberto && (
+
+<div style={styles.expandArea}>
 
 {
-Object.entries(
+infoLog.cartoes.length === 0 ?
 
-    infoLog.cartoes.reduce((grupo,cartao)=>{
+<p>Nenhum cartão encontrado.</p>
 
-        const chave = cartao.tipo + "_" + (cartao.nome || "Gerente");
+:
 
-        if(!grupo[chave]){
+infoLog.cartoes.map((c,index)=>(
 
-            grupo[chave]=[];
+<div
+key={index}
+style={styles.listaInfo}
+>
 
-        }
+<b>{c.tipo}</b>
 
-        grupo[chave].push(cartao);
+<br/>
 
-        return grupo;
+Nome:
+{" "}
+{c.nome || "Gerencial"}
 
-    },{})
+<br/>
 
-).map(([chave,lista])=>{
+Data:
+{" "}
+{c.data}
 
+<br/>
 
-    const primeiro = lista[0];
+Hora:
+{" "}
+{c.hora}
 
+</div>
 
-    return (
-
-        <div
-            key={chave}
-            style={{
-                background:"#222",
-                padding:10,
-                marginBottom:10,
-                borderRadius:8,
-                border:"1px solid #555"
-            }}
-        >
-
-
-            <div
-
-                style={{
-                    cursor:"pointer"
-                }}
-
-                onClick={()=>{
-
-                    setCartoesAbertos(prev=>({
-
-                        ...prev,
-
-                        [chave]: !prev[chave]
-
-                    }));
-
-                }}
-
-            >
-
-                <h3>
-
-                {primeiro.tipo==="Técnico"
-                    ? "🟢 Técnico"
-                    : "🔴 Gerencial"}
-
-                </h3>
-
-
-                <p>
-
-                <b>
-                    {primeiro.nome || "Cartão Gerente"}
-                </b>
-
-                </p>
-
-
-                <p>
-
-                Registros:
-                {" "}
-                {lista.length}
-
-                </p>
-
-
-                <small>
-                    Clique para visualizar
-                </small>
-
-
-            </div>
-
-
-            {cartoesAbertos[chave] && (
-
-                <div
-                    style={{
-                        marginTop:15,
-                        borderTop:"1px solid #555",
-                        paddingTop:10
-                    }}
-                >
-
-                {
-                    lista.map((c,index)=>(
-
-                        <div
-                            key={index}
-                            style={{
-                                background:"#111",
-                                padding:10,
-                                marginBottom:10,
-                                borderRadius:8
-                            }}
-                        >
-
-                            <p>
-                            📅 <b>Data:</b> {c.data}
-                            </p>
-
-                            <p>
-                            ⏰ <b>Hora:</b> {c.hora}
-                            </p>
-
-
-                            {c.nome && (
-
-                                <p>
-                                👤 <b>Nome:</b> {c.nome}
-                                </p>
-
-                            )}
-
-
-                            {c.validade && (
-
-                                <p>
-                                📆 <b>Validade:</b> {c.validade}
-                                </p>
-
-                            )}
-
-
-                        </div>
-
-                    ))
-
-                }
-
-                </div>
-
-            )}
-
-
-        </div>
-
-    );
-
-
-})
+))
 
 }
+
+</div>
+
+)}
 
 <hr/>
 
@@ -763,7 +652,7 @@ Object.keys(infoLog.paginas).length===0 ?
 
 </div>  // fecha card diagnóstico
 
-</div>  // fecha diagnosticoGrid
+
 
 
 
@@ -1225,4 +1114,20 @@ const styles = {
         margin: "0 auto",
         padding: "20px"
     },
+botaoExpansao:{
+    background:"#222",
+    border:"1px solid #555",
+    borderRadius:10,
+    padding:15,
+    marginTop:15,
+    marginBottom:15,
+    cursor:"pointer",
+    display:"flex",
+    justifyContent:"space-between",
+    alignItems:"center",
+    color:"#FFD600",
+    fontSize:18,
+    fontWeight:"bold",
+},
 };
+
