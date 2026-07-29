@@ -373,7 +373,7 @@ style={styles.listaInfo}
 
 
 
-))
+
 
 
 <hr/>
@@ -512,7 +512,7 @@ Página {pagina} ({quantidade}x)
 
 
 
-📋 Painel de Diagnóstico
+
 
 
 
