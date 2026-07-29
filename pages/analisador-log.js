@@ -1037,20 +1037,28 @@ c=>c.tipo==="Gerencial"
 </div>
 
 
-{infoLog.paginas.length===0 ?
+{
+Object.keys(infoLog.paginas).length===0 ?
 
-"Nenhuma"
+(
+    <p>Nenhuma.</p>
+)
 
 :
 
-{infoLog.paginas.map((p,i)=>(
+(
+    Object.entries(infoLog.paginas).map(([pagina,quantidade])=>(
 
-<div key={i}>
-Página {p}
-</div>
+        <div key={pagina}>
 
-))}
+            Página {pagina} ({quantidade}x)
 
+        </div>
+
+    ))
+)
+
+}
 
 
 </div>
