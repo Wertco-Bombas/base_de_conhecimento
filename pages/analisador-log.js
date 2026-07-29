@@ -493,64 +493,99 @@ Object.values(resumoErros)
 
 <div
 key={erro.codigo}
-style={styles.cardErro}
+style={{
+    background:"#222",
+    border:"1px solid #555",
+    borderRadius:8,
+    padding:15,
+    marginBottom:10
+}}
 >
 
 
 <div
-style={styles.cardResumo}
-onClick={()=>{
-    setErrosAbertos(prev=>({
-        ...prev,
-        [erro.codigo]: !prev[erro.codigo]
-    }));
+style={{
+    cursor:"pointer",
+    display:"flex",
+    justifyContent:"space-between",
+    alignItems:"center"
 }}
+
+onClick={()=>{
+
+    setErrosAbertos(prev=>({
+
+        ...prev,
+
+        [erro.codigo]: !prev[erro.codigo]
+
+    }));
+
+}}
+
 >
 
-<h2>
-{erro.codigo}
-</h2>
 
-<p>
-{erro.quantidade} ocorrências
-</p>
+<div>
 
-<small>
-Clique para visualizar
-</small>
+<b style={{
+    color:"#FFD600",
+    fontSize:20
+}}>
+⚠ {erro.codigo}
+</b>
+
+<br/>
+
+{erro.descricao}
+
+</div>
+
+
+<div>
+
+{erro.quantidade}x
+
+{" "}
+
+{errosAbertos[erro.codigo] ? "▼" : "▶"}
+
+</div>
 
 
 </div>
 
 
+
 {errosAbertos[erro.codigo] && (
 
-<div style={styles.expandArea}>
+<div
+style={{
+    marginTop:15,
+    borderTop:"1px solid #555",
+    paddingTop:10
+}}
+>
 
-<h3>
-{erro.descricao}
-</h3>
 
-
-{
-erro.ocorrencias.map((item,index)=>(
+{erro.ocorrencias.map((item,index)=>(
 
 <div
 key={index}
 style={styles.erro}
 >
 
-<b>
-{item.codigo}
-</b>
-
-<br/>
-
 📅 {item.data}
 
 <br/>
 
 ⏰ {item.hora}
+
+<br/>
+
+Código:
+{" "}
+<b>{item.codigo}</b>
 
 <br/>
 
@@ -564,8 +599,7 @@ style={styles.erro}
 
 </div>
 
-))
-}
+))}
 
 
 </div>
@@ -576,9 +610,7 @@ style={styles.erro}
 </div>
 
 ))
-
 }
-
 
 </div>
 
@@ -976,30 +1008,6 @@ const styles = {
         marginBottom: 10,
         borderRadius: 8,
         color: "#fff"
-    },
-    gridErros: {
-        display: "flex",
-        flexWrap: "wrap",
-        justifyContent: "center",
-        gap: 20,
-        marginTop: 20
-    },
-    cardErro: {
-        width: 220
-    },
-    cardResumo: {
-        background: "#222",
-        border: "2px solid #FFD600",
-        borderRadius: 12,
-        padding: 20,
-        textAlign: "center",
-        cursor: "pointer",
-        color: "#fff",
-        transition: "0.2s",
-        minHeight: 120,
-        display: "flex",
-        flexDirection: "column",
-        justifyContent: "center"
     },
     listaInfo: {
         background: "#000",
