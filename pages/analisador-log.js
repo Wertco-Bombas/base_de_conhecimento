@@ -19,6 +19,7 @@ const [cartoesPainelAberto, setCartoesPainelAberto] = useState(false);
     const [resumoErros, setResumoErros] = useState({});
     const [errosAbertos, setErrosAbertos] = useState({});
     const [cartoesAbertos, setCartoesAbertos] = useState({});
+    const [resumoErrosAberto, setResumoErrosAberto] = useState(false);
     const [infoLog, setInfoLog] = useState({
         cpu: "",
         jsonModel: "",
@@ -443,6 +444,145 @@ Hora:
 )}
 
 <hr/>
+    <hr/>
+
+<div
+    style={{
+        background:"#222",
+        padding:15,
+        marginTop:15,
+        marginBottom:15,
+        borderRadius:10,
+        border:"1px solid #555",
+        cursor:"pointer",
+        display:"flex",
+        justifyContent:"space-between",
+        alignItems:"center",
+        color:"#FFD600",
+        fontSize:18,
+        fontWeight:"bold"
+    }}
+
+    onClick={()=>setResumoErrosAberto(!resumoErrosAberto)}
+>
+
+⚠️ Resumo Geral dos Erros
+
+<span>
+
+{Object.keys(resumoErros).length} códigos
+
+{" "}
+
+{resumoErrosAberto ? "▼" : "▶"}
+
+</span>
+
+</div>
+
+
+{resumoErrosAberto && (
+
+<div style={styles.expandArea}>
+
+
+{
+Object.values(resumoErros)
+.sort((a,b)=>b.quantidade-a.quantidade)
+.map((erro)=>(
+
+<div
+key={erro.codigo}
+style={styles.cardErro}
+>
+
+
+<div
+style={styles.cardResumo}
+onClick={()=>{
+    setErrosAbertos(prev=>({
+        ...prev,
+        [erro.codigo]: !prev[erro.codigo]
+    }));
+}}
+>
+
+<h2>
+{erro.codigo}
+</h2>
+
+<p>
+{erro.quantidade} ocorrências
+</p>
+
+<small>
+Clique para visualizar
+</small>
+
+
+</div>
+
+
+{errosAbertos[erro.codigo] && (
+
+<div style={styles.expandArea}>
+
+<h3>
+{erro.descricao}
+</h3>
+
+
+{
+erro.ocorrencias.map((item,index)=>(
+
+<div
+key={index}
+style={styles.erro}
+>
+
+<b>
+{item.codigo}
+</b>
+
+<br/>
+
+📅 {item.data}
+
+<br/>
+
+⏰ {item.hora}
+
+<br/>
+
+{item.descricao}
+
+<br/>
+
+<small>
+{item.linha}
+</small>
+
+</div>
+
+))
+}
+
+
+</div>
+
+)}
+
+
+</div>
+
+))
+
+}
+
+
+</div>
+
+)}
 
 <h3>📄 Páginas não carregadas</h3>
 
@@ -519,82 +659,7 @@ Página {pagina} ({quantidade}x)
 
 
 
-<div style={styles.card}>
 
-    <h2>📊 Resumo Geral dos Erros</h2>
-
-    <div style={styles.gridErros}>
-
-        {Object.values(resumoErros)
-            .sort((a,b)=>b.quantidade-a.quantidade)
-            .map((erro)=>(
-
-                <div key={erro.codigo} style={styles.cardErro}>
-
-                    <div
-                        style={styles.cardResumo}
-                        onClick={()=>{
-                            setErrosAbertos(prev=>({
-                                ...prev,
-                                [erro.codigo]: !prev[erro.codigo]
-                            }));
-                        }}
-                    >
-
-                        <h2>{erro.codigo}</h2>
-
-                        <p>{erro.quantidade} ocorrências</p>
-
-                        <small>Clique para visualizar</small>
-
-                    </div>
-
-                    {errosAbertos[erro.codigo] && (
-
-                        <div style={styles.expandArea}>
-
-                            <h3>{erro.descricao}</h3>
-
-                            {erro.ocorrencias.map((item,index)=>(
-
-                                <div
-                                    key={index}
-                                    style={styles.erro}
-                                >
-
-                                    <b>{item.codigo}</b>
-
-                                    <br/>
-
-                                    📅 {item.data}
-
-                                    <br/>
-
-                                    ⏰ {item.hora}
-
-                                    <br/>
-
-                                    {item.descricao}
-
-                                    <br/>
-
-                                    <small>{item.linha}</small>
-
-                                </div>
-
-                            ))}
-
-                        </div>
-
-                    )}
-
-                </div>
-
-            ))}
-
-    </div>
-
-</div>
                 
 <div style={styles.card}>
 
