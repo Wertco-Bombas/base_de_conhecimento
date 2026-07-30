@@ -23,6 +23,7 @@ const [cartoesPainelAberto, setCartoesPainelAberto] = useState(false);
     const [errosAbertos, setErrosAbertos] = useState({});
     const [cartoesAbertos, setCartoesAbertos] = useState({});
     const eventosRefs = useRef({});
+const errosRefs = useRef({});
 const [eventoDestacado, setEventoDestacado] = useState("");
     const [resumoErrosAberto, setResumoErrosAberto] = useState(false);
     const [infoLog, setInfoLog] = useState({
@@ -34,58 +35,100 @@ const [eventoDestacado, setEventoDestacado] = useState("");
         cartoes: [],
         versoesCPU: []
     });
-   function irParaEvento(abastecimento) {
+  function irParaEvento(abastecimento) {
 
     if (!abastecimento) {
         console.log("Erro sem abastecimento associado");
         return;
     }
 
-    const chave = String(abastecimento.venda || "");
 
-    console.log("Procurando venda:", chave);
+    const venda = String(abastecimento.venda || "");
 
-    // Se não tem venda, tenta localizar pelo erro
-    if (!chave) {
-        console.log("Esse erro não possui venda vinculada");
-        return;
-    }
 
-    setAbertos(prev => ({
+    console.log(
+        "Tentando localizar:",
+        venda
+    );
+
+
+    setAbertos(prev=>({
         ...prev,
-        [abastecimento.data]: true
+        [abastecimento.data]:true
     }));
 
-    setTimeout(() => {
 
-        const elemento = eventosRefs.current[chave];
+    setTimeout(()=>{
 
-        if (!elemento) {
 
-            console.log(
-                "Venda não encontrada:",
-                chave,
-                Object.keys(eventosRefs.current)
-            );
+        // tenta achar abastecimento
+        const elementoVenda =
+            eventosRefs.current[venda];
+
+
+        if(elementoVenda){
+
+            elementoVenda.scrollIntoView({
+                behavior:"smooth",
+                block:"center"
+            });
+
+
+            setEventoDestacado(venda);
+
+            setTimeout(()=>{
+                setEventoDestacado("");
+            },3000);
 
             return;
         }
 
-        elemento.scrollIntoView({
-            behavior:"smooth",
-            block:"center"
-        });
+
+        // se não achar abastecimento,
+        // procura o próprio erro
+
+        console.log(
+            "Venda não encontrada, procurando erro"
+        );
 
 
-        setEventoDestacado(chave);
+        const chaveErro =
+            `${abastecimento.data}_${abastecimento.hora}_${abastecimento.codigo}`;
 
 
-        setTimeout(()=>{
-            setEventoDestacado("");
-        },3000);
+        const elementoErro =
+            errosRefs.current[chaveErro];
 
 
-    },500);
+        if(elementoErro){
+
+            elementoErro.scrollIntoView({
+                behavior:"smooth",
+                block:"center"
+            });
+
+            elementoErro.style.border =
+                "3px solid #FFD600";
+
+
+            setTimeout(()=>{
+                elementoErro.style.border="";
+            },3000);
+
+
+            return;
+        }
+
+
+        console.log(
+            "Nada encontrado:",
+            chaveErro,
+            Object.keys(eventosRefs.current),
+            Object.keys(errosRefs.current)
+        );
+
+
+    },600);
 
 }
   
@@ -993,11 +1036,24 @@ ref={el => {
 
 
 
-                                    {gruposFiltrados[data].erros.map((erro,index)=>(
+                                   {gruposFiltrados[data].erros.map((erro,index)=>(
 
 
-                                      <div
+<div
     key={index}
+
+    ref={el => {
+
+        if(el){
+
+            const chave =
+                `${erro.data}_${erro.hora}_${erro.codigo}`;
+
+            errosRefs.current[chave] = el;
+
+        }
+
+    }}
  
 
 
