@@ -34,38 +34,56 @@ const [eventoDestacado, setEventoDestacado] = useState("");
         cartoes: [],
         versoesCPU: []
     });
-    function irParaEvento(abastecimento) {
+   function irParaEvento(abastecimento) {
 
-    if (!abastecimento) return;
+    if (!abastecimento) {
+        console.log("Sem abastecimento associado");
+        return;
+    }
 
-    // abre a data
+    const chave = `${abastecimento.data}_${abastecimento.hora}_${abastecimento.venda}`;
+
+    console.log("Procurando:", chave);
+
+
     setAbertos(prev => ({
         ...prev,
         [abastecimento.data]: true
     }));
 
-    // espera o React renderizar
+
     setTimeout(() => {
 
-        const elemento = eventosRefs.current[abastecimento.venda];
+        const elemento = eventosRefs.current[chave];
+
 
         if (!elemento) {
-            console.log("Não encontrou:", abastecimento.venda);
+
+            console.log(
+                "Não encontrou:",
+                chave,
+                Object.keys(eventosRefs.current)
+            );
+
             return;
         }
+
 
         elemento.scrollIntoView({
             behavior: "smooth",
             block: "center"
         });
 
-        setEventoDestacado(abastecimento.venda);
+
+        setEventoDestacado(chave);
+
 
         setTimeout(() => {
             setEventoDestacado("");
         }, 3000);
 
-    }, 300);
+
+    }, 800);
 
 }
   
@@ -856,18 +874,24 @@ Página {pagina} ({quantidade}x)
                                       <div
     key={index}
 ref={el => {
+
     if (el) {
-        eventosRefs.current[String(item.venda)] = el;
+
+        const chave = `${item.data}_${item.hora}_${item.venda}`;
+
+        eventosRefs.current[chave] = el;
+
     }
+
 }}
     style={{
         ...styles.linha,
         border:
-            eventoDestacado === item.venda
+            eventoDestacado === `${item.data}_${item.hora}_${item.venda}`
                 ? "3px solid #FFD600"
                 : "none",
         background:
-            eventoDestacado === item.venda
+            eventoDestacado === `${item.data}_${item.hora}_${item.venda}`
                 ? "#3a3000"
                 : "#000",
         transition: "0.3s"
