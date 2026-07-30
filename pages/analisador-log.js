@@ -5,6 +5,10 @@ import Layout from "../components/Layout";
 import {
     codigosErros
 } from "../utils/codigosErros";
+import {
+    useState,
+    useRef
+} from "react";
 export default function AnalisadorLog() {
     const [arquivo, setArquivo] = useState(null);
     const [dados, setDados] = useState([]);
@@ -19,6 +23,8 @@ const [cartoesPainelAberto, setCartoesPainelAberto] = useState(false);
     const [resumoErros, setResumoErros] = useState({});
     const [errosAbertos, setErrosAbertos] = useState({});
     const [cartoesAbertos, setCartoesAbertos] = useState({});
+    const eventosRefs = useRef({});
+const [eventoDestacado, setEventoDestacado] = useState("");
     const [resumoErrosAberto, setResumoErrosAberto] = useState(false);
     const [infoLog, setInfoLog] = useState({
         cpu: "",
@@ -29,6 +35,38 @@ const [cartoesPainelAberto, setCartoesPainelAberto] = useState(false);
         cartoes: [],
         versoesCPU: []
     });
+    
+   function irParaEvento(data, hora, venda) {
+
+    setAbertos(prev => ({
+        ...prev,
+        [data]: true
+    }));
+
+    const chave = `${data}_${hora}_${venda}`;
+
+    setTimeout(() => {
+
+        const elemento = eventosRefs.current[chave];
+
+        if (elemento) {
+
+            elemento.scrollIntoView({
+                behavior: "smooth",
+                block: "center"
+            });
+
+            setEventoDestacado(chave);
+
+            setTimeout(() => {
+                setEventoDestacado("");
+            }, 3000);
+
+        }
+
+    }, 100);
+
+}
 
     function aplicarFiltros(grupos) {
         const resultado = {};
@@ -227,16 +265,17 @@ const diferenca = totalNumero - volumeNumero;
 // aceita diferença máxima de 0,001
 if (Math.abs(diferenca - Math.round(diferenca)) > 0.001) {
 
-    const erro = {
-        tipo: "erro",
-        data: abastecimento.data,
-        hora: abastecimento.hora,
-        codigo: "ANC",
-        descricao: "Abastecimento não conforme",
-        linha:
-            `Venda ${abastecimento.venda} - ` +
-            `Total (${abastecimento.total}) não corresponde ao volume (${abastecimento.volume})`
-    };
+   const erro = {
+    tipo: "erro",
+    data: abastecimento.data,
+    hora: abastecimento.hora,
+    venda: abastecimento.venda,
+    codigo: "ANC",
+    descricao: "Abastecimento não conforme",
+    linha:
+        `Venda ${abastecimento.venda} - ` +
+        `Total (${abastecimento.total}) não corresponde ao volume (${abastecimento.volume})`
+};
 
     errosEncontrados.push(erro);
     eventos.push(erro);
@@ -609,8 +648,12 @@ style={{
 {erro.ocorrencias.map((item,index)=>(
 
 <div
-key={index}
-style={styles.erro}
+    key={index}
+    style={{
+        ...styles.erro,
+        cursor: "pointer"
+    }}
+    onClick={() => irParaEvento(item.data, item.hora, item.venda)}
 >
 
 📅 {item.data}
@@ -803,13 +846,26 @@ Página {pagina} ({quantidade}x)
                                     {gruposFiltrados[data].abastecimentos.map((item,index)=>(
 
 
-                                        <div
-
-                                            key={index}
-
-                                            style={styles.linha}
-
-                                        >
+                                      <div
+    key={index}
+   ref={el => {
+    eventosRefs.current[
+        `${item.data}_${item.hora}_${item.venda}`
+    ] = el;
+}}
+    style={{
+        ...styles.linha,
+        border:
+            eventoDestacado === `${item.data}_${item.hora}_${item.venda}`
+                ? "3px solid #FFD600"
+                : "none",
+        background:
+            eventoDestacado === `${item.data}_${item.hora}_${item.venda}`
+                ? "#3a3000"
+                : "#000",
+        transition: "0.3s"
+    }}
+>
 
 
                                             ⏰ Hora:
