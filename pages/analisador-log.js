@@ -192,20 +192,58 @@ const [cartoesPainelAberto, setCartoesPainelAberto] = useState(false);
                 const volume = linha.match(/V:\s*([\d.]+)/);
                 const preco = linha.match(/PA:\s*([\d.]+)/);
                 const total = linha.match(/Vt:\s*([\d,\.]+)/);
-                const abastecimento = {
-                    tipo: "abastecimento",
-                    data: dataAtual,
-                    hora: hora ? hora[1] : "",
-                    bico: bico ? bico[1] : "",
-                    venda: venda ? venda[1] : "",
-                    valor: valor ? valor[1] : "",
-                    volume: volume ? volume[1] : "",
-                    preco: preco ? preco[1] : "",
-                    total: total ? total[1] : "",
-                    original: linha
-                };
-                abastecimentos.push(abastecimento);
-                eventos.push(abastecimento);
+               const abastecimento = {
+    tipo: "abastecimento",
+    data: dataAtual,
+    hora: hora ? hora[1] : "",
+    bico: bico ? bico[1] : "",
+    venda: venda ? venda[1] : "",
+    valor: valor ? valor[1] : "",
+    volume: volume ? volume[1] : "",
+    preco: preco ? preco[1] : "",
+    total: total ? total[1] : "",
+    original: linha
+};
+
+// ===========================
+// Validação do totalizador
+// ===========================
+
+// volume
+const volumeNumero = parseFloat(
+    (abastecimento.volume || "0").replace(",", ".")
+);
+
+// total do log
+const totalNumero = parseFloat(
+    (abastecimento.total || "0")
+        .replace(/\./g, "")
+        .replace(",", ".")
+);
+
+// diferença
+const diferenca = totalNumero - volumeNumero;
+
+// aceita diferença máxima de 0,001
+if (Math.abs(diferenca - Math.round(diferenca)) > 0.001) {
+
+    const erro = {
+        tipo: "erro",
+        data: abastecimento.data,
+        hora: abastecimento.hora,
+        codigo: "ANC",
+        descricao: "Abastecimento não conforme",
+        linha:
+            `Venda ${abastecimento.venda} - ` +
+            `Total (${abastecimento.total}) não corresponde ao volume (${abastecimento.volume})`
+    };
+
+    errosEncontrados.push(erro);
+    eventos.push(erro);
+}
+
+abastecimentos.push(abastecimento);
+eventos.push(abastecimento);
             }
             if (linha.startsWith("#")) {
                 const hora = linha.match(/#(\d{2}:\d{2}:\d{2})/);
