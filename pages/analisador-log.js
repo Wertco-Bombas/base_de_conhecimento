@@ -855,8 +855,10 @@ Página {pagina} ({quantidade}x)
 
                                       <div
     key={index}
- ref={el=>{
-    eventosRefs.current[item.venda] = el;
+ref={el => {
+    if (el) {
+        eventosRefs.current[String(item.venda)] = el;
+    }
 }}
     style={{
         ...styles.linha,
