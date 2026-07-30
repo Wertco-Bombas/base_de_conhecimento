@@ -35,100 +35,134 @@ const [eventoDestacado, setEventoDestacado] = useState("");
         cartoes: [],
         versoesCPU: []
     });
-  function irParaEvento(abastecimento) {
+function irParaEvento(item) {
 
-    if (!abastecimento) {
-        console.log("Erro sem abastecimento associado");
+    if (!item) {
+        console.log("Item vazio");
         return;
     }
 
 
-    const venda = String(abastecimento.venda || "");
+    console.log("Tentando localizar:", item);
 
 
-    console.log(
-        "Tentando localizar:",
-        venda
-    );
+    // ==========================
+    // Caso tenha abastecimento
+    // ==========================
+    if(item.abastecimento){
+
+        const venda = String(item.abastecimento.venda || "");
+
+
+        setAbertos(prev=>({
+            ...prev,
+            [item.abastecimento.data]: true
+        }));
+
+
+        setTimeout(()=>{
+
+            const elementoVenda =
+                eventosRefs.current[
+                    `${item.abastecimento.data}_${item.abastecimento.hora}_${venda}`
+                ];
+
+
+            if(elementoVenda){
+
+                elementoVenda.scrollIntoView({
+                    behavior:"smooth",
+                    block:"center"
+                });
+
+
+                setEventoDestacado(
+                    `${item.abastecimento.data}_${item.abastecimento.hora}_${venda}`
+                );
+
+
+                setTimeout(()=>{
+                    setEventoDestacado("");
+                },3000);
+
+
+                return;
+            }
+
+
+            procurarErro(item);
+
+
+        },600);
+
+
+        return;
+    }
+
+function procurarErro(erro){
+
+    console.log("Procurando erro:", erro);
 
 
     setAbertos(prev=>({
         ...prev,
-        [abastecimento.data]:true
+        [erro.data || "SEM DATA"]: true
     }));
 
 
     setTimeout(()=>{
 
 
-        // tenta achar abastecimento
-        const elementoVenda =
-            eventosRefs.current[venda];
+        const chave =
+            `${erro.data || "SEM DATA"}_${erro.hora}_${erro.codigo}`;
 
 
-        if(elementoVenda){
+        console.log(
+            "Chave erro:",
+            chave
+        );
 
-            elementoVenda.scrollIntoView({
+
+        const elemento =
+            errosRefs.current[chave];
+
+
+        if(elemento){
+
+            elemento.scrollIntoView({
                 behavior:"smooth",
                 block:"center"
             });
 
 
-            setEventoDestacado(venda);
+            setEventoDestacado(chave);
+
 
             setTimeout(()=>{
                 setEventoDestacado("");
             },3000);
 
-            return;
-        }
-
-
-        // se não achar abastecimento,
-        // procura o próprio erro
-
-        console.log(
-            "Venda não encontrada, procurando erro"
-        );
-
-
-        const chaveErro =
-            `${abastecimento.data}_${abastecimento.hora}_${abastecimento.codigo}`;
-
-
-        const elementoErro =
-            errosRefs.current[chaveErro];
-
-
-        if(elementoErro){
-
-            elementoErro.scrollIntoView({
-                behavior:"smooth",
-                block:"center"
-            });
-
-            elementoErro.style.border =
-                "3px solid #FFD600";
-
-
-            setTimeout(()=>{
-                elementoErro.style.border="";
-            },3000);
-
 
             return;
         }
 
 
         console.log(
-            "Nada encontrado:",
-            chaveErro,
-            Object.keys(eventosRefs.current),
+            "Erro não localizado:",
+            chave,
             Object.keys(errosRefs.current)
         );
 
 
     },600);
+
+}
+
+    // ==========================
+    // Caso seja erro sem venda
+    // ==========================
+
+    procurarErro(item);
 
 }
   
@@ -360,13 +394,27 @@ ultimoAbastecimento = abastecimento;
                     let cod = codigo[1];
                     if (cod.startsWith("EP")) cod = "EP";
 const erro = {
+
     tipo:"erro",
-    data: dataAtual || (ultimoAbastecimento ? ultimoAbastecimento.data : ""),
-    hora: hora ? hora[1] : "",
-    codigo: cod,
-    descricao: codigosErros[cod] || "Código não cadastrado",
-    abastecimento: ultimoAbastecimento,
+
+   data:
+    dataAtual ||
+    (ultimoAbastecimento ? ultimoAbastecimento.data : "SEM DATA"),
+
+    hora:
+        hora ? hora[1] : "",
+
+    codigo:
+        cod || "SEM CODIGO",
+
+    descricao:
+        codigosErros[cod] || "Código não cadastrado",
+
+    abastecimento:
+        ultimoAbastecimento,
+
     linha
+
 };
                     errosEncontrados.push(erro);
                     eventos.push(erro);
@@ -723,15 +771,7 @@ style={{
         ...styles.erro,
         cursor: "pointer"
     }}
-    onClick={() => {
-
-    if(item.abastecimento){
-        irParaEvento(item.abastecimento);
-    } else {
-        console.log("Erro sem abastecimento:", item);
-    }
-
-}}
+onClick={() => irParaEvento(item)}
 >
 
 📅 {item.data}
@@ -1046,10 +1086,8 @@ ref={el => {
 
         if(el){
 
-            const chave =
-                `${erro.data}_${erro.hora}_${erro.codigo}`;
-
-            errosRefs.current[chave] = el;
+const chave =
+ `${erro.data || "SEM DATA"}_${erro.hora || ""}_${erro.codigo}`;
 
         }
 
