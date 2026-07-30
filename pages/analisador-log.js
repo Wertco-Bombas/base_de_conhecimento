@@ -34,7 +34,40 @@ const [eventoDestacado, setEventoDestacado] = useState("");
         cartoes: [],
         versoesCPU: []
     });
-    
+    function irParaEvento(abastecimento) {
+
+    if (!abastecimento) return;
+
+    // abre a data
+    setAbertos(prev => ({
+        ...prev,
+        [abastecimento.data]: true
+    }));
+
+    // espera o React renderizar
+    setTimeout(() => {
+
+        const elemento = eventosRefs.current[abastecimento.venda];
+
+        if (!elemento) {
+            console.log("Não encontrou:", abastecimento.venda);
+            return;
+        }
+
+        elemento.scrollIntoView({
+            behavior: "smooth",
+            block: "center"
+        });
+
+        setEventoDestacado(abastecimento.venda);
+
+        setTimeout(() => {
+            setEventoDestacado("");
+        }, 3000);
+
+    }, 300);
+
+}
   
 
     function aplicarFiltros(grupos) {
@@ -929,11 +962,7 @@ Página {pagina} ({quantidade}x)
 
                                       <div
     key={index}
-    ref={el => {
-        eventosRefs.current[
-            `${erro.data}_${erro.hora}_${erro.codigo}`
-        ] = el;
-    }}
+ 
 
 
     style={{
