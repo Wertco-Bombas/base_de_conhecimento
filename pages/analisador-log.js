@@ -1,14 +1,13 @@
 import {
-    useState
-} from "react";
-import Layout from "../components/Layout";
-import {
-    codigosErros
-} from "../utils/codigosErros";
-import {
     useState,
     useRef
 } from "react";
+
+import Layout from "../components/Layout";
+
+import {
+    codigosErros
+} from "../utils/codigosErros";
 export default function AnalisadorLog() {
     const [arquivo, setArquivo] = useState(null);
     const [dados, setDados] = useState([]);
@@ -36,37 +35,7 @@ const [eventoDestacado, setEventoDestacado] = useState("");
         versoesCPU: []
     });
     
-   function irParaEvento(data, hora, venda) {
-
-    setAbertos(prev => ({
-        ...prev,
-        [data]: true
-    }));
-
-    const chave = `${data}_${hora}_${venda}`;
-
-    setTimeout(() => {
-
-        const elemento = eventosRefs.current[chave];
-
-        if (elemento) {
-
-            elemento.scrollIntoView({
-                behavior: "smooth",
-                block: "center"
-            });
-
-            setEventoDestacado(chave);
-
-            setTimeout(() => {
-                setEventoDestacado("");
-            }, 3000);
-
-        }
-
-    }, 100);
-
-}
+  
 
     function aplicarFiltros(grupos) {
         const resultado = {};
@@ -135,6 +104,7 @@ const [eventoDestacado, setEventoDestacado] = useState("");
         const paginasNaoEncontradas = {};
         const cartoes = [];
         const versoesCPU = [];
+        let ultimoAbastecimento = null;
         linhasTxt.forEach(linha => {
             if (linha.trim().startsWith("@")) {
                 const data = linha.match(/@(\d{2}[A-Z]{3}\d{2})/);
@@ -269,9 +239,9 @@ if (Math.abs(diferenca - Math.round(diferenca)) > 0.001) {
     tipo: "erro",
     data: abastecimento.data,
     hora: abastecimento.hora,
-    venda: abastecimento.venda,
     codigo: "ANC",
     descricao: "Abastecimento não conforme",
+    abastecimento,
     linha:
         `Venda ${abastecimento.venda} - ` +
         `Total (${abastecimento.total}) não corresponde ao volume (${abastecimento.volume})`
@@ -283,6 +253,9 @@ if (Math.abs(diferenca - Math.round(diferenca)) > 0.001) {
 
 abastecimentos.push(abastecimento);
 eventos.push(abastecimento);
+
+// guarda o último abastecimento encontrado
+ultimoAbastecimento = abastecimento;
             }
             if (linha.startsWith("#")) {
                 const hora = linha.match(/#(\d{2}:\d{2}:\d{2})/);
@@ -290,14 +263,15 @@ eventos.push(abastecimento);
                 if (codigo) {
                     let cod = codigo[1];
                     if (cod.startsWith("EP")) cod = "EP";
-                    const erro = {
-                        tipo: "erro",
-                        data: dataAtual,
-                        hora: hora ? hora[1] : "",
-                        codigo: cod,
-                        descricao: codigosErros[cod] || "Código não cadastrado",
-                        linha
-                    };
+                 const erro = {
+    tipo: "erro",
+    data: dataAtual,
+    hora: hora ? hora[1] : "",
+    codigo: cod,
+    descricao: codigosErros[cod] || "Código não cadastrado",
+    abastecimento: ultimoAbastecimento,
+    linha
+};
                     errosEncontrados.push(erro);
                     eventos.push(erro);
                 }
@@ -653,7 +627,7 @@ style={{
         ...styles.erro,
         cursor: "pointer"
     }}
-    onClick={() => irParaEvento(item.data, item.hora, item.venda)}
+    onClick={() => irParaEvento(item.abastecimento)}
 >
 
 📅 {item.data}
@@ -848,19 +822,17 @@ Página {pagina} ({quantidade}x)
 
                                       <div
     key={index}
-   ref={el => {
-    eventosRefs.current[
-        `${item.data}_${item.hora}_${item.venda}`
-    ] = el;
+ ref={el=>{
+    eventosRefs.current[item.venda] = el;
 }}
     style={{
         ...styles.linha,
         border:
-            eventoDestacado === `${item.data}_${item.hora}_${item.venda}`
+            eventoDestacado === item.venda
                 ? "3px solid #FFD600"
                 : "none",
         background:
-            eventoDestacado === `${item.data}_${item.hora}_${item.venda}`
+            eventoDestacado === item.venda
                 ? "#3a3000"
                 : "#000",
         transition: "0.3s"
