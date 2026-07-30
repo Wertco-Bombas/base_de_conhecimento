@@ -235,6 +235,7 @@ function procurarErro(erro){
         const cartoes = [];
         const versoesCPU = [];
         let ultimoAbastecimento = null;
+        let ultimoTotalPorBico = {};
         linhasTxt.forEach(linha => {
             if (linha.trim().startsWith("@")) {
                 const data = linha.match(/@(\d{2}[A-Z]{3}\d{2})/);
@@ -345,48 +346,83 @@ function procurarErro(erro){
 
 // ===========================
 // Validação do totalizador
+// Total atual - Total anterior = Volume
 // ===========================
 
-// volume
-const volumeNumero = parseFloat(
-    (abastecimento.volume || "0").replace(",", ".")
+const bicoAtual = abastecimento.bico;
+
+const volumeAtual = Number(
+    abastecimento.volume.replace(",", ".")
 );
 
-// total do log
-const totalNumero = parseFloat(
-    (abastecimento.total || "0")
+
+const totalAtual = Number(
+    abastecimento.total
         .replace(/\./g, "")
         .replace(",", ".")
 );
 
-// diferença
-const diferenca = totalNumero - volumeNumero;
 
-// aceita diferença máxima de 0,001
-if (Math.abs(diferenca - Math.round(diferenca)) > 0.001) {
+const totalAnterior = ultimoTotalPorBico[bicoAtual];
 
-const erro = {
-    tipo: "erro",
 
-    data:
-        abastecimento.data ||
-        "SEM DATA",
+if(totalAnterior !== undefined){
 
-    hora: abastecimento.hora,
-    codigo: "ANC",
-    descricao: "Abastecimento não conforme",
-    abastecimento,
-    linha:
-        `Venda ${abastecimento.venda} - ` +
-        `Total (${abastecimento.total}) não corresponde ao volume (${abastecimento.volume})`
-};
-console.log(
-    "ANC abastecimento:",
-    abastecimento
-);
-    errosEncontrados.push(erro);
-    eventos.push(erro);
+    const diferencaTotal =
+        totalAtual - totalAnterior;
+
+
+    const diferenca =
+        Math.abs(
+            diferencaTotal - volumeAtual
+        );
+
+
+    // tolerância de 0,001 litro
+    if(diferenca > 0.001){
+
+        const erro = {
+
+            tipo:"erro",
+
+            data:
+                abastecimento.data ||
+                "SEM DATA",
+
+            hora:
+                abastecimento.hora,
+
+            codigo:"ANC",
+
+            descricao:
+                "Abastecimento não conforme",
+
+            abastecimento,
+
+            linha:
+                `Bico ${bicoAtual} - `+
+                `Diferença totalizador (${diferencaTotal.toFixed(3)}) `+
+                `não bate com volume (${volumeAtual.toFixed(3)})`
+        };
+
+
+        errosEncontrados.push(erro);
+        eventos.push(erro);
+
+
+        console.log(
+            "ANC:",
+            erro
+        );
+
+    }
+
 }
+
+
+// guarda o total atual para o próximo abastecimento
+
+ultimoTotalPorBico[bicoAtual] = totalAtual;
 
 abastecimentos.push(abastecimento);
 eventos.push(abastecimento);
