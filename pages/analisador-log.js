@@ -927,13 +927,27 @@ Página {pagina} ({quantidade}x)
                                     {gruposFiltrados[data].erros.map((erro,index)=>(
 
 
-                                        <div
+                                      <div
+    key={index}
+    ref={el => {
+        eventosRefs.current[
+            `${erro.data}_${erro.hora}_${erro.codigo}`
+        ] = el;
+    }}
 
-                                            key={index}
 
-                                            style={styles.erro}
-
-                                        >
+    style={{
+        ...styles.erro,
+        border:
+            eventoDestacado === `${erro.data}_${erro.hora}_${erro.codigo}`
+                ? "3px solid #FFD600"
+                : "1px solid #ff4444",
+        background:
+            eventoDestacado === `${erro.data}_${erro.hora}_${erro.codigo}`
+                ? "#5a3b00"
+                : "#450000"
+    }}
+>
 
 
                                             <b>
