@@ -56,6 +56,8 @@ export const codigosErros = {
     "F9": "Bateria de lítio ausente ou baixa.",
     "FA": "Tensão rede AC alta.",
     "FB": "Operação por bateria.",
-    "FF": "Falha comunicação Controladora/interface"
+    "FF": "Falha comunicação Controladora/interface",
+
+    ANC: "Abastecimento não conforme"
 
 };
