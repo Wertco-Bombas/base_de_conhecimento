@@ -114,7 +114,7 @@ function procurarErro(erro){
 
 
         const chave =
-            `${erro.data || "SEM DATA"}_${erro.hora}_${erro.codigo}`;
+    `${erro.data || "SEM DATA"}_${erro.hora || ""}_${erro.codigo}`;
 
 
         console.log(
@@ -365,9 +365,13 @@ const diferenca = totalNumero - volumeNumero;
 // aceita diferença máxima de 0,001
 if (Math.abs(diferenca - Math.round(diferenca)) > 0.001) {
 
-   const erro = {
+const erro = {
     tipo: "erro",
-    data: abastecimento.data,
+
+    data:
+        abastecimento.data ||
+        "SEM DATA",
+
     hora: abastecimento.hora,
     codigo: "ANC",
     descricao: "Abastecimento não conforme",
@@ -376,7 +380,10 @@ if (Math.abs(diferenca - Math.round(diferenca)) > 0.001) {
         `Venda ${abastecimento.venda} - ` +
         `Total (${abastecimento.total}) não corresponde ao volume (${abastecimento.volume})`
 };
-
+console.log(
+    "ANC abastecimento:",
+    abastecimento
+);
     errosEncontrados.push(erro);
     eventos.push(erro);
 }
@@ -397,9 +404,9 @@ const erro = {
 
     tipo:"erro",
 
-   data:
+data:
     dataAtual ||
-    (ultimoAbastecimento ? ultimoAbastecimento.data : "SEM DATA"),
+    (ultimoAbastecimento?.data || "SEM DATA"),
 
     hora:
         hora ? hora[1] : "",
@@ -1082,16 +1089,18 @@ ref={el => {
 <div
     key={index}
 
-    ref={el => {
+ref={el => {
 
-        if(el){
+    if(el){
 
-const chave =
- `${erro.data || "SEM DATA"}_${erro.hora || ""}_${erro.codigo}`;
+        const chave =
+            `${erro.data || "SEM DATA"}_${erro.hora || ""}_${erro.codigo}`;
 
-        }
+        errosRefs.current[chave] = el;
 
-    }}
+    }
+
+}}
  
 
 
