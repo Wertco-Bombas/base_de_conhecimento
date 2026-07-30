@@ -37,30 +37,33 @@ const [eventoDestacado, setEventoDestacado] = useState("");
    function irParaEvento(abastecimento) {
 
     if (!abastecimento) {
-        console.log("Sem abastecimento associado");
+        console.log("Erro sem abastecimento associado");
         return;
     }
 
-    const chave = `${abastecimento.data}_${abastecimento.hora}_${abastecimento.venda}`;
+    const chave = String(abastecimento.venda || "");
 
-    console.log("Procurando:", chave);
+    console.log("Procurando venda:", chave);
 
+    // Se não tem venda, tenta localizar pelo erro
+    if (!chave) {
+        console.log("Esse erro não possui venda vinculada");
+        return;
+    }
 
     setAbertos(prev => ({
         ...prev,
         [abastecimento.data]: true
     }));
 
-
     setTimeout(() => {
 
         const elemento = eventosRefs.current[chave];
 
-
         if (!elemento) {
 
             console.log(
-                "Não encontrou:",
+                "Venda não encontrada:",
                 chave,
                 Object.keys(eventosRefs.current)
             );
@@ -68,22 +71,21 @@ const [eventoDestacado, setEventoDestacado] = useState("");
             return;
         }
 
-
         elemento.scrollIntoView({
-            behavior: "smooth",
-            block: "center"
+            behavior:"smooth",
+            block:"center"
         });
 
 
         setEventoDestacado(chave);
 
 
-        setTimeout(() => {
+        setTimeout(()=>{
             setEventoDestacado("");
-        }, 3000);
+        },3000);
 
 
-    }, 800);
+    },500);
 
 }
   
@@ -314,9 +316,9 @@ ultimoAbastecimento = abastecimento;
                 if (codigo) {
                     let cod = codigo[1];
                     if (cod.startsWith("EP")) cod = "EP";
-                 const erro = {
-    tipo: "erro",
-    data: dataAtual,
+const erro = {
+    tipo:"erro",
+    data: dataAtual || (ultimoAbastecimento ? ultimoAbastecimento.data : ""),
     hora: hora ? hora[1] : "",
     codigo: cod,
     descricao: codigosErros[cod] || "Código não cadastrado",
@@ -678,7 +680,15 @@ style={{
         ...styles.erro,
         cursor: "pointer"
     }}
-    onClick={() => irParaEvento(item.abastecimento)}
+    onClick={() => {
+
+    if(item.abastecimento){
+        irParaEvento(item.abastecimento);
+    } else {
+        console.log("Erro sem abastecimento:", item);
+    }
+
+}}
 >
 
 📅 {item.data}
