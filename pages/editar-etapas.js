@@ -434,16 +434,26 @@ export default function EditarEtapas() {
                       Selecione a próxima etapa
                     </option>
 
-                    {etapas
-                      .filter(etapa => etapa.id !== editando)
-                      .map(etapa => (
-                        <option
-                          key={etapa.id}
-                          value={etapa.id}
-                        >
-                          {etapa.ordem} - {etapa.titulo}
-                        </option>
-                      ))}
+                   {etapas
+  .filter(etapa => {
+    if (etapa.id === editando) return false;
+
+    const selecionadaEmOutraResposta = opcoes.some(
+      (outraOpcao, outroIndex) =>
+        outroIndex !== index &&
+        outraOpcao.proxima_etapa_id === etapa.id
+    );
+
+    return !selecionadaEmOutraResposta;
+  })
+  .map(etapa => (
+    <option
+      key={etapa.id}
+      value={etapa.id}
+    >
+      {etapa.ordem} - {etapa.titulo}
+    </option>
+  ))}
                   </select>
 
                   {opcoes.length > 2 && (
