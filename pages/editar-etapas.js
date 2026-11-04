@@ -27,10 +27,9 @@ export default function EditarEtapas() {
   const [proximaEtapa, setProximaEtapa] = useState('');
 
   useEffect(() => {
-    if (!router.isReady) return;
-    if (!fluxo) return;
-
-    iniciar();
+    if (router.isReady && fluxo) {
+      iniciar();
+    }
   }, [router.isReady, fluxo]);
 
   async function iniciar() {
@@ -95,25 +94,25 @@ export default function EditarEtapas() {
     const lista = data || [];
     setEtapas(lista);
 
-    if (lista.length > 0) {
-      const ids = lista.map(e => e.id);
-
-      const { data: opcoesData, error: opcoesError } =
-        await supabase
-          .from('aux_opcoes')
-          .select('*')
-          .in('etapa_id', ids)
-          .order('ordem');
-
-      if (opcoesError) {
-        alert('Erro ao carregar opções: ' + opcoesError.message);
-        return;
-      }
-
-      setOpcoes(opcoesData || []);
-    } else {
+    if (lista.length === 0) {
       setOpcoes([]);
+      return;
     }
+
+    const ids = lista.map(e => e.id);
+
+    const { data: opcoesData, error: opcoesError } = await supabase
+      .from('aux_opcoes')
+      .select('*')
+      .in('etapa_id', ids)
+      .order('ordem');
+
+    if (opcoesError) {
+      alert('Erro ao carregar opções: ' + opcoesError.message);
+      return;
+    }
+
+    setOpcoes(opcoesData || []);
   }
 
   function limparFormulario() {
@@ -131,16 +130,18 @@ export default function EditarEtapas() {
       return;
     }
 
+    if (!user) return;
+
     setSalvando(true);
 
     if (etapaInicial) {
-      const { error: inicialError } = await supabase
+      const { error } = await supabase
         .from('aux_etapas')
         .update({ etapa_inicial: false })
         .eq('fluxo_id', fluxo);
 
-      if (inicialError) {
-        alert(inicialError.message);
+      if (error) {
+        alert(error.message);
         setSalvando(false);
         return;
       }
@@ -190,18 +191,11 @@ export default function EditarEtapas() {
     setOrdem(etapa.ordem);
     setEtapaInicial(etapa.etapa_inicial);
 
-    window.scrollTo({
-      top: 0,
-      behavior: 'smooth'
-    });
+    window.scrollTo({ top: 0, behavior: 'smooth' });
   }
 
   async function excluirEtapa(id) {
-    const confirmar = confirm(
-      'Deseja realmente excluir esta etapa? As opções relacionadas também serão excluídas.'
-    );
-
-    if (!confirmar) return;
+    if (!confirm('Deseja realmente excluir esta etapa?')) return;
 
     const { error } = await supabase
       .from('aux_etapas')
@@ -289,9 +283,7 @@ export default function EditarEtapas() {
           ← Voltar aos fluxos
         </button>
 
-        <h1 style={styles.heading}>
-          📋 Gerenciar Etapas
-        </h1>
+        <h1 style={styles.heading}>📋 Gerenciar Etapas</h1>
 
         {fluxoInfo && (
           <div style={styles.card}>
@@ -365,4 +357,74 @@ export default function EditarEtapas() {
 
             {etapaId && (
               <button
-                style
+                style={styles.secondaryButton}
+                onClick={limparFormulario}
+              >
+                Cancelar edição
+              </button>
+            )}
+          </div>
+        </div>
+
+        <h2 style={styles.yellow}>
+          Etapas cadastradas ({etapas.length})
+        </h2>
+
+        {etapas.map(etapa => (
+          <div key={etapa.id} style={styles.card}>
+
+            <h3>{etapa.titulo}</h3>
+
+            <p style={styles.metadata}>
+              Tipo: {etapa.tipo} | Ordem: {etapa.ordem}
+            </p>
+
+            {etapa.etapa_inicial && (
+              <p style={styles.green}>⭐ ETAPA INICIAL</p>
+            )}
+
+            <p style={styles.description}>
+              {etapa.conteudo || 'Sem conteúdo.'}
+            </p>
+
+            <div style={styles.actions}>
+              <button
+                style={styles.mainButton}
+                onClick={() => editarEtapa(etapa)}
+              >
+                ✏️ Editar
+              </button>
+
+              <button
+                style={styles.deleteButton}
+                onClick={() => excluirEtapa(etapa.id)}
+              >
+                🗑️ Excluir
+              </button>
+            </div>
+
+            <div style={styles.optionBox}>
+              <h4>Opções de resposta</h4>
+
+              {opcoes
+                .filter(o => o.etapa_id === etapa.id)
+                .map(opcao => (
+                  <div key={opcao.id} style={styles.option}>
+                    <div>
+                      <strong>{opcao.texto}</strong>
+                      <p style={styles.metadata}>
+                        Próxima etapa: {
+                          etapas.find(
+                            e => e.id === opcao.proxima_etapa_id
+                          )?.titulo || 'Etapa não encontrada'
+                        }
+                      </p>
+                    </div>
+
+                    <button
+                      style={styles.deleteButton}
+                      onClick={() => excluirOpcao(opcao.id)}
+                    >
+                      Excluir
+                    </button>
+                  </div
