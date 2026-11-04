@@ -1,4 +1,3 @@
-jsx
 import { useEffect, useState } from 'react';
 import Layout from '../components/Layout';
 import { supabase } from '../lib/supabaseClient';
@@ -427,4 +426,175 @@ export default function EditarEtapas() {
                     >
                       Excluir
                     </button>
-                  </div
+                  </div>
+                ))}
+
+              <label style={styles.label}>Nova opção</label>
+
+              <input
+                style={styles.input}
+                placeholder="Ex: Sim"
+                value={textoOpcao}
+                onChange={e => setTextoOpcao(e.target.value)}
+              />
+
+              <label style={styles.label}>Próxima etapa</label>
+
+              <select
+                style={styles.input}
+                value={proximaEtapa}
+                onChange={e => setProximaEtapa(e.target.value)}
+              >
+                <option value="">Selecione a próxima etapa</option>
+
+                {etapas
+                  .filter(e => e.id !== etapa.id)
+                  .map(e => (
+                    <option key={e.id} value={e.id}>
+                      {e.titulo}
+                    </option>
+                  ))}
+              </select>
+
+              <button
+                style={styles.mainButton}
+                onClick={() => salvarOpcao(etapa)}
+              >
+                + Adicionar opção
+              </button>
+            </div>
+
+          </div>
+        ))}
+
+        {etapas.length === 0 && (
+          <div style={styles.card}>
+            Nenhuma etapa cadastrada. Crie a primeira etapa acima.
+          </div>
+        )}
+
+      </div>
+    </Layout>
+  );
+}
+
+const styles = {
+  container: {
+    maxWidth: 1100,
+    margin: '0 auto',
+    color: '#fff'
+  },
+
+  heading: {
+    color: '#FFD600',
+    marginTop: 20
+  },
+
+  yellow: {
+    color: '#FFD600',
+    marginTop: 20
+  },
+
+  card: {
+    background: '#111',
+    border: '1px solid #333',
+    borderRadius: 12,
+    padding: 20,
+    marginTop: 20,
+    marginBottom: 20
+  },
+
+  label: {
+    display: 'block',
+    color: '#ddd',
+    marginTop: 15,
+    marginBottom: 7
+  },
+
+  input: {
+    width: '100%',
+    padding: 12,
+    background: '#0b0b0b',
+    color: '#fff',
+    border: '1px solid #444',
+    borderRadius: 8,
+    marginBottom: 10
+  },
+
+  checkboxLabel: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: 10,
+    marginTop: 15
+  },
+
+  actions: {
+    display: 'flex',
+    flexWrap: 'wrap',
+    gap: 10,
+    marginTop: 15
+  },
+
+  mainButton: {
+    background: '#FFD600',
+    color: '#000',
+    border: 'none',
+    padding: '11px 16px',
+    borderRadius: 8,
+    cursor: 'pointer'
+  },
+
+  secondaryButton: {
+    background: 'transparent',
+    color: '#FFD600',
+    border: '1px solid #FFD600',
+    padding: '10px 14px',
+    borderRadius: 8,
+    cursor: 'pointer'
+  },
+
+  deleteButton: {
+    background: 'transparent',
+    color: '#ff5555',
+    border: '1px solid #ff5555',
+    padding: '8px 12px',
+    borderRadius: 8,
+    cursor: 'pointer'
+  },
+
+  optionBox: {
+    background: '#191919',
+    padding: 15,
+    borderRadius: 10,
+    marginTop: 20
+  },
+
+  option: {
+    display: 'flex',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    gap: 10,
+    flexWrap: 'wrap',
+    borderBottom: '1px solid #333',
+    padding: 10
+  },
+
+  metadata: {
+    color: '#999',
+    fontSize: 12
+  },
+
+  description: {
+    color: '#ccc',
+    whiteSpace: 'pre-wrap'
+  },
+
+  green: {
+    color: '#4CAF50',
+    fontWeight: 'bold'
+  },
+
+  text: {
+    color: '#fff'
+  }
+};
