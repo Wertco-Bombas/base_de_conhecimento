@@ -263,7 +263,23 @@ export default function Layout({ children }) {
               </span>
 
             </a>
+{/* GERENCIAR FLUXOS - SOMENTE ADMIN E SUPERVISOR */}
 
+{(user?.role === 'admin' || user?.role === 'supervisor') && (
+
+  <a style={styles.link} href="/gerenciar-fluxos">
+
+    <span style={{fontSize:18,minWidth:24,textAlign:'center'}}>
+      🔧
+    </span>
+
+    <span className="menu-text">
+      Gerenciar Fluxos
+    </span>
+
+  </a>
+
+)}
 
 
 
