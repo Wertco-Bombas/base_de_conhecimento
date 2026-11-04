@@ -294,6 +294,17 @@ export default function Layout({ children }) {
               </span>
 
             </a>
+                  <a style={styles.link} href="/auxilio-tecnico">
+
+  <span style={{fontSize:18,minWidth:24,textAlign:'center'}}>
+    🔧
+  </span>
+
+  <span className="menu-text">
+    Auxílio Técnico
+  </span>
+
+</a>
 <a style={styles.link} href="/tecnicos">
 
   <span style={{fontSize:18,minWidth:24,textAlign:'center'}}>
