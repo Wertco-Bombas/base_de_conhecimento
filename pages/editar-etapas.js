@@ -8,35 +8,35 @@ export default function EditarEtapas() {
   const { fluxo } = router.query;
 
   const [user, setUser] = useState(null);
-  const [fluxoInfo, setFluxoInfo] = useState(null);
-  const [etapas, setEtapas] = useState([]);
-  const [opcoes, setOpcoes] = useState([]);
-
   const [loading, setLoading] = useState(true);
   const [salvando, setSalvando] = useState(false);
 
-  const [etapaId, setEtapaId] = useState(null);
-  const [tipo, setTipo] = useState('pergunta');
+  const [dadosFluxo, setDadosFluxo] = useState(null);
+  const [etapas, setEtapas] = useState([]);
+
   const [titulo, setTitulo] = useState('');
   const [conteudo, setConteudo] = useState('');
-  const [ordem, setOrdem] = useState(0);
+  const [tipo, setTipo] = useState('pergunta');
+  const [ordem, setOrdem] = useState(1);
   const [etapaInicial, setEtapaInicial] = useState(false);
 
-  const [textoOpcao, setTextoOpcao] = useState('');
-  const [proximaEtapa, setProximaEtapa] = useState('');
+  const [opcoes, setOpcoes] = useState([
+    { texto: 'Sim', proxima_etapa_id: '' },
+    { texto: 'Não', proxima_etapa_id: '' }
+  ]);
+
+  const [editando, setEditando] = useState(null);
 
   useEffect(() => {
-    if (router.isReady && fluxo) {
+    if (fluxo) {
       iniciar();
     }
-  }, [router.isReady, fluxo]);
+  }, [fluxo]);
 
   async function iniciar() {
-    setLoading(true);
+    const { data: auth } = await supabase.auth.getUser();
 
-    const { data: auth, error } = await supabase.auth.getUser();
-
-    if (error || !auth?.user) {
+    if (!auth?.user) {
       router.replace('/');
       return;
     }
@@ -50,7 +50,7 @@ export default function EditarEtapas() {
     const role = profile?.role?.toLowerCase();
 
     if (role !== 'admin' && role !== 'supervisor') {
-      alert('Você não tem permissão para acessar esta página.');
+      alert('Acesso não autorizado.');
       router.replace('/base');
       return;
     }
@@ -75,7 +75,7 @@ export default function EditarEtapas() {
       return;
     }
 
-    setFluxoInfo(data);
+    setDadosFluxo(data);
   }
 
   async function carregarEtapas() {
@@ -91,115 +91,191 @@ export default function EditarEtapas() {
     }
 
     const lista = data || [];
-    setEtapas(lista);
 
-    if (lista.length === 0) {
-      setOpcoes([]);
-      return;
-    }
+    const etapasComOpcoes = await Promise.all(
+      lista.map(async etapa => {
+        const { data: opcoesData } = await supabase
+          .from('aux_opcoes')
+          .select('*')
+          .eq('etapa_id', etapa.id)
+          .order('ordem');
 
-    const ids = lista.map(e => e.id);
+        return {
+          ...etapa,
+          opcoes: opcoesData || []
+        };
+      })
+    );
 
-    const { data: opcoesData, error: opcoesError } = await supabase
-      .from('aux_opcoes')
-      .select('*')
-      .in('etapa_id', ids)
-      .order('ordem');
-
-    if (opcoesError) {
-      alert('Erro ao carregar opções: ' + opcoesError.message);
-      return;
-    }
-
-    setOpcoes(opcoesData || []);
+    setEtapas(etapasComOpcoes);
   }
 
   function limparFormulario() {
-    setEtapaId(null);
-    setTipo('pergunta');
     setTitulo('');
     setConteudo('');
-    setOrdem(etapas.length);
+    setTipo('pergunta');
+    setOrdem(etapas.length + 1);
     setEtapaInicial(false);
+    setOpcoes([
+      { texto: 'Sim', proxima_etapa_id: '' },
+      { texto: 'Não', proxima_etapa_id: '' }
+    ]);
+    setEditando(null);
   }
 
-  async function salvarEtapa() {
+  function adicionarOpcao() {
+    setOpcoes([
+      ...opcoes,
+      { texto: '', proxima_etapa_id: '' }
+    ]);
+  }
+
+  function removerOpcao(index) {
+    setOpcoes(opcoes.filter((_, i) => i !== index));
+  }
+
+  function atualizarOpcao(index, campo, valor) {
+    const novas = [...opcoes];
+    novas[index][campo] = valor;
+    setOpcoes(novas);
+  }
+    async function salvarEtapa() {
     if (!titulo.trim()) {
       alert('Informe o título da etapa.');
       return;
     }
 
-    if (!user) return;
+    if (tipo === 'pergunta') {
+      if (opcoes.length < 2) {
+        alert('Uma pergunta precisa ter pelo menos duas opções.');
+        return;
+      }
 
-    setSalvando(true);
+      if (opcoes.some(o => !o.texto.trim())) {
+        alert('Preencha todas as opções.');
+        return;
+      }
 
-    if (etapaInicial) {
-      const { error } = await supabase
-        .from('aux_etapas')
-        .update({ etapa_inicial: false })
-        .eq('fluxo_id', fluxo);
-
-      if (error) {
-        alert(error.message);
-        setSalvando(false);
+      if (opcoes.some(o => !o.proxima_etapa_id)) {
+        alert('Defina a próxima etapa de cada opção.');
         return;
       }
     }
 
-    const dados = {
-      fluxo_id: fluxo,
-      tipo,
-      titulo: titulo.trim(),
-      conteudo: conteudo.trim(),
-      ordem: Number(ordem),
-      etapa_inicial: etapaInicial,
-      updated_at: new Date().toISOString()
-    };
+    setSalvando(true);
 
-    let resultado;
+    try {
+      const dadosEtapa = {
+        fluxo_id: fluxo,
+        titulo: titulo.trim(),
+        conteudo: conteudo.trim(),
+        tipo,
+        ordem: Number(ordem),
+        etapa_inicial: etapaInicial,
+        updated_at: new Date().toISOString()
+      };
 
-    if (etapaId) {
-      resultado = await supabase
-        .from('aux_etapas')
-        .update(dados)
-        .eq('id', etapaId);
-    } else {
-      resultado = await supabase
-        .from('aux_etapas')
-        .insert(dados);
+      if (etapaInicial) {
+        const { error: inicialError } = await supabase
+          .from('aux_etapas')
+          .update({ etapa_inicial: false })
+          .eq('fluxo_id', fluxo);
+
+        if (inicialError) throw inicialError;
+      }
+
+      let etapaId = editando;
+
+      if (editando) {
+        const { error } = await supabase
+          .from('aux_etapas')
+          .update(dadosEtapa)
+          .eq('id', editando);
+
+        if (error) throw error;
+
+        const { error: excluirOpcoesError } = await supabase
+          .from('aux_opcoes')
+          .delete()
+          .eq('etapa_id', editando);
+
+        if (excluirOpcoesError) throw excluirOpcoesError;
+      } else {
+        const { data, error } = await supabase
+          .from('aux_etapas')
+          .insert(dadosEtapa)
+          .select()
+          .single();
+
+        if (error) throw error;
+
+        etapaId = data.id;
+      }
+
+      if (tipo === 'pergunta') {
+        const dadosOpcoes = opcoes.map((opcao, index) => ({
+          etapa_id: etapaId,
+          texto: opcao.texto.trim(),
+          proxima_etapa_id: opcao.proxima_etapa_id,
+          ordem: index + 1
+        }));
+
+        const { error } = await supabase
+          .from('aux_opcoes')
+          .insert(dadosOpcoes);
+
+        if (error) throw error;
+      }
+
+      alert('Etapa salva com sucesso!');
+
+      limparFormulario();
+      await carregarEtapas();
+
+    } catch (error) {
+      alert('Erro ao salvar etapa: ' + error.message);
+    } finally {
+      setSalvando(false);
     }
-
-    setSalvando(false);
-
-    if (resultado.error) {
-      alert('Erro ao salvar etapa: ' + resultado.error.message);
-      return;
-    }
-
-    alert('Etapa salva com sucesso!');
-
-    limparFormulario();
-    await carregarEtapas();
   }
 
   function editarEtapa(etapa) {
-    setEtapaId(etapa.id);
-    setTipo(etapa.tipo);
+    setEditando(etapa.id);
     setTitulo(etapa.titulo);
     setConteudo(etapa.conteudo || '');
+    setTipo(etapa.tipo);
     setOrdem(etapa.ordem);
     setEtapaInicial(etapa.etapa_inicial);
 
-    window.scrollTo({ top: 0, behavior: 'smooth' });
+    setOpcoes(
+      etapa.opcoes?.length
+        ? etapa.opcoes.map(o => ({
+            texto: o.texto,
+            proxima_etapa_id: o.proxima_etapa_id
+          }))
+        : [
+            { texto: 'Sim', proxima_etapa_id: '' },
+            { texto: 'Não', proxima_etapa_id: '' }
+          ]
+    );
+
+    window.scrollTo({
+      top: 0,
+      behavior: 'smooth'
+    });
   }
 
-  async function excluirEtapa(id) {
-    if (!confirm('Deseja realmente excluir esta etapa?')) return;
+  async function excluirEtapa(etapa) {
+    const confirmar = confirm(
+      `Deseja excluir a etapa "${etapa.titulo}"?`
+    );
+
+    if (!confirmar) return;
 
     const { error } = await supabase
       .from('aux_etapas')
       .delete()
-      .eq('id', id);
+      .eq('id', etapa.id);
 
     if (error) {
       alert('Erro ao excluir: ' + error.message);
@@ -207,66 +283,17 @@ export default function EditarEtapas() {
     }
 
     alert('Etapa excluída!');
-    await carregarEtapas();
-  }
 
-  async function salvarOpcao(etapa) {
-    if (!textoOpcao.trim()) {
-      alert('Informe o texto da opção.');
-      return;
-    }
-
-    if (!proximaEtapa) {
-      alert('Selecione a próxima etapa.');
-      return;
-    }
-
-    if (proximaEtapa === etapa.id) {
-      alert('Uma etapa não pode apontar para ela mesma.');
-      return;
-    }
-
-    const { error } = await supabase
-      .from('aux_opcoes')
-      .insert({
-        etapa_id: etapa.id,
-        texto: textoOpcao.trim(),
-        proxima_etapa_id: proximaEtapa,
-        ordem: opcoes.filter(o => o.etapa_id === etapa.id).length
-      });
-
-    if (error) {
-      alert('Erro ao salvar opção: ' + error.message);
-      return;
-    }
-
-    setTextoOpcao('');
-    setProximaEtapa('');
-
-    alert('Opção cadastrada!');
-    await carregarEtapas();
-  }
-
-  async function excluirOpcao(id) {
-    if (!confirm('Deseja excluir esta opção?')) return;
-
-    const { error } = await supabase
-      .from('aux_opcoes')
-      .delete()
-      .eq('id', id);
-
-    if (error) {
-      alert('Erro ao excluir opção: ' + error.message);
-      return;
+    if (editando === etapa.id) {
+      limparFormulario();
     }
 
     await carregarEtapas();
   }
-
-  if (loading) {
+    if (loading) {
     return (
       <Layout>
-        <p style={styles.text}>Carregando...</p>
+        <p style={styles.text}>Carregando etapas...</p>
       </Layout>
     );
   }
@@ -282,56 +309,72 @@ export default function EditarEtapas() {
           ← Voltar aos fluxos
         </button>
 
-        <h1 style={styles.heading}>📋 Gerenciar Etapas</h1>
+        <h1 style={styles.heading}>
+          🔧 Gerenciar Etapas
+        </h1>
 
-        {fluxoInfo && (
-          <div style={styles.card}>
-            <h2>{fluxoInfo.nome}</h2>
-            <p>{fluxoInfo.descricao}</p>
-            <p>Categoria: {fluxoInfo.categoria}</p>
-          </div>
-        )}
+        <h2 style={styles.flowTitle}>
+          {dadosFluxo?.nome || 'Fluxo'}
+        </h2>
 
         <div style={styles.card}>
-          <h2 style={styles.yellow}>
-            {etapaId ? 'Editar Etapa' : 'Nova Etapa'}
+          <h2 style={styles.sectionTitle}>
+            {editando ? 'Editar etapa' : 'Nova etapa'}
           </h2>
 
-          <label style={styles.label}>Tipo de etapa</label>
+          <label style={styles.label}>
+            Tipo de etapa
+          </label>
 
           <select
             style={styles.input}
             value={tipo}
-            onChange={e => setTipo(e.target.value)}
+            onChange={e => {
+              setTipo(e.target.value);
+
+              if (e.target.value === 'pergunta') {
+                setOpcoes([
+                  { texto: 'Sim', proxima_etapa_id: '' },
+                  { texto: 'Não', proxima_etapa_id: '' }
+                ]);
+              }
+            }}
           >
             <option value="pergunta">Pergunta</option>
             <option value="tratativa">Tratativa</option>
           </select>
 
-          <label style={styles.label}>Título</label>
+          <label style={styles.label}>
+            Título da etapa
+          </label>
 
           <input
             style={styles.input}
-            placeholder="Ex: Equipamento liga?"
+            placeholder="Ex: O equipamento liga?"
             value={titulo}
             onChange={e => setTitulo(e.target.value)}
           />
 
-          <label style={styles.label}>Conteúdo / Orientação</label>
+          <label style={styles.label}>
+            Conteúdo / Orientação
+          </label>
 
           <textarea
             style={styles.input}
-            rows={5}
+            rows={4}
             placeholder="Descreva a pergunta ou orientação técnica..."
             value={conteudo}
             onChange={e => setConteudo(e.target.value)}
           />
 
-          <label style={styles.label}>Ordem</label>
+          <label style={styles.label}>
+            Ordem
+          </label>
 
           <input
             style={styles.input}
             type="number"
+            min="1"
             value={ordem}
             onChange={e => setOrdem(e.target.value)}
           />
@@ -342,8 +385,87 @@ export default function EditarEtapas() {
               checked={etapaInicial}
               onChange={e => setEtapaInicial(e.target.checked)}
             />
-            Esta é a etapa inicial do fluxo
+            Definir como etapa inicial
           </label>
+
+          {tipo === 'pergunta' && (
+            <>
+              <h3 style={styles.sectionTitle}>
+                Respostas e direcionamentos
+              </h3>
+
+              <p style={styles.description}>
+                Cadastre pelo menos duas respostas e escolha
+                para qual etapa cada resposta deverá direcionar.
+              </p>
+
+              {opcoes.map((opcao, index) => (
+                <div key={index} style={styles.optionCard}>
+
+                  <label style={styles.label}>
+                    Resposta {index + 1}
+                  </label>
+
+                  <input
+                    style={styles.input}
+                    placeholder="Ex: Sim"
+                    value={opcao.texto}
+                    onChange={e =>
+                      atualizarOpcao(index, 'texto', e.target.value)
+                    }
+                  />
+
+                  <label style={styles.label}>
+                    Próxima etapa
+                  </label>
+
+                  <select
+                    style={styles.input}
+                    value={opcao.proxima_etapa_id}
+                    onChange={e =>
+                      atualizarOpcao(
+                        index,
+                        'proxima_etapa_id',
+                        e.target.value
+                      )
+                    }
+                  >
+                    <option value="">
+                      Selecione a próxima etapa
+                    </option>
+
+                    {etapas
+                      .filter(etapa => etapa.id !== editando)
+                      .map(etapa => (
+                        <option
+                          key={etapa.id}
+                          value={etapa.id}
+                        >
+                          {etapa.ordem} - {etapa.titulo}
+                        </option>
+                      ))}
+                  </select>
+
+                  {opcoes.length > 2 && (
+                    <button
+                      style={styles.deleteButton}
+                      onClick={() => removerOpcao(index)}
+                    >
+                      Remover resposta
+                    </button>
+                  )}
+
+                </div>
+              ))}
+
+              <button
+                style={styles.secondaryButton}
+                onClick={adicionarOpcao}
+              >
+                + Adicionar resposta
+              </button>
+            </>
+          )}
 
           <div style={styles.actions}>
             <button
@@ -351,10 +473,10 @@ export default function EditarEtapas() {
               onClick={salvarEtapa}
               disabled={salvando}
             >
-              {salvando ? 'Salvando...' : 'Salvar Etapa'}
+              {salvando ? 'Salvando...' : 'Salvar etapa'}
             </button>
 
-            {etapaId && (
+            {editando && (
               <button
                 style={styles.secondaryButton}
                 onClick={limparFormulario}
@@ -365,26 +487,56 @@ export default function EditarEtapas() {
           </div>
         </div>
 
-        <h2 style={styles.yellow}>
+        <h2 style={styles.sectionTitle}>
           Etapas cadastradas ({etapas.length})
         </h2>
+
+        {etapas.length === 0 && (
+          <div style={styles.card}>
+            Nenhuma etapa cadastrada.
+          </div>
+        )}
 
         {etapas.map(etapa => (
           <div key={etapa.id} style={styles.card}>
 
-            <h3>{etapa.titulo}</h3>
+            <div style={styles.header}>
+              <h3 style={styles.flowTitle}>
+                {etapa.ordem}. {etapa.titulo}
+              </h3>
 
-            <p style={styles.metadata}>
-              Tipo: {etapa.tipo} | Ordem: {etapa.ordem}
-            </p>
+              <span style={styles.badge}>
+                {etapa.tipo === 'pergunta' ? 'PERGUNTA' : 'TRATATIVA'}
+              </span>
+            </div>
 
             {etapa.etapa_inicial && (
-              <p style={styles.green}>⭐ ETAPA INICIAL</p>
+              <p style={styles.initial}>
+                ⭐ ETAPA INICIAL
+              </p>
             )}
 
             <p style={styles.description}>
               {etapa.conteudo || 'Sem conteúdo.'}
             </p>
+
+            {etapa.opcoes?.length > 0 && (
+              <div style={styles.optionList}>
+                <strong>Respostas:</strong>
+
+                {etapa.opcoes.map(opcao => {
+                  const destino = etapas.find(
+                    e => e.id === opcao.proxima_etapa_id
+                  );
+
+                  return (
+                    <p key={opcao.id}>
+                      • {opcao.texto} → {destino?.titulo || 'Destino não encontrado'}
+                    </p>
+                  );
+                })}
+              </div>
+            )}
 
             <div style={styles.actions}>
               <button
@@ -396,82 +548,14 @@ export default function EditarEtapas() {
 
               <button
                 style={styles.deleteButton}
-                onClick={() => excluirEtapa(etapa.id)}
+                onClick={() => excluirEtapa(etapa)}
               >
                 🗑️ Excluir
               </button>
             </div>
 
-            <div style={styles.optionBox}>
-              <h4>Opções de resposta</h4>
-
-              {opcoes
-                .filter(o => o.etapa_id === etapa.id)
-                .map(opcao => (
-                  <div key={opcao.id} style={styles.option}>
-                    <div>
-                      <strong>{opcao.texto}</strong>
-                      <p style={styles.metadata}>
-                        Próxima etapa: {
-                          etapas.find(
-                            e => e.id === opcao.proxima_etapa_id
-                          )?.titulo || 'Etapa não encontrada'
-                        }
-                      </p>
-                    </div>
-
-                    <button
-                      style={styles.deleteButton}
-                      onClick={() => excluirOpcao(opcao.id)}
-                    >
-                      Excluir
-                    </button>
-                  </div>
-                ))}
-
-              <label style={styles.label}>Nova opção</label>
-
-              <input
-                style={styles.input}
-                placeholder="Ex: Sim"
-                value={textoOpcao}
-                onChange={e => setTextoOpcao(e.target.value)}
-              />
-
-              <label style={styles.label}>Próxima etapa</label>
-
-              <select
-                style={styles.input}
-                value={proximaEtapa}
-                onChange={e => setProximaEtapa(e.target.value)}
-              >
-                <option value="">Selecione a próxima etapa</option>
-
-                {etapas
-                  .filter(e => e.id !== etapa.id)
-                  .map(e => (
-                    <option key={e.id} value={e.id}>
-                      {e.titulo}
-                    </option>
-                  ))}
-              </select>
-
-              <button
-                style={styles.mainButton}
-                onClick={() => salvarOpcao(etapa)}
-              >
-                + Adicionar opção
-              </button>
-            </div>
-
           </div>
         ))}
-
-        {etapas.length === 0 && (
-          <div style={styles.card}>
-            Nenhuma etapa cadastrada. Crie a primeira etapa acima.
-          </div>
-        )}
 
       </div>
     </Layout>
@@ -487,27 +571,32 @@ const styles = {
 
   heading: {
     color: '#FFD600',
-    marginTop: 20
+    marginTop: 25
   },
 
-  yellow: {
+  flowTitle: {
+    color: '#fff',
+    margin: 0
+  },
+
+  sectionTitle: {
     color: '#FFD600',
-    marginTop: 20
+    marginTop: 20,
+    marginBottom: 15
   },
 
   card: {
     background: '#111',
     border: '1px solid #333',
-    borderRadius: 12,
+    borderRadius: 14,
     padding: 20,
-    marginTop: 20,
-    marginBottom: 20
+    marginBottom: 18
   },
 
   label: {
     display: 'block',
     color: '#ddd',
-    marginTop: 15,
+    marginTop: 12,
     marginBottom: 7
   },
 
@@ -525,14 +614,56 @@ const styles = {
     display: 'flex',
     alignItems: 'center',
     gap: 10,
-    marginTop: 15
+    marginTop: 15,
+    color: '#FFD600'
+  },
+
+  optionCard: {
+    background: '#1a1a1a',
+    border: '1px solid #444',
+    borderRadius: 10,
+    padding: 15,
+    marginTop: 15,
+    marginBottom: 12
+  },
+
+  optionList: {
+    background: '#1a1a1a',
+    padding: 12,
+    borderRadius: 8,
+    marginTop: 12,
+    color: '#ddd'
+  },
+
+  description: {
+    color: '#aaa',
+    whiteSpace: 'pre-wrap'
+  },
+
+  initial: {
+    color: '#FFD600',
+    fontWeight: 'bold'
+  },
+
+  badge: {
+    color: '#FFD600',
+    fontSize: 12,
+    fontWeight: 'bold'
+  },
+
+  header: {
+    display: 'flex',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    gap: 10,
+    flexWrap: 'wrap'
   },
 
   actions: {
     display: 'flex',
-    flexWrap: 'wrap',
     gap: 10,
-    marginTop: 15
+    flexWrap: 'wrap',
+    marginTop: 18
   },
 
   mainButton: {
@@ -557,41 +688,9 @@ const styles = {
     background: 'transparent',
     color: '#ff5555',
     border: '1px solid #ff5555',
-    padding: '8px 12px',
+    padding: '10px 14px',
     borderRadius: 8,
     cursor: 'pointer'
-  },
-
-  optionBox: {
-    background: '#191919',
-    padding: 15,
-    borderRadius: 10,
-    marginTop: 20
-  },
-
-  option: {
-    display: 'flex',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    gap: 10,
-    flexWrap: 'wrap',
-    borderBottom: '1px solid #333',
-    padding: 10
-  },
-
-  metadata: {
-    color: '#999',
-    fontSize: 12
-  },
-
-  description: {
-    color: '#ccc',
-    whiteSpace: 'pre-wrap'
-  },
-
-  green: {
-    color: '#4CAF50',
-    fontWeight: 'bold'
   },
 
   text: {
