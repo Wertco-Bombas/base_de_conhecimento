@@ -14,6 +14,7 @@ export default function GerenciarFluxos() {
   const [fluxos, setFluxos] = useState([]);
   const [etapas, setEtapas] = useState([]);
 
+  // Dados do fluxo
   const [nome, setNome] = useState('');
   const [descricao, setDescricao] = useState('');
   const [codigoErro, setCodigoErro] = useState('');
@@ -22,17 +23,11 @@ export default function GerenciarFluxos() {
   const [editando, setEditando] = useState(null);
   const [fluxoExpandido, setFluxoExpandido] = useState(null);
 
+  // Dados das orientações
   const [tituloEtapa, setTituloEtapa] = useState('');
   const [conteudoEtapa, setConteudoEtapa] = useState('');
-  const [tipoEtapa, setTipoEtapa] = useState('pergunta');
-  const [etapaInicial, setEtapaInicial] = useState(false);
   const [ordemEtapa, setOrdemEtapa] = useState(1);
   const [etapaEditando, setEtapaEditando] = useState(null);
-
-  const [opcoes, setOpcoes] = useState([
-    { texto: 'Sim', proxima_etapa_id: '' },
-    { texto: 'Não', proxima_etapa_id: '' }
-  ]);
 
   useEffect(() => {
     verificarUsuario();
@@ -69,6 +64,7 @@ export default function GerenciarFluxos() {
     setLoading(false);
   }
 
+  // CARREGAR FLUXOS
   async function carregarFluxos() {
     const { data, error } = await supabase
       .from('aux_fluxos')
@@ -83,36 +79,23 @@ export default function GerenciarFluxos() {
     setFluxos(data || []);
   }
 
+  // CARREGAR ORIENTAÇÕES
   async function carregarEtapas(fluxoId) {
     const { data, error } = await supabase
       .from('aux_etapas')
       .select('*')
       .eq('fluxo_id', fluxoId)
-      .order('ordem');
+      .order('ordem', { ascending: true });
 
     if (error) {
-      alert('Erro ao carregar etapas: ' + error.message);
+      alert('Erro ao carregar orientações: ' + error.message);
       return;
     }
 
-    const lista = await Promise.all(
-      (data || []).map(async etapa => {
-        const { data: opcoesData } = await supabase
-          .from('aux_opcoes')
-          .select('*')
-          .eq('etapa_id', etapa.id)
-          .order('ordem');
-
-        return {
-          ...etapa,
-          opcoes: opcoesData || []
-        };
-      })
-    );
-
-    setEtapas(lista);
+    setEtapas(data || []);
   }
 
+  // LIMPAR FORMULÁRIO DO FLUXO
   function limparFormulario() {
     setNome('');
     setDescricao('');
@@ -121,9 +104,18 @@ export default function GerenciarFluxos() {
     setEditando(null);
   }
 
+  // LIMPAR FORMULÁRIO DA ORIENTAÇÃO
+  function limparFormularioEtapa() {
+    setTituloEtapa('');
+    setConteudoEtapa('');
+    setOrdemEtapa(etapas.length + 1);
+    setEtapaEditando(null);
+  }
+
+  // CADASTRAR OU EDITAR FLUXO
   async function salvarFluxo() {
     if (!nome.trim()) {
-      alert('Informe o nome do fluxo.');
+      alert('Informe o nome do problema.');
       return;
     }
 
@@ -174,6 +166,7 @@ export default function GerenciarFluxos() {
     }
   }
 
+  // EDITAR FLUXO
   function editarFluxo(fluxo) {
     setEditando(fluxo.id);
     setNome(fluxo.nome || '');
@@ -187,66 +180,29 @@ export default function GerenciarFluxos() {
     });
   }
 
+  // ABRIR GERENCIAMENTO DE ORIENTAÇÕES
   async function abrirGerenciamento(fluxo) {
     setFluxoExpandido(fluxo.id);
     setEtapaEditando(null);
 
-    limparFormularioEtapa();
-    await carregarEtapas(fluxo.id);
-  }
-
-  function limparFormularioEtapa() {
     setTituloEtapa('');
     setConteudoEtapa('');
-    setTipoEtapa('pergunta');
-    setEtapaInicial(false);
+
+    await carregarEtapas(fluxo.id);
+
     setOrdemEtapa(etapas.length + 1);
-    setEtapaEditando(null);
-
-    setOpcoes([
-      { texto: 'Sim', proxima_etapa_id: '' },
-      { texto: 'Não', proxima_etapa_id: '' }
-    ]);
   }
 
-  function adicionarOpcao() {
-    setOpcoes([
-      ...opcoes,
-      { texto: '', proxima_etapa_id: '' }
-    ]);
-  }
-
-  function removerOpcao(index) {
-    setOpcoes(opcoes.filter((_, i) => i !== index));
-  }
-
-  function atualizarOpcao(index, campo, valor) {
-    const novas = [...opcoes];
-
-    novas[index] = {
-      ...novas[index],
-      [campo]: valor
-    };
-
-    setOpcoes(novas);
-  }
-
+  // SALVAR ORIENTAÇÃO
   async function salvarEtapa(fluxoId) {
     if (!tituloEtapa.trim()) {
-      alert('Informe o título da etapa.');
+      alert('Informe o título da orientação.');
       return;
     }
 
-    if (tipoEtapa === 'pergunta') {
-      if (opcoes.length < 2) {
-        alert('Cadastre pelo menos duas respostas.');
-        return;
-      }
-
-      if (opcoes.some(o => !o.texto.trim())) {
-        alert('Preencha todas as respostas.');
-        return;
-      }
+    if (!conteudoEtapa.trim()) {
+      alert('Informe o procedimento que deverá ser realizado.');
+      return;
     }
 
     setSalvando(true);
@@ -256,111 +212,60 @@ export default function GerenciarFluxos() {
         fluxo_id: fluxoId,
         titulo: tituloEtapa.trim(),
         conteudo: conteudoEtapa.trim(),
-        tipo: tipoEtapa,
+        tipo: 'tratativa',
         ordem: Number(ordemEtapa),
-        etapa_inicial: etapaInicial,
+        etapa_inicial: Number(ordemEtapa) === 1,
         updated_at: new Date().toISOString()
       };
 
-      if (etapaInicial) {
-        const { error } = await supabase
-          .from('aux_etapas')
-          .update({ etapa_inicial: false })
-          .eq('fluxo_id', fluxoId);
-
-        if (error) throw error;
-      }
-
-      let etapaId = etapaEditando;
+      let resultado;
 
       if (etapaEditando) {
-        const { error } = await supabase
+        resultado = await supabase
           .from('aux_etapas')
           .update(dados)
           .eq('id', etapaEditando);
-
-        if (error) throw error;
-
-        const { error: excluirError } = await supabase
-          .from('aux_opcoes')
-          .delete()
-          .eq('etapa_id', etapaEditando);
-
-        if (excluirError) throw excluirError;
-
       } else {
-        const { data, error } = await supabase
+        resultado = await supabase
           .from('aux_etapas')
-          .insert(dados)
-          .select()
-          .single();
-
-        if (error) throw error;
-
-        etapaId = data.id;
+          .insert(dados);
       }
 
-      if (tipoEtapa === 'pergunta') {
-        const dadosOpcoes = opcoes.map((o, index) => ({
-          etapa_id: etapaId,
-          texto: o.texto.trim(),
-          proxima_etapa_id: o.proxima_etapa_id || null,
-          ordem: index + 1
-        }));
+      if (resultado.error) throw resultado.error;
 
-        const { error } = await supabase
-          .from('aux_opcoes')
-          .insert(dadosOpcoes);
+      alert('Orientação salva com sucesso!');
 
-        if (error) throw error;
-      }
-
-      alert('Etapa salva com sucesso!');
-
-      setTituloEtapa('');
-      setConteudoEtapa('');
-      setTipoEtapa('pergunta');
-      setEtapaInicial(false);
-      setEtapaEditando(null);
-      setOpcoes([
-        { texto: 'Sim', proxima_etapa_id: '' },
-        { texto: 'Não', proxima_etapa_id: '' }
-      ]);
+      limparFormularioEtapa();
 
       await carregarEtapas(fluxoId);
 
     } catch (error) {
-      alert('Erro ao salvar etapa: ' + error.message);
+      alert('Erro ao salvar orientação: ' + error.message);
     } finally {
       setSalvando(false);
     }
   }
 
+  // EDITAR ORIENTAÇÃO
   function editarEtapa(etapa) {
     setEtapaEditando(etapa.id);
-    setTituloEtapa(etapa.titulo);
+    setTituloEtapa(etapa.titulo || '');
     setConteudoEtapa(etapa.conteudo || '');
-    setTipoEtapa(etapa.tipo);
-    setEtapaInicial(etapa.etapa_inicial);
-    setOrdemEtapa(etapa.ordem);
+    setOrdemEtapa(etapa.ordem || 1);
 
-    setOpcoes(
-      etapa.opcoes?.length
-        ? etapa.opcoes.map(o => ({
-            texto: o.texto,
-            proxima_etapa_id: o.proxima_etapa_id || ''
-          }))
-        : [
-            { texto: 'Sim', proxima_etapa_id: '' },
-            { texto: 'Não', proxima_etapa_id: '' }
-          ]
-    );
+    window.scrollTo({
+      top: 0,
+      behavior: 'smooth'
+    });
   }
 
+  // EXCLUIR ORIENTAÇÃO
   async function excluirEtapa(etapa, fluxoId) {
-    if (!confirm(`Deseja excluir a etapa "${etapa.titulo}"?`)) {
-      return;
-    }
+    const confirmar = confirm(
+      `Deseja excluir a orientação "${etapa.titulo}"?`
+    );
+
+    if (!confirmar) return;
 
     const { error } = await supabase
       .from('aux_etapas')
@@ -372,11 +277,16 @@ export default function GerenciarFluxos() {
       return;
     }
 
-    alert('Etapa excluída!');
+    if (etapaEditando === etapa.id) {
+      limparFormularioEtapa();
+    }
+
+    alert('Orientação excluída!');
 
     await carregarEtapas(fluxoId);
   }
 
+  // ALTERAR STATUS
   async function alterarStatus(fluxo) {
     const { error } = await supabase
       .from('aux_fluxos')
@@ -395,12 +305,14 @@ export default function GerenciarFluxos() {
     await carregarFluxos();
   }
 
+  // PUBLICAR OU RETIRAR PUBLICAÇÃO
   async function alterarPublicacao(fluxo) {
     if (!fluxo.publicado) {
       const { data: lista, error } = await supabase
         .from('aux_etapas')
-        .select('id, etapa_inicial, tipo')
-        .eq('fluxo_id', fluxo.id);
+        .select('id, ordem, etapa_inicial')
+        .eq('fluxo_id', fluxo.id)
+        .order('ordem');
 
       if (error) {
         alert(error.message);
@@ -408,49 +320,13 @@ export default function GerenciarFluxos() {
       }
 
       if (!lista?.length) {
-        alert('Cadastre pelo menos uma etapa.');
+        alert('Cadastre pelo menos uma orientação antes de publicar.');
         return;
       }
 
-      if (lista.filter(e => e.etapa_inicial).length !== 1) {
-        alert('O fluxo precisa ter exatamente uma etapa inicial.');
+      if (lista.filter(e => e.ordem === 1).length !== 1) {
+        alert('O fluxo precisa ter exatamente uma orientação de ordem 1.');
         return;
-      }
-
-      const ids = lista.map(e => e.id);
-      const { data: respostas, error: respostasError } = await supabase
-        .from('aux_opcoes')
-        .select('etapa_id, texto, proxima_etapa_id')
-        .in('etapa_id', ids);
-
-      if (respostasError) {
-        alert(respostasError.message);
-        return;
-      }
-
-      for (const etapa of lista) {
-        if (etapa.tipo !== 'pergunta') continue;
-
-        const respostasEtapa = (respostas || []).filter(
-          r => r.etapa_id === etapa.id
-        );
-
-        if (respostasEtapa.length < 2) {
-          alert('Cada pergunta precisa ter pelo menos duas respostas.');
-          return;
-        }
-
-        if (respostasEtapa.some(r => !r.proxima_etapa_id)) {
-          alert('Configure o destino de todas as respostas antes de publicar.');
-          return;
-        }
-
-        if (respostasEtapa.some(
-          r => !ids.includes(r.proxima_etapa_id)
-        )) {
-          alert('Existe uma resposta direcionando para uma etapa inválida.');
-          return;
-        }
       }
     }
 
@@ -468,7 +344,7 @@ export default function GerenciarFluxos() {
       .eq('id', fluxo.id);
 
     if (error) {
-      alert(error.message);
+      alert('Erro ao alterar publicação: ' + error.message);
       return;
     }
 
@@ -477,10 +353,13 @@ export default function GerenciarFluxos() {
     await carregarFluxos();
   }
 
+  // EXCLUIR FLUXO
   async function excluirFluxo(fluxo) {
-    if (!confirm(`Deseja excluir o fluxo "${fluxo.nome}" e todas as suas etapas?`)) {
-      return;
-    }
+    const confirmar = confirm(
+      `Deseja excluir o fluxo "${fluxo.nome}" e todas as suas orientações?`
+    );
+
+    if (!confirmar) return;
 
     const { error } = await supabase
       .from('aux_fluxos')
@@ -488,16 +367,16 @@ export default function GerenciarFluxos() {
       .eq('id', fluxo.id);
 
     if (error) {
-      alert('Erro ao excluir: ' + error.message);
+      alert('Erro ao excluir fluxo: ' + error.message);
       return;
     }
-
-    alert('Fluxo excluído!');
 
     if (fluxoExpandido === fluxo.id) {
       setFluxoExpandido(null);
       setEtapas([]);
     }
+
+    alert('Fluxo excluído!');
 
     await carregarFluxos();
   }
@@ -505,7 +384,7 @@ export default function GerenciarFluxos() {
   if (loading) {
     return (
       <Layout>
-        <p style={styles.text}>Carregando...</p>
+        <p style={{ color: '#fff' }}>Carregando...</p>
       </Layout>
     );
   }
@@ -517,26 +396,28 @@ export default function GerenciarFluxos() {
         <h1 style={styles.heading}>🔧 Gerenciar Fluxos</h1>
 
         <p style={styles.subtitle}>
-          Cadastre problemas, códigos de erro, palavras-chave,
-          perguntas e orientações técnicas.
+          Cadastre problemas e seus respectivos procedimentos técnicos.
         </p>
 
         {/* CADASTRO DO FLUXO */}
 
         <div style={styles.card}>
+
           <h2 style={styles.sectionTitle}>
-            {editando ? 'Editar fluxo' : 'Novo fluxo'}
+            {editando ? 'Editar problema' : 'Cadastrar novo problema'}
           </h2>
 
           <label style={styles.label}>Nome do problema</label>
+
           <input
             style={styles.input}
-            placeholder="Ex: Equipamento não liga"
+            placeholder="Ex: Bomba não liga"
             value={nome}
             onChange={e => setNome(e.target.value)}
           />
 
           <label style={styles.label}>Código do erro</label>
+
           <input
             style={styles.input}
             placeholder="Ex: E001"
@@ -544,24 +425,31 @@ export default function GerenciarFluxos() {
             onChange={e => setCodigoErro(e.target.value)}
           />
 
-          <label style={styles.label}>Palavras-chave</label>
+          <label style={styles.label}>Palavras-chave para busca</label>
+
           <input
             style={styles.input}
-            placeholder="Ex: bomba, motor, equipamento parado"
+            placeholder="Ex: bomba, motor, não liga, disjuntor"
             value={palavrasChave}
             onChange={e => setPalavrasChave(e.target.value)}
           />
 
-          <label style={styles.label}>Descrição</label>
+          <p style={styles.hint}>
+            Separe as palavras-chave por vírgula. Elas ajudarão o analista a encontrar o procedimento.
+          </p>
+
+          <label style={styles.label}>Descrição do problema</label>
+
           <textarea
             style={styles.input}
-            rows={3}
-            placeholder="Descreva o problema..."
+            rows={4}
+            placeholder="Descreva quando este procedimento deverá ser utilizado..."
             value={descricao}
             onChange={e => setDescricao(e.target.value)}
           />
 
           <div style={styles.actions}>
+
             <button
               style={styles.mainButton}
               onClick={salvarFluxo}
@@ -571,7 +459,7 @@ export default function GerenciarFluxos() {
                 ? 'Salvando...'
                 : editando
                   ? 'Salvar alterações'
-                  : 'Criar fluxo'}
+                  : 'Cadastrar problema'}
             </button>
 
             {editando && (
@@ -579,28 +467,32 @@ export default function GerenciarFluxos() {
                 style={styles.secondaryButton}
                 onClick={limparFormulario}
               >
-                Cancelar
+                Cancelar edição
               </button>
             )}
+
           </div>
+
         </div>
 
-        {/* LISTAGEM DOS FLUXOS */}
+        {/* LISTA DE FLUXOS */}
 
         <h2 style={styles.sectionTitle}>
-          Fluxos cadastrados ({fluxos.length})
+          Problemas cadastrados ({fluxos.length})
         </h2>
 
         {fluxos.length === 0 && (
           <div style={styles.card}>
-            Nenhum fluxo cadastrado.
+            Nenhum problema cadastrado.
           </div>
         )}
 
         {fluxos.map(fluxo => (
+
           <div key={fluxo.id} style={styles.card}>
 
             <div style={styles.header}>
+
               <h3 style={styles.flowTitle}>
                 🔧 {fluxo.nome}
               </h3>
@@ -612,19 +504,24 @@ export default function GerenciarFluxos() {
               }}>
                 {fluxo.publicado ? 'PUBLICADO' : 'RASCUNHO'}
               </span>
+
             </div>
 
             <p style={styles.description}>
               {fluxo.descricao || 'Sem descrição.'}
             </p>
 
-            <p style={styles.metadata}>
-              Código: {fluxo.codigo_erro || 'Não informado'}
-            </p>
+            {fluxo.codigo_erro && (
+              <p style={styles.metadata}>
+                Código: {fluxo.codigo_erro}
+              </p>
+            )}
 
-            <p style={styles.metadata}>
-              Palavras-chave: {fluxo.palavras_chave || 'Não informadas'}
-            </p>
+            {fluxo.palavras_chave && (
+              <p style={styles.metadata}>
+                Palavras-chave: {fluxo.palavras_chave}
+              </p>
+            )}
 
             <p style={styles.metadata}>
               Status: {fluxo.ativo ? 'Ativo' : 'Inativo'}
@@ -636,23 +533,14 @@ export default function GerenciarFluxos() {
                 style={styles.mainButton}
                 onClick={() => editarFluxo(fluxo)}
               >
-                ✏️ Editar
+                ✏️ Editar problema
               </button>
 
               <button
                 style={styles.secondaryButton}
-                onClick={() => {
-                  if (fluxoExpandido === fluxo.id) {
-                    setFluxoExpandido(null);
-                    setEtapas([]);
-                  } else {
-                    abrirGerenciamento(fluxo);
-                  }
-                }}
+                onClick={() => abrirGerenciamento(fluxo)}
               >
-                📋 {fluxoExpandido === fluxo.id
-                  ? 'Fechar etapas'
-                  : 'Gerenciar etapas'}
+                📋 Gerenciar orientações
               </button>
 
               <button
@@ -666,9 +554,7 @@ export default function GerenciarFluxos() {
                 style={styles.secondaryButton}
                 onClick={() => alterarPublicacao(fluxo)}
               >
-                {fluxo.publicado
-                  ? 'Retirar publicação'
-                  : 'Publicar'}
+                {fluxo.publicado ? 'Retirar publicação' : 'Publicar'}
               </button>
 
               <button
@@ -680,250 +566,143 @@ export default function GerenciarFluxos() {
 
             </div>
 
-            {/* GERENCIAMENTO DE ETAPAS */}
+            {/* ÁREA DE ORIENTAÇÕES */}
 
             {fluxoExpandido === fluxo.id && (
-              <div style={styles.etapasArea}>
+
+              <div style={styles.stepsArea}>
 
                 <h2 style={styles.sectionTitle}>
-                  Etapas do fluxo: {fluxo.nome}
+                  Passo a passo: {fluxo.nome}
                 </h2>
 
-                <div style={styles.optionCard}>
+                <p style={styles.description}>
+                  Cadastre cada procedimento que o analista deverá realizar.
+                </p>
 
-                  <h3 style={styles.flowTitle}>
-                    {etapaEditando ? 'Editar etapa' : 'Nova etapa'}
-                  </h3>
+                <label style={styles.label}>
+                  Nome da orientação
+                </label>
 
-                  <label style={styles.label}>
-                    Tipo de etapa
-                  </label>
+                <input
+                  style={styles.input}
+                  placeholder="Ex: Verificar o disjuntor"
+                  value={tituloEtapa}
+                  onChange={e => setTituloEtapa(e.target.value)}
+                />
 
-                  <select
-                    style={styles.input}
-                    value={tipoEtapa}
-                    onChange={e => setTipoEtapa(e.target.value)}
+                <label style={styles.label}>
+                  Instruções do procedimento
+                </label>
+
+                <textarea
+                  style={styles.input}
+                  rows={5}
+                  placeholder="Descreva detalhadamente o que o analista deverá verificar ou executar..."
+                  value={conteudoEtapa}
+                  onChange={e => setConteudoEtapa(e.target.value)}
+                />
+
+                <label style={styles.label}>
+                  Ordem de execução
+                </label>
+
+                <input
+                  style={styles.input}
+                  type="number"
+                  min="1"
+                  value={ordemEtapa}
+                  onChange={e => setOrdemEtapa(e.target.value)}
+                />
+
+                <div style={styles.actions}>
+
+                  <button
+                    style={styles.mainButton}
+                    disabled={salvando}
+                    onClick={() => salvarEtapa(fluxo.id)}
                   >
-                    <option value="pergunta">Pergunta</option>
-                    <option value="tratativa">Tratativa / Orientação</option>
-                  </select>
+                    {salvando
+                      ? 'Salvando...'
+                      : etapaEditando
+                        ? 'Salvar orientação'
+                        : 'Adicionar orientação'}
+                  </button>
 
-                  <label style={styles.label}>
-                    Título
-                  </label>
-
-                  <input
-                    style={styles.input}
-                    placeholder="Ex: O equipamento está ligado?"
-                    value={tituloEtapa}
-                    onChange={e => setTituloEtapa(e.target.value)}
-                  />
-
-                  <label style={styles.label}>
-                    Conteúdo / Orientação
-                  </label>
-
-                  <textarea
-                    style={styles.input}
-                    rows={5}
-                    placeholder="Descreva a pergunta ou procedimento..."
-                    value={conteudoEtapa}
-                    onChange={e => setConteudoEtapa(e.target.value)}
-                  />
-
-                  <label style={styles.label}>
-                    Ordem
-                  </label>
-
-                  <input
-                    style={styles.input}
-                    type="number"
-                    min="1"
-                    value={ordemEtapa}
-                    onChange={e => setOrdemEtapa(e.target.value)}
-                  />
-
-                  <label style={styles.checkboxLabel}>
-                    <input
-                      type="checkbox"
-                      checked={etapaInicial}
-                      onChange={e => setEtapaInicial(e.target.checked)}
-                    />
-                    Definir como etapa inicial
-                  </label>
-
-                  {tipoEtapa === 'pergunta' && (
-                    <>
-                      <h3 style={styles.sectionTitle}>
-                        Respostas e direcionamentos
-                      </h3>
-
-                      <p style={styles.description}>
-                        Cadastre as respostas e indique qual será
-                        a próxima etapa para cada uma.
-                      </p>
-
-                      {opcoes.map((opcao, index) => (
-                        <div key={index} style={styles.card}>
-
-                          <label style={styles.label}>
-                            Resposta {index + 1}
-                          </label>
-
-                          <input
-                            style={styles.input}
-                            placeholder="Ex: Sim, resolveu"
-                            value={opcao.texto}
-                            onChange={e =>
-                              atualizarOpcao(
-                                index,
-                                'texto',
-                                e.target.value
-                              )
-                            }
-                          />
-
-                          <label style={styles.label}>
-                            Próxima etapa
-                          </label>
-
-                          <select
-                            style={styles.input}
-                            value={opcao.proxima_etapa_id}
-                            onChange={e =>
-                              atualizarOpcao(
-                                index,
-                                'proxima_etapa_id',
-                                e.target.value
-                              )
-                            }
-                          >
-                            <option value="">
-                              Selecione uma etapa
-                            </option>
-
-                            {etapas
-                              .filter(e => e.id !== etapaEditando)
-                              .map(e => (
-                                <option key={e.id} value={e.id}>
-                                  {e.ordem} - {e.titulo}
-                                </option>
-                              ))}
-                          </select>
-
-                          {opcoes.length > 2 && (
-                            <button
-                              style={styles.deleteButton}
-                              onClick={() => removerOpcao(index)}
-                            >
-                              Remover resposta
-                            </button>
-                          )}
-
-                        </div>
-                      ))}
-
-                      <button
-                        style={styles.secondaryButton}
-                        onClick={adicionarOpcao}
-                      >
-                        + Adicionar resposta
-                      </button>
-                    </>
-                  )}
-
-                  <div style={styles.actions}>
+                  {etapaEditando && (
                     <button
-                      style={styles.mainButton}
-                      disabled={salvando}
-                      onClick={() => salvarEtapa(fluxo.id)}
+                      style={styles.secondaryButton}
+                      onClick={limparFormularioEtapa}
                     >
-                      {salvando ? 'Salvando...' : 'Salvar etapa'}
+                      Cancelar edição
                     </button>
-
-                    {etapaEditando && (
-                      <button
-                        style={styles.secondaryButton}
-                        onClick={limparFormularioEtapa}
-                      >
-                        Cancelar edição
-                      </button>
-                    )}
-                  </div>
+                  )}
 
                 </div>
 
                 <h3 style={styles.sectionTitle}>
-                  Etapas cadastradas ({etapas.length})
+                  Orientações cadastradas ({etapas.length})
                 </h3>
 
+                {etapas.length === 0 && (
+                  <p style={styles.description}>
+                    Nenhuma orientação cadastrada ainda.
+                  </p>
+                )}
+
                 {etapas.map(etapa => (
-                  <div key={etapa.id} style={styles.card}>
 
-                    <div style={styles.header}>
-                      <h3 style={styles.flowTitle}>
-                        {etapa.ordem}. {etapa.titulo}
-                      </h3>
+                  <div key={etapa.id} style={styles.stepCard}>
 
-                      <span style={styles.badge}>
-                        {etapa.tipo.toUpperCase()}
-                      </span>
-                    </div>
-
-                    {etapa.etapa_inicial && (
-                      <p style={styles.initial}>
-                        ⭐ ETAPA INICIAL
-                      </p>
-                    )}
+                    <h3 style={styles.flowTitle}>
+                      {etapa.ordem}. {etapa.titulo}
+                    </h3>
 
                     <p style={styles.description}>
-                      {etapa.conteudo || 'Sem conteúdo.'}
+                      {etapa.conteudo}
                     </p>
 
-                    {etapa.opcoes?.map(opcao => {
-                      const destino = etapas.find(
-                        e => e.id === opcao.proxima_etapa_id
-                      );
-
-                      return (
-                        <p key={opcao.id} style={styles.metadata}>
-                          → {opcao.texto} → {destino?.titulo || 'Destino não configurado'}
-                        </p>
-                      );
-                    })}
+                    <p style={styles.hint}>
+                      Ao finalizar este passo, o analista poderá informar se o problema foi resolvido.
+                    </p>
 
                     <div style={styles.actions}>
+
                       <button
                         style={styles.mainButton}
                         onClick={() => editarEtapa(etapa)}
                       >
-                        ✏️ Editar etapa
+                        ✏️ Editar
                       </button>
 
                       <button
                         style={styles.deleteButton}
                         onClick={() => excluirEtapa(etapa, fluxo.id)}
                       >
-                        🗑️ Excluir etapa
+                        🗑️ Excluir
                       </button>
+
                     </div>
 
                   </div>
+
                 ))}
 
               </div>
+
             )}
 
           </div>
+
         ))}
 
       </div>
     </Layout>
   );
-}
 
 const styles = {
   container: {
+    width: '100%',
     maxWidth: 1100,
     margin: '0 auto',
     color: '#fff'
@@ -931,7 +710,8 @@ const styles = {
 
   heading: {
     color: '#FFD600',
-    marginBottom: 8
+    marginBottom: 8,
+    fontSize: 28
   },
 
   subtitle: {
@@ -941,7 +721,7 @@ const styles = {
 
   sectionTitle: {
     color: '#FFD600',
-    marginTop: 20,
+    marginTop: 22,
     marginBottom: 15
   },
 
@@ -953,17 +733,28 @@ const styles = {
     marginBottom: 18
   },
 
-  etapasArea: {
-    marginTop: 25,
-    paddingTop: 20,
-    borderTop: '1px solid #444'
+  stepsArea: {
+    background: '#0b0b0b',
+    border: '1px solid #555',
+    borderRadius: 12,
+    padding: 20,
+    marginTop: 22
+  },
+
+  stepCard: {
+    background: '#1a1a1a',
+    border: '1px solid #444',
+    borderRadius: 10,
+    padding: 16,
+    marginTop: 14
   },
 
   label: {
     display: 'block',
+    marginTop: 15,
+    marginBottom: 7,
     color: '#ddd',
-    marginTop: 12,
-    marginBottom: 7
+    fontWeight: 'bold'
   },
 
   input: {
@@ -973,58 +764,16 @@ const styles = {
     color: '#fff',
     border: '1px solid #444',
     borderRadius: 8,
-    marginBottom: 10
+    marginBottom: 5,
+    fontSize: 14,
+    boxSizing: 'border-box'
   },
 
-  checkboxLabel: {
-    display: 'flex',
-    alignItems: 'center',
-    gap: 10,
-    marginTop: 15,
-    color: '#FFD600'
-  },
-
-  optionCard: {
-    background: '#1a1a1a',
-    border: '1px solid #444',
-    borderRadius: 10,
-    padding: 18,
-    marginTop: 15
-  },
-
-  description: {
-    color: '#ccc',
-    whiteSpace: 'pre-wrap',
-    lineHeight: 1.6
-  },
-
-  metadata: {
-    color: '#999',
-    fontSize: 13
-  },
-
-  initial: {
-    color: '#FFD600',
-    fontWeight: 'bold'
-  },
-
-  badge: {
-    color: '#FFD600',
+  hint: {
+    color: '#888',
     fontSize: 12,
-    fontWeight: 'bold'
-  },
-
-  header: {
-    display: 'flex',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    gap: 10,
-    flexWrap: 'wrap'
-  },
-
-  flowTitle: {
-    color: '#fff',
-    margin: 0
+    marginTop: 5,
+    lineHeight: 1.5
   },
 
   actions: {
@@ -1040,7 +789,8 @@ const styles = {
     border: 'none',
     padding: '11px 16px',
     borderRadius: 8,
-    cursor: 'pointer'
+    cursor: 'pointer',
+    fontWeight: 'bold'
   },
 
   secondaryButton: {
@@ -1061,7 +811,28 @@ const styles = {
     cursor: 'pointer'
   },
 
-  text: {
+  header: {
+    display: 'flex',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    gap: 10,
+    flexWrap: 'wrap'
+  },
+
+  flowTitle: {
+    margin: 0,
     color: '#fff'
+  },
+
+  description: {
+    color: '#ccc',
+    whiteSpace: 'pre-wrap',
+    lineHeight: 1.6
+  },
+
+  metadata: {
+    color: '#888',
+    fontSize: 12,
+    marginTop: 8
   }
 };
