@@ -318,29 +318,54 @@ async function abrirGerenciamento(fluxo) {
   }
 
   // PUBLICAR OU RETIRAR PUBLICAÇÃO
-  async function alterarPublicacao(fluxo) {
-    if (!fluxo.publicado) {
-      const { data: lista, error } = await supabase
-        .from('aux_etapas')
-        .select('id, ordem, etapa_inicial')
-        .eq('fluxo_id', fluxo.id)
-        .order('ordem');
 
-      if (error) {
-        alert(error.message);
-        return;
-      }
+async function alterarPublicacao(fluxo) {
+  if (!fluxo.publicado) {
+    const { data: lista, error } = await supabase
+      .from('aux_etapas')
+      .select('id, ordem')
+      .eq('fluxo_id', fluxo.id)
+      .order('ordem', { ascending: true });
 
-      if (!lista?.length) {
-        alert('Cadastre pelo menos uma orientação antes de publicar.');
-        return;
-      }
-
-      if (lista.filter(e => e.ordem === 1).length !== 1) {
-        alert('O fluxo precisa ter exatamente uma orientação de ordem 1.');
-        return;
-      }
+    if (error) {
+      alert('Erro ao verificar orientações: ' + error.message);
+      return;
     }
+
+    if (!lista || lista.length === 0) {
+      alert('Cadastre pelo menos uma orientação antes de publicar.');
+      return;
+    }
+
+    if (!lista.some(etapa => Number(etapa.ordem) === 1)) {
+      alert('O fluxo precisa ter uma orientação de ordem 1.');
+      return;
+    }
+  }
+
+  const novoStatus = !fluxo.publicado;
+
+  const { error } = await supabase
+    .from('aux_fluxos')
+    .update({
+      publicado: novoStatus,
+      publicado_por: novoStatus ? user.id : null,
+      publicado_em: novoStatus ? new Date().toISOString() : null,
+      updated_at: new Date().toISOString(),
+      atualizado_por: user.id
+    })
+    .eq('id', fluxo.id);
+
+  if (error) {
+    alert('Erro ao alterar publicação: ' + error.message);
+    return;
+  }
+
+  alert(novoStatus ? 'Fluxo publicado com sucesso!' : 'Publicação removida!');
+
+  await carregarFluxos();
+}
+
 
     const novoStatus = !fluxo.publicado;
 
