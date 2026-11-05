@@ -1,14 +1,13 @@
 
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import Layout from '../components/Layout';
 import { supabase } from '../lib/supabaseClient';
 
 export default function AuxilioTecnico() {
+  const [busca, setBusca] = useState('');
+  const [resultados, setResultados] = useState([]);
 
-  const [categoria, setCategoria] = useState('');
-  const [fluxos, setFluxos] = useState([]);
   const [fluxoSelecionado, setFluxoSelecionado] = useState(null);
-
   const [etapas, setEtapas] = useState([]);
   const [opcoes, setOpcoes] = useState([]);
 
@@ -17,143 +16,231 @@ export default function AuxilioTecnico() {
 
   const [loading, setLoading] = useState(false);
   const [erro, setErro] = useState('');
+  const [pesquisou, setPesquisou] = useState(false);
+  const [atendimentoConcluido, setAtendimentoConcluido] = useState(false);
 
-  useEffect(() => {
-    carregarFluxos();
-  }, [categoria]);
+  function normalizar(texto) {
+    return String(texto || '')
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '')
+      .toLowerCase()
+      .trim();
+  }
 
-  async function carregarFluxos() {
-
-    if (!categoria) {
-      setFluxos([]);
+  async function pesquisar() {
+    if (busca.trim().length < 2) {
+      setErro('Digite pelo menos duas letras ou números para pesquisar.');
       return;
     }
 
     setLoading(true);
     setErro('');
+    setPesquisou(true);
+    setResultados([]);
 
-    const { data, error } = await supabase
-      .from('aux_fluxos')
-      .select('*')
-      .eq('categoria', categoria)
-      .eq('ativo', true)
-      .eq('publicado', true)
-      .order('nome');
+    try {
+      const termo = normalizar(busca);
 
-    if (error) {
-      setErro('Erro ao carregar fluxos: ' + error.message);
+      const { data: fluxosData, error: fluxosError } = await supabase
+        .from('aux_fluxos')
+        .select('*')
+        .eq('ativo', true)
+        .eq('publicado', true)
+        .order('nome');
+
+      if (fluxosError) throw fluxosError;
+
+      const listaFluxos = fluxosData || [];
+
+      if (listaFluxos.length === 0) {
+        setResultados([]);
+        return;
+      }
+
+      const idsFluxos = listaFluxos.map(f => f.id);
+
+      const { data: etapasData, error: etapasError } = await supabase
+        .from('aux_etapas')
+        .select('*')
+        .in('fluxo_id', idsFluxos)
+        .order('ordem');
+
+      if (etapasError) throw etapasError;
+
+      const listaEtapas = etapasData || [];
+
+      let listaOpcoes = [];
+
+      if (listaEtapas.length > 0) {
+        const idsEtapas = listaEtapas.map(e => e.id);
+
+        const { data: opcoesData, error: opcoesError } = await supabase
+          .from('aux_opcoes')
+          .select('*')
+          .in('etapa_id', idsEtapas);
+
+        if (opcoesError) throw opcoesError;
+
+        listaOpcoes = opcoesData || [];
+      }
+
+      const encontrados = listaFluxos.map(fluxo => {
+        const etapasFluxo = listaEtapas.filter(
+          etapa => etapa.fluxo_id === fluxo.id
+        );
+
+        const opcoesFluxo = listaOpcoes.filter(opcao =>
+          etapasFluxo.some(etapa => etapa.id === opcao.etapa_id)
+        );
+
+        const textos = [
+          fluxo.nome,
+          fluxo.descricao,
+          ...etapasFluxo.map(etapa => etapa.titulo),
+          ...etapasFluxo.map(etapa => etapa.conteudo),
+          ...opcoesFluxo.map(opcao => opcao.texto)
+        ];
+
+        const correspondencias = textos.filter(texto =>
+          normalizar(texto).includes(termo)
+        );
+
+        if (correspondencias.length === 0) return null;
+
+        return {
+          ...fluxo,
+          etapasEncontradas: etapasFluxo.length,
+          correspondencias: correspondencias.length
+        };
+      }).filter(Boolean);
+
+      encontrados.sort((a, b) =>
+        b.correspondencias - a.correspondencias
+      );
+
+      setResultados(encontrados);
+
+      if (encontrados.length === 0) {
+        setErro('Nenhum fluxo encontrado para essa pesquisa.');
+      }
+
+    } catch (error) {
+      setErro('Erro ao pesquisar: ' + error.message);
+    } finally {
       setLoading(false);
-      return;
     }
-
-    setFluxos(data || []);
-    setLoading(false);
   }
 
   async function abrirFluxo(fluxo) {
-
     setLoading(true);
     setErro('');
 
-    const { data: etapasData, error: etapasError } =
-      await supabase
+    try {
+      const { data: etapasData, error: etapasError } = await supabase
         .from('aux_etapas')
         .select('*')
         .eq('fluxo_id', fluxo.id)
         .order('ordem');
 
-    if (etapasError) {
-      setErro(etapasError.message);
-      setLoading(false);
-      return;
-    }
+      if (etapasError) throw etapasError;
 
-    const { data: opcoesData, error: opcoesError } =
-      await supabase
+      const etapasFluxo = etapasData || [];
+
+      if (etapasFluxo.length === 0) {
+        setErro('Este fluxo ainda não possui etapas cadastradas.');
+        return;
+      }
+
+      const iniciais = etapasFluxo.filter(e => e.etapa_inicial);
+
+      if (iniciais.length !== 1) {
+        setErro('Este fluxo precisa ter exatamente uma etapa inicial.');
+        return;
+      }
+
+      const idsEtapas = etapasFluxo.map(e => e.id);
+
+      const { data: opcoesData, error: opcoesError } = await supabase
         .from('aux_opcoes')
         .select('*')
+        .in('etapa_id', idsEtapas)
         .order('ordem');
 
-    if (opcoesError) {
-      setErro(opcoesError.message);
+      if (opcoesError) throw opcoesError;
+
+      setFluxoSelecionado(fluxo);
+      setEtapas(etapasFluxo);
+      setOpcoes(opcoesData || []);
+
+      setEtapaAtual(iniciais[0]);
+      setHistorico([]);
+      setAtendimentoConcluido(false);
+
+    } catch (error) {
+      setErro('Erro ao abrir fluxo: ' + error.message);
+    } finally {
       setLoading(false);
-      return;
     }
-
-    const etapasFluxo = etapasData || [];
-    const opcoesFluxo = opcoesData || [];
-
-    const inicial = etapasFluxo.find(
-      etapa => etapa.etapa_inicial
-    );
-
-    if (!inicial) {
-      setErro('Este fluxo não possui uma etapa inicial configurada.');
-      setLoading(false);
-      return;
-    }
-
-    setFluxoSelecionado(fluxo);
-    setEtapas(etapasFluxo);
-    setOpcoes(
-      opcoesFluxo.filter(opcao =>
-        etapasFluxo.some(etapa => etapa.id === opcao.etapa_id)
-      )
-    );
-
-    setEtapaAtual(inicial);
-    setHistorico([]);
-    setLoading(false);
   }
 
   function responder(opcao) {
+    if (!etapaAtual) return;
+
+    setHistorico(prev => [
+      ...prev,
+      etapaAtual.id
+    ]);
+
+    setErro('');
+
+    if (!opcao.proxima_etapa_id) {
+      setAtendimentoConcluido(true);
+      return;
+    }
 
     const proxima = etapas.find(
       etapa => etapa.id === opcao.proxima_etapa_id
     );
 
     if (!proxima) {
-      setErro('A próxima etapa não foi encontrada.');
+      setHistorico(prev => prev.slice(0, -1));
+      setErro('A próxima etapa não foi encontrada. Verifique o cadastro do fluxo.');
       return;
     }
 
-    setHistorico(prev => [
-      ...prev,
-      {
-        pergunta: etapaAtual.titulo,
-        resposta: opcao.texto,
-        etapa: etapaAtual.id
-      }
-    ]);
-
     setEtapaAtual(proxima);
-    setErro('');
   }
 
   function voltar() {
-
     if (historico.length === 0) {
-      setEtapaAtual(null);
-      setFluxoSelecionado(null);
+      reiniciar();
       return;
     }
 
     const anterior = historico[historico.length - 1];
 
     const etapaAnterior = etapas.find(
-      etapa => etapa.id === anterior.etapa
+      etapa => etapa.id === anterior
     );
+
+    if (!etapaAnterior) {
+      setErro('Não foi possível recuperar a etapa anterior.');
+      return;
+    }
 
     setEtapaAtual(etapaAnterior);
     setHistorico(prev => prev.slice(0, -1));
+    setAtendimentoConcluido(false);
+    setErro('');
   }
 
   function reiniciar() {
     setFluxoSelecionado(null);
-    setEtapaAtual(null);
     setEtapas([]);
     setOpcoes([]);
+    setEtapaAtual(null);
     setHistorico([]);
+    setAtendimentoConcluido(false);
     setErro('');
   }
 
@@ -165,83 +252,88 @@ export default function AuxilioTecnico() {
 
   return (
     <Layout>
-
       <div style={styles.container}>
 
-        <h1 style={styles.titulo}>
-          🔧 Auxílio Técnico
-        </h1>
-
-        <p style={styles.subtitulo}>
-          Selecione uma categoria e siga as orientações
-          para identificar e solucionar o problema.
-        </p>
-
-        {erro && (
-          <div style={styles.erro}>
-            {erro}
-          </div>
-        )}
-
         {!fluxoSelecionado && (
-
           <>
-            <div style={styles.categorias}>
+            <h1 style={styles.titulo}>
+              🔧 Auxílio Técnico
+            </h1>
 
-              <button
-                style={{
-                  ...styles.categoria,
-                  ...(categoria === 'eletronico'
-                    ? styles.selecionado
-                    : {})
-                }}
-                onClick={() => setCategoria('eletronico')}
-              >
-                ⚡ Eletrônico
-              </button>
+            <p style={styles.subtitulo}>
+              Pesquise pelo código de erro, equipamento ou descrição
+              do problema para encontrar procedimentos técnicos.
+            </p>
 
-              <button
-                style={{
-                  ...styles.categoria,
-                  ...(categoria === 'hidraulico'
-                    ? styles.selecionado
-                    : {})
-                }}
-                onClick={() => setCategoria('hidraulico')}
-              >
-                💧 Hidráulico
-              </button>
+            {erro && (
+              <div style={styles.erro}>
+                {erro}
+              </div>
+            )}
 
+            <div style={styles.pesquisaCard}>
+              <label style={styles.label}>
+                O que está acontecendo?
+              </label>
+
+              <div style={styles.pesquisaLinha}>
+                <input
+                  style={styles.campoBusca}
+                  placeholder="Ex: Erro E01, equipamento não liga..."
+                  value={busca}
+                  onChange={e => setBusca(e.target.value)}
+                  onKeyDown={e => {
+                    if (e.key === 'Enter') pesquisar();
+                  }}
+                />
+
+                <button
+                  style={styles.botaoPesquisar}
+                  onClick={pesquisar}
+                  disabled={loading}
+                >
+                  {loading ? 'Pesquisando...' : '🔍 Pesquisar'}
+                </button>
+              </div>
+
+              <p style={styles.ajuda}>
+                Você pode pesquisar por código de erro,
+                palavra-chave ou descrição do problema.
+              </p>
             </div>
 
             {loading && (
               <p style={styles.texto}>
-                Carregando fluxos...
+                Pesquisando procedimentos técnicos...
               </p>
             )}
 
-            {categoria && !loading && (
-
+            {!loading && pesquisou && (
               <div>
-
                 <h2 style={styles.subtitulo}>
-                  Fluxos disponíveis
+                  Resultados encontrados ({resultados.length})
                 </h2>
 
-                {fluxos.length === 0 && (
-                  <div style={styles.card}>
-                    Nenhum fluxo publicado nesta categoria.
-                  </div>
-                )}
-
-                {fluxos.map(fluxo => (
-
+                {resultados.map(fluxo => (
                   <div key={fluxo.id} style={styles.card}>
+                    <div style={styles.topoResultado}>
+                      <h3 style={styles.nomeFluxo}>
+                        {fluxo.nome}
+                      </h3>
 
-                    <h3>{fluxo.nome}</h3>
+                      <span style={styles.categoria}>
+                        {fluxo.categoria === 'eletronico'
+                          ? '⚡ Eletrônico'
+                          : '💧 Hidráulico'}
+                      </span>
+                    </div>
 
                     <p style={styles.descricao}>
                       {fluxo.descricao || 'Sem descrição.'}
+                    </p>
+
+                    <p style={styles.metadata}>
+                      {fluxo.etapasEncontradas} etapas cadastradas
                     </p>
 
                     <button
@@ -250,27 +342,19 @@ export default function AuxilioTecnico() {
                     >
                       Iniciar atendimento →
                     </button>
-
                   </div>
-
                 ))}
-
               </div>
-
             )}
-
           </>
-
         )}
 
         {fluxoSelecionado && etapaAtual && (
-
           <div style={styles.card}>
 
             <div style={styles.topoFluxo}>
-
               <span style={styles.identificacao}>
-                {fluxoSelecionado.nome}
+                🔧 {fluxoSelecionado.nome}
               </span>
 
               <span style={styles.identificacao}>
@@ -278,77 +362,96 @@ export default function AuxilioTecnico() {
                   ? 'PERGUNTA'
                   : 'TRATATIVA'}
               </span>
-
             </div>
 
             <div style={styles.progresso}>
               Etapas percorridas: {historico.length + 1}
             </div>
 
-            <h2 style={styles.pergunta}>
-              {etapaAtual.titulo}
-            </h2>
+            {!atendimentoConcluido && (
+              <>
+                <h2 style={styles.pergunta}>
+                  {etapaAtual.titulo}
+                </h2>
 
-            {etapaAtual.conteudo && (
-              <div style={styles.conteudo}>
-                {etapaAtual.conteudo}
-              </div>
-            )}
-
-            {etapaAtual.tipo === 'pergunta' && (
-
-              <div style={styles.respostas}>
-
-                {opcoesAtuais.length === 0 && (
-                  <p>
-                    Esta pergunta ainda não possui respostas
-                    cadastradas.
-                  </p>
+                {etapaAtual.conteudo && (
+                  <div style={styles.conteudo}>
+                    {etapaAtual.conteudo}
+                  </div>
                 )}
 
-                {opcoesAtuais.map(opcao => (
+                {etapaAtual.tipo === 'pergunta' && (
+                  <div style={styles.respostas}>
 
-                  <button
-                    key={opcao.id}
-                    style={styles.resposta}
-                    onClick={() => responder(opcao)}
-                  >
-                    {opcao.texto}
-                    <span> → </span>
-                  </button>
+                    {opcoesAtuais.length === 0 && (
+                      <p style={styles.descricao}>
+                        Esta pergunta ainda não possui respostas cadastradas.
+                      </p>
+                    )}
 
-                ))}
+                    {opcoesAtuais.map(opcao => (
+                      <button
+                        key={opcao.id}
+                        style={styles.resposta}
+                        onClick={() => responder(opcao)}
+                      >
+                        {opcao.texto}
+                        <span> → </span>
+                      </button>
+                    ))}
 
-              </div>
+                  </div>
+                )}
 
+                {etapaAtual.tipo === 'tratativa' && (
+                  <div style={styles.finalizacao}>
+                    <h3>Orientação apresentada</h3>
+
+                    <p>
+                      Siga as instruções acima para realizar
+                      o procedimento indicado.
+                    </p>
+
+                    <button
+                      style={styles.botao}
+                      onClick={() => setAtendimentoConcluido(true)}
+                    >
+                      Finalizar atendimento
+                    </button>
+                  </div>
+                )}
+              </>
             )}
 
-            {etapaAtual.tipo === 'tratativa' && (
-
+            {atendimentoConcluido && (
               <div style={styles.finalizacao}>
-
-                <h3>
-                  ✅ Orientação apresentada
-                </h3>
+                <h2>✅ Atendimento finalizado!</h2>
 
                 <p>
-                  Siga as instruções acima para realizar
-                  o procedimento indicado.
+                  O procedimento foi encerrado conforme a resposta
+                  selecionada.
+                </p>
+
+                <p>
+                  Fluxo: <strong>{fluxoSelecionado.nome}</strong>
                 </p>
 
                 <button
                   style={styles.botao}
                   onClick={reiniciar}
                 >
-                  Finalizar atendimento
+                  Finalizar e voltar à pesquisa
                 </button>
-
               </div>
+            )}
 
+            {erro && (
+              <div style={styles.erro}>
+                {erro}
+              </div>
             )}
 
             <div style={styles.acoes}>
-
               <button
                 style={styles.voltar}
                 onClick={voltar}
@@ -362,21 +465,17 @@ export default function AuxilioTecnico() {
               >
                 Sair do fluxo
               </button>
-
             </div>
 
           </div>
-
         )}
 
       </div>
-
     </Layout>
   );
 }
 
 const styles = {
-
   container: {
     maxWidth: 950,
     margin: '0 auto',
@@ -395,29 +494,52 @@ const styles = {
     marginBottom: 25
   },
 
-  categorias: {
-    display: 'flex',
-    gap: 15,
-    flexWrap: 'wrap',
-    marginBottom: 30
+  pesquisaCard: {
+    background: '#141414',
+    border: '1px solid #333',
+    borderRadius: 14,
+    padding: 22,
+    marginBottom: 25
   },
 
-  categoria: {
+  label: {
+    display: 'block',
+    color: '#ddd',
+    marginBottom: 10,
+    fontWeight: 'bold'
+  },
+
+  pesquisaLinha: {
+    display: 'flex',
+    gap: 10,
+    flexWrap: 'wrap'
+  },
+
+  campoBusca: {
     flex: 1,
-    minWidth: 180,
-    padding: 22,
-    background: '#171717',
+    minWidth: 200,
+    padding: 15,
+    background: '#0b0b0b',
     color: '#fff',
     border: '1px solid #444',
-    borderRadius: 12,
-    fontSize: 18,
+    borderRadius: 8,
+    fontSize: 15
+  },
+
+  botaoPesquisar: {
+    background: '#FFD600',
+    color: '#000',
+    border: 'none',
+    padding: '13px 20px',
+    borderRadius: 8,
+    fontWeight: 'bold',
     cursor: 'pointer'
   },
 
-  selecionado: {
-    border: '2px solid #FFD600',
-    color: '#FFD600',
-    background: '#242000'
+  ajuda: {
+    color: '#777',
+    fontSize: 12,
+    marginTop: 12
   },
 
   card: {
@@ -428,9 +550,32 @@ const styles = {
     marginBottom: 18
   },
 
+  topoResultado: {
+    display: 'flex',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    gap: 10,
+    flexWrap: 'wrap'
+  },
+
+  nomeFluxo: {
+    color: '#fff',
+    margin: 0
+  },
+
+  categoria: {
+    color: '#FFD600',
+    fontSize: 12
+  },
+
   descricao: {
     color: '#aaa',
     whiteSpace: 'pre-wrap'
+  },
+
+  metadata: {
+    color: '#777',
+    fontSize: 12
   },
 
   botao: {
@@ -499,9 +644,10 @@ const styles = {
   finalizacao: {
     background: '#172217',
     border: '1px solid #387438',
-    padding: 18,
+    padding: 20,
     borderRadius: 10,
-    marginTop: 20
+    marginTop: 20,
+    color: '#fff'
   },
 
   acoes: {
@@ -531,6 +677,9 @@ const styles = {
 
   texto: {
     color: '#fff'
-  }
+  },
 
+  successText: {
+    color: '#80d890'
+  }
 };
