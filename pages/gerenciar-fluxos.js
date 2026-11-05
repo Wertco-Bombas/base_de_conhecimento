@@ -181,17 +181,29 @@ export default function GerenciarFluxos() {
   }
 
   // ABRIR GERENCIAMENTO DE ORIENTAÇÕES
-  async function abrirGerenciamento(fluxo) {
-    setFluxoExpandido(fluxo.id);
-    setEtapaEditando(null);
+async function abrirGerenciamento(fluxo) {
+  setFluxoExpandido(fluxo.id);
+  setEtapaEditando(null);
 
-    setTituloEtapa('');
-    setConteudoEtapa('');
+  setTituloEtapa('');
+  setConteudoEtapa('');
 
-    await carregarEtapas(fluxo.id);
+  const { data, error } = await supabase
+    .from('aux_etapas')
+    .select('*')
+    .eq('fluxo_id', fluxo.id)
+    .order('ordem', { ascending: true });
 
-    setOrdemEtapa(etapas.length + 1);
+  if (error) {
+    alert('Erro ao carregar orientações: ' + error.message);
+    return;
   }
+
+  const lista = data || [];
+
+  setEtapas(lista);
+  setOrdemEtapa(lista.length + 1);
+}
 
   // SALVAR ORIENTAÇÃO
   async function salvarEtapa(fluxoId) {
@@ -699,7 +711,7 @@ export default function GerenciarFluxos() {
       </div>
     </Layout>
   );
-
+}
 const styles = {
   container: {
     width: '100%',
