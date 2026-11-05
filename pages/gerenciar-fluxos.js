@@ -15,9 +15,6 @@ export default function GerenciarFluxos() {
 
   const [nome, setNome] = useState('');
   const [descricao, setDescricao] = useState('');
-  const [categoria, setCategoria] = useState('eletronico');
-
-  // NOVOS CAMPOS
   const [codigoErro, setCodigoErro] = useState('');
   const [palavrasChave, setPalavrasChave] = useState('');
 
@@ -82,11 +79,8 @@ export default function GerenciarFluxos() {
   function limparFormulario() {
     setNome('');
     setDescricao('');
-    setCategoria('eletronico');
-
     setCodigoErro('');
     setPalavrasChave('');
-
     setEditando(null);
   }
 
@@ -100,20 +94,16 @@ export default function GerenciarFluxos() {
 
     setSalvando(true);
 
-    const dados = {
-      nome: nome.trim(),
-      descricao: descricao.trim(),
-      categoria,
-
-      // NOVOS CAMPOS
-      codigo_erro: codigoErro.trim() || null,
-      palavras_chave: palavrasChave.trim() || null,
-
-      atualizado_por: user.id,
-      updated_at: new Date().toISOString()
-    };
-
     try {
+      const dados = {
+        nome: nome.trim(),
+        descricao: descricao.trim(),
+        codigo_erro: codigoErro.trim() || null,
+        palavras_chave: palavrasChave.trim() || null,
+        atualizado_por: user.id,
+        updated_at: new Date().toISOString()
+      };
+
       let resultado;
 
       if (editando) {
@@ -153,9 +143,6 @@ export default function GerenciarFluxos() {
 
     setNome(fluxo.nome || '');
     setDescricao(fluxo.descricao || '');
-    setCategoria(fluxo.categoria || 'eletronico');
-
-    // CARREGAR NOVOS CAMPOS
     setCodigoErro(fluxo.codigo_erro || '');
     setPalavrasChave(fluxo.palavras_chave || '');
 
@@ -270,18 +257,23 @@ export default function GerenciarFluxos() {
     <Layout>
       <div style={styles.container}>
 
-        <h1 style={styles.heading}>🔧 Gerenciar Fluxos</h1>
+        <h1 style={styles.heading}>
+          🔧 Gerenciar Fluxos
+        </h1>
 
         <p style={styles.subtitle}>
-          Crie e gerencie os procedimentos de auxílio técnico.
+          Cadastre e gerencie os procedimentos de auxílio técnico.
         </p>
 
         <div style={styles.card}>
+
           <h2 style={styles.sectionTitle}>
             {editando ? 'Editar Fluxo' : 'Novo Fluxo'}
           </h2>
 
-          <label style={styles.label}>Nome do fluxo</label>
+          <label style={styles.label}>
+            Nome do fluxo
+          </label>
 
           <input
             style={styles.input}
@@ -290,7 +282,9 @@ export default function GerenciarFluxos() {
             onChange={e => setNome(e.target.value)}
           />
 
-          <label style={styles.label}>Código do erro</label>
+          <label style={styles.label}>
+            Código do erro
+          </label>
 
           <input
             style={styles.input}
@@ -299,7 +293,9 @@ export default function GerenciarFluxos() {
             onChange={e => setCodigoErro(e.target.value)}
           />
 
-          <label style={styles.label}>Palavras-chave para pesquisa</label>
+          <label style={styles.label}>
+            Palavras-chave para pesquisa
+          </label>
 
           <textarea
             style={styles.input}
@@ -314,7 +310,9 @@ export default function GerenciarFluxos() {
             a encontrar este procedimento na busca.
           </p>
 
-          <label style={styles.label}>Descrição</label>
+          <label style={styles.label}>
+            Descrição
+          </label>
 
           <textarea
             style={styles.input}
@@ -324,18 +322,8 @@ export default function GerenciarFluxos() {
             onChange={e => setDescricao(e.target.value)}
           />
 
-          <label style={styles.label}>Categoria</label>
-
-          <select
-            style={styles.input}
-            value={categoria}
-            onChange={e => setCategoria(e.target.value)}
-          >
-            <option value="eletronico">Eletrônico</option>
-            <option value="hidraulico">Hidráulico</option>
-          </select>
-
           <div style={styles.actions}>
+
             <button
               style={styles.mainButton}
               onClick={salvarFluxo}
@@ -356,7 +344,9 @@ export default function GerenciarFluxos() {
                 Cancelar
               </button>
             )}
+
           </div>
+
         </div>
 
         <h2 style={styles.sectionTitle}>
@@ -370,12 +360,13 @@ export default function GerenciarFluxos() {
         )}
 
         {fluxos.map(fluxo => (
+
           <div key={fluxo.id} style={styles.card}>
 
             <div style={styles.header}>
+
               <h3 style={styles.flowTitle}>
-                {fluxo.categoria === 'eletronico' ? '⚡' : '💧'}
-                {' '}{fluxo.nome}
+                🔧 {fluxo.nome}
               </h3>
 
               <span style={{
@@ -384,6 +375,7 @@ export default function GerenciarFluxos() {
               }}>
                 {fluxo.publicado ? 'PUBLICADO' : 'RASCUNHO'}
               </span>
+
             </div>
 
             <p style={styles.description}>
@@ -399,8 +391,6 @@ export default function GerenciarFluxos() {
             </p>
 
             <p style={styles.metadata}>
-              Categoria: {fluxo.categoria}
-              {' | '}
               Status: {fluxo.ativo ? 'Ativo' : 'Inativo'}
             </p>
 
@@ -446,7 +436,9 @@ export default function GerenciarFluxos() {
               </button>
 
             </div>
+
           </div>
+
         ))}
 
       </div>
@@ -455,6 +447,7 @@ export default function GerenciarFluxos() {
 }
 
 const styles = {
+
   container: {
     width: '100%',
     maxWidth: 1100,
@@ -574,4 +567,5 @@ const styles = {
   text: {
     color: '#fff'
   }
+
 };
