@@ -320,11 +320,12 @@ async function abrirGerenciamento(fluxo) {
   // PUBLICAR OU RETIRAR PUBLICAÇÃO
 
 
+
 async function alterarPublicacao(fluxo) {
   if (!fluxo.publicado) {
     const { data: lista, error } = await supabase
       .from('aux_etapas')
-      .select('id, ordem')
+      .select('id, ordem, titulo')
       .eq('fluxo_id', fluxo.id)
       .order('ordem', { ascending: true });
 
@@ -338,7 +339,9 @@ async function alterarPublicacao(fluxo) {
       return;
     }
 
-    if (!lista.some(etapa => Number(etapa.ordem) === 1)) {
+    const ordens = lista.map(e => Number(e.ordem));
+
+    if (!ordens.includes(1)) {
       alert('O fluxo precisa ter uma orientação de ordem 1.');
       return;
     }
