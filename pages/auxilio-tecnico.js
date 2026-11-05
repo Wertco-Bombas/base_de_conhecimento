@@ -9,16 +9,18 @@ export default function AuxilioTecnico() {
 
   const [fluxoSelecionado, setFluxoSelecionado] = useState(null);
   const [etapas, setEtapas] = useState([]);
-  const [opcoes, setOpcoes] = useState([]);
-
   const [etapaAtual, setEtapaAtual] = useState(null);
+
   const [historico, setHistorico] = useState([]);
+  const [etapaResolucao, setEtapaResolucao] = useState(null);
 
   const [loading, setLoading] = useState(false);
   const [erro, setErro] = useState('');
+
   const [finalizado, setFinalizado] = useState(false);
   const [resolvido, setResolvido] = useState(false);
 
+  // PESQUISAR FLUXOS
   async function pesquisar() {
     if (!busca.trim()) {
       setErro('Digite um código de erro ou uma palavra para pesquisar.');
@@ -56,101 +58,91 @@ export default function AuxilioTecnico() {
     setLoading(false);
   }
 
+  // ABRIR FLUXO E CARREGAR ORIENTAÇÕES
   async function abrirFluxo(fluxo) {
     setLoading(true);
     setErro('');
 
-    const { data: etapasData, error: etapasError } = await supabase
+    const { data, error } = await supabase
       .from('aux_etapas')
       .select('*')
       .eq('fluxo_id', fluxo.id)
-      .order('ordem');
+      .order('ordem', { ascending: true });
 
-    if (etapasError) {
-      setErro('Erro ao carregar etapas: ' + etapasError.message);
+    if (error) {
+      setErro('Erro ao carregar orientações: ' + error.message);
       setLoading(false);
       return;
     }
 
-    const listaEtapas = etapasData || [];
+    const listaEtapas = (data || []).sort(
+      (a, b) => Number(a.ordem) - Number(b.ordem)
+    );
 
-    if (!listaEtapas.length) {
-      setErro('Este fluxo ainda não possui etapas cadastradas.');
+    if (listaEtapas.length === 0) {
+      setErro('Este fluxo ainda não possui orientações cadastradas.');
       setLoading(false);
       return;
     }
 
-    const ids = listaEtapas.map(e => e.id);
-
-    const { data: opcoesData, error: opcoesError } = await supabase
-      .from('aux_opcoes')
-      .select('*')
-      .in('etapa_id', ids)
-      .order('ordem');
-
-    if (opcoesError) {
-      setErro('Erro ao carregar respostas: ' + opcoesError.message);
-      setLoading(false);
-      return;
-    }
-
-    const inicial = listaEtapas.find(e => e.etapa_inicial);
-
-    if (!inicial) {
-      setErro('Este fluxo não possui uma etapa inicial.');
-      setLoading(false);
-      return;
-    }
+    // Busca a orientação inicial.
+    // Se não houver marcação, utiliza a primeira pela ordem.
+    const inicial =
+      listaEtapas.find(e => e.etapa_inicial === true) ||
+      listaEtapas[0];
 
     setFluxoSelecionado(fluxo);
     setEtapas(listaEtapas);
-    setOpcoes(opcoesData || []);
     setEtapaAtual(inicial);
 
     setHistorico([]);
+    setEtapaResolucao(null);
+
     setFinalizado(false);
     setResolvido(false);
 
     setLoading(false);
   }
 
-  function responder(opcao) {
+  // ANALISTA INFORMOU QUE RESOLVEU
+  function marcarResolvido() {
     if (!etapaAtual) return;
 
-    const proxima = etapas.find(
-      e => e.id === opcao.proxima_etapa_id
+    setEtapaResolucao(etapaAtual);
+    setResolvido(true);
+    setFinalizado(true);
+    setErro('');
+  }
+
+  // ANALISTA INFORMOU QUE NÃO RESOLVEU
+  function proximaOrientacao() {
+    if (!etapaAtual) return;
+
+    const indiceAtual = etapas.findIndex(
+      e => e.id === etapaAtual.id
     );
 
-    // Resposta sem destino significa encerramento.
-    if (!opcao.proxima_etapa_id) {
-      setFinalizado(true);
+    const proxima = etapas[indiceAtual + 1];
 
-      const texto = opcao.texto.trim().toLowerCase();
-      setResolvido(texto === 'sim');
-
-      return;
-    }
+    // Registra a orientação percorrida.
+    setHistorico(prev => [...prev, etapaAtual.id]);
 
     if (!proxima) {
-      setErro('A próxima etapa não foi encontrada.');
+      // Não existem mais orientações.
+      setResolvido(false);
+      setFinalizado(true);
+      setEtapaResolucao(null);
+      setErro('');
       return;
     }
 
-    setHistorico(prev => [
-      ...prev,
-      etapaAtual.id
-    ]);
-
+    // Avança para a próxima orientação.
     setEtapaAtual(proxima);
     setErro('');
   }
 
+  // VOLTAR PARA ORIENTAÇÃO ANTERIOR
   function voltar() {
-    if (finalizado) {
-      setFinalizado(false);
-      return;
-    }
-
     if (!historico.length) {
       sairDoFluxo();
       return;
@@ -169,28 +161,31 @@ export default function AuxilioTecnico() {
     }
   }
 
+  // SAIR DO ATENDIMENTO
   function sairDoFluxo() {
     setFluxoSelecionado(null);
     setEtapas([]);
-    setOpcoes([]);
     setEtapaAtual(null);
     setHistorico([]);
+
+    setEtapaResolucao(null);
+
     setFinalizado(false);
     setResolvido(false);
+
     setErro('');
   }
 
+  // NOVA PESQUISA
   function novaPesquisa() {
     sairDoFluxo();
     setBusca('');
     setResultados([]);
   }
 
-  const opcoesAtuais = etapaAtual
-    ? opcoes
-        .filter(o => o.etapa_id === etapaAtual.id)
-        .sort((a, b) => a.ordem - b.ordem)
-    : [];
+  const numeroEtapaAtual = etapaAtual
+    ? etapas.findIndex(e => e.id === etapaAtual.id) + 1
+    : 0;
 
   return (
     <Layout>
@@ -204,6 +199,8 @@ export default function AuxilioTecnico() {
           Pesquise pelo código do erro ou descreva o problema
           para encontrar um procedimento de atendimento.
         </p>
+
+        {/* PESQUISA */}
 
         {!fluxoSelecionado && (
           <>
@@ -241,6 +238,7 @@ export default function AuxilioTecnico() {
 
                 {resultados.map(fluxo => (
                   <div key={fluxo.id} style={styles.card}>
+
                     <h3 style={styles.nomeFluxo}>
                       {fluxo.nome}
                     </h3>
@@ -255,6 +253,12 @@ export default function AuxilioTecnico() {
                       </p>
                     )}
 
+                    {fluxo.palavras_chave && (
+                      <p style={styles.metadata}>
+                        Palavras-chave: {fluxo.palavras_chave}
+                      </p>
+                    )}
+
                     <button
                       style={styles.botao}
                       onClick={() => abrirFluxo(fluxo)}
@@ -262,12 +266,15 @@ export default function AuxilioTecnico() {
                     >
                       Iniciar atendimento →
                     </button>
+
                   </div>
                 ))}
               </>
             )}
           </>
         )}
+
+        {/* ATENDIMENTO */}
 
         {fluxoSelecionado && etapaAtual && !finalizado && (
           <div style={styles.card}>
@@ -278,14 +285,21 @@ export default function AuxilioTecnico() {
               </span>
 
               <span style={styles.identificacao}>
-                {etapaAtual.tipo === 'pergunta'
-                  ? 'PERGUNTA'
-                  : 'TRATATIVA'}
+                ORIENTAÇÃO {numeroEtapaAtual} DE {etapas.length}
               </span>
             </div>
 
+            <div style={styles.barraContainer}>
+              <div
+                style={{
+                  ...styles.barraProgresso,
+                  width: `${(numeroEtapaAtual / etapas.length) * 100}%`
+                }}
+              />
+            </div>
+
             <p style={styles.progresso}>
-              Etapas percorridas: {historico.length + 1}
+              Passo {numeroEtapaAtual} de {etapas.length}
             </p>
 
             <h2 style={styles.pergunta}>
@@ -298,27 +312,30 @@ export default function AuxilioTecnico() {
               </div>
             )}
 
-            {opcoesAtuais.length === 0 && (
-              <div style={styles.erro}>
-                Esta etapa ainda não possui respostas cadastradas.
-                Entre em contato com a gestão.
-              </div>
-            )}
+            <p style={styles.instrucao}>
+              Após realizar este procedimento, informe o resultado:
+            </p>
 
             <div style={styles.respostas}>
-              {opcoesAtuais.map(opcao => (
-                <button
-                  key={opcao.id}
-                  style={styles.resposta}
-                  onClick={() => responder(opcao)}
-                >
-                  {opcao.texto}
-                  <span> → </span>
-                </button>
-              ))}
+
+              <button
+                style={styles.botaoResolvido}
+                onClick={marcarResolvido}
+              >
+                ✓ Resolveu o problema
+              </button>
+
+              <button
+                style={styles.botaoNaoResolvido}
+                onClick={proximaOrientacao}
+              >
+                ✕ Não resolveu, próximo passo
+              </button>
+
             </div>
 
             <div style={styles.acoes}>
+
               <button
                 style={styles.voltar}
                 onClick={voltar}
@@ -332,27 +349,57 @@ export default function AuxilioTecnico() {
               >
                 Sair do atendimento
               </button>
+
             </div>
 
           </div>
         )}
 
+        {/* FINALIZAÇÃO */}
+
         {finalizado && (
           <div style={styles.card}>
 
-            <div style={styles.finalizacao}>
-              <h2>
-                {resolvido
-                  ? '✅ Problema resolvido!'
-                  : '⚠️ Atendimento encerrado'}
-              </h2>
+            {resolvido ? (
+              <div style={styles.finalizacaoSucesso}>
 
-              <p>
-                {resolvido
-                  ? 'Ótimo! A orientação resolveu o problema informado.'
-                  : 'O atendimento foi encerrado. A gestão ou equipe técnica deverá avaliar a necessidade de suporte adicional.'}
-              </p>
-            </div>
+                <h2>
+                  ✅ Problema resolvido!
+                </h2>
+
+                <p>
+                  O atendimento foi concluído com sucesso.
+                </p>
+
+                <p>
+                  **Problema:** {fluxoSelecionado?.nome}
+                </p>
+
+                <p>
+                  **Resolvido na orientação:**
+                  {' '}{etapaResolucao?.ordem} - {etapaResolucao?.titulo}
+                </p>
+
+              </div>
+            ) : (
+              <div style={styles.finalizacaoAlerta}>
+
+                <h2>
+                  ⚠️ Todas as orientações foram realizadas
+                </h2>
+
+                <p>
+                  O problema não foi resolvido após a execução
+                  de todos os procedimentos cadastrados.
+                </p>
+
+                <p>
+                  É necessário encaminhar o atendimento para
+                  avaliação da equipe técnica ou gestão.
+                </p>
+
+              </div>
+            )}
 
             <button
               style={styles.botao}
@@ -465,16 +512,32 @@ const styles = {
     fontWeight: 'bold'
   },
 
+  barraContainer: {
+    height: 7,
+    background: '#333',
+    borderRadius: 10,
+    overflow: 'hidden',
+    marginTop: 20
+  },
+
+  barraProgresso: {
+    height: '100%',
+    background: '#FFD600',
+    borderRadius: 10,
+    transition: 'width 0.3s'
+  },
+
   progresso: {
     color: '#888',
-    marginTop: 20,
+    marginTop: 12,
     fontSize: 13
   },
 
   pergunta: {
     fontSize: 25,
     marginTop: 25,
-    marginBottom: 20
+    marginBottom: 20,
+    color: '#FFD600'
   },
 
   conteudo: {
@@ -483,7 +546,14 @@ const styles = {
     borderRadius: 10,
     whiteSpace: 'pre-wrap',
     lineHeight: 1.7,
-    marginBottom: 20
+    marginBottom: 20,
+    color: '#fff'
+  },
+
+  instrucao: {
+    color: '#ccc',
+    marginTop: 20,
+    marginBottom: 15
   },
 
   respostas: {
@@ -492,24 +562,46 @@ const styles = {
     gap: 12
   },
 
-  resposta: {
+  botaoResolvido: {
     width: '100%',
-    textAlign: 'left',
-    background: '#202020',
-    border: '1px solid #555',
+    background: '#174522',
+    border: '1px solid #36a852',
     color: '#fff',
     padding: 18,
     borderRadius: 10,
     fontSize: 16,
+    fontWeight: 'bold',
     cursor: 'pointer'
   },
 
-  finalizacao: {
+  botaoNaoResolvido: {
+    width: '100%',
+    background: '#38251a',
+    border: '1px solid #bd783e',
+    color: '#fff',
+    padding: 18,
+    borderRadius: 10,
+    fontSize: 16,
+    fontWeight: 'bold',
+    cursor: 'pointer'
+  },
+
+  finalizacaoSucesso: {
     background: '#172217',
     border: '1px solid #387438',
     padding: 18,
     borderRadius: 10,
-    marginBottom: 15
+    marginBottom: 15,
+    lineHeight: 1.7
+  },
+
+  finalizacaoAlerta: {
+    background: '#382b18',
+    border: '1px solid #b58a36',
+    padding: 18,
+    borderRadius: 10,
+    marginBottom: 15,
+    lineHeight: 1.7
   },
 
   acoes: {
