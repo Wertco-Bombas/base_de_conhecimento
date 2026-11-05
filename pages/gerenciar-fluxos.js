@@ -319,6 +319,7 @@ async function abrirGerenciamento(fluxo) {
 
   // PUBLICAR OU RETIRAR PUBLICAÇÃO
 
+
 async function alterarPublicacao(fluxo) {
   if (!fluxo.publicado) {
     const { data: lista, error } = await supabase
@@ -361,34 +362,14 @@ async function alterarPublicacao(fluxo) {
     return;
   }
 
-  alert(novoStatus ? 'Fluxo publicado com sucesso!' : 'Publicação removida!');
+  alert(
+    novoStatus
+      ? 'Fluxo publicado com sucesso!'
+      : 'Publicação removida!'
+  );
 
   await carregarFluxos();
 }
-
-
-    const novoStatus = !fluxo.publicado;
-
-    const { error } = await supabase
-      .from('aux_fluxos')
-      .update({
-        publicado: novoStatus,
-        publicado_por: novoStatus ? user.id : null,
-        publicado_em: novoStatus ? new Date().toISOString() : null,
-        updated_at: new Date().toISOString(),
-        atualizado_por: user.id
-      })
-      .eq('id', fluxo.id);
-
-    if (error) {
-      alert('Erro ao alterar publicação: ' + error.message);
-      return;
-    }
-
-    alert(novoStatus ? 'Fluxo publicado!' : 'Publicação removida!');
-
-    await carregarFluxos();
-  }
 
   // EXCLUIR FLUXO
   async function excluirFluxo(fluxo) {
