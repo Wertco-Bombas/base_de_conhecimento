@@ -17,6 +17,10 @@ export default function GerenciarFluxos() {
   const [descricao, setDescricao] = useState('');
   const [categoria, setCategoria] = useState('eletronico');
 
+  // NOVOS CAMPOS
+  const [codigoErro, setCodigoErro] = useState('');
+  const [palavrasChave, setPalavrasChave] = useState('');
+
   const [editando, setEditando] = useState(null);
 
   useEffect(() => {
@@ -24,34 +28,41 @@ export default function GerenciarFluxos() {
   }, []);
 
   async function verificarUsuario() {
-    const { data: auth, error } = await supabase.auth.getUser();
+    try {
+      const { data: auth, error } =
+        await supabase.auth.getUser();
 
-    if (error || !auth?.user) {
-      router.replace('/');
-      return;
+      if (error || !auth?.user) {
+        router.replace('/');
+        return;
+      }
+
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('role')
+        .eq('id', auth.user.id)
+        .maybeSingle();
+
+      const role = profile?.role?.toLowerCase();
+
+      if (role !== 'admin' && role !== 'supervisor') {
+        alert('Você não tem permissão para acessar esta página.');
+        router.replace('/base');
+        return;
+      }
+
+      setUser({
+        id: auth.user.id,
+        role
+      });
+
+      await carregarFluxos();
+
+    } catch (error) {
+      alert('Erro ao verificar usuário: ' + error.message);
+    } finally {
+      setLoading(false);
     }
-
-    const { data: profile } = await supabase
-      .from('profiles')
-      .select('role')
-      .eq('id', auth.user.id)
-      .maybeSingle();
-
-    const role = profile?.role?.toLowerCase();
-
-    if (role !== 'admin' && role !== 'supervisor') {
-      alert('Você não tem permissão para acessar esta página.');
-      router.replace('/base');
-      return;
-    }
-
-    setUser({
-      id: auth.user.id,
-      role
-    });
-
-    await carregarFluxos();
-    setLoading(false);
   }
 
   async function carregarFluxos() {
@@ -72,6 +83,10 @@ export default function GerenciarFluxos() {
     setNome('');
     setDescricao('');
     setCategoria('eletronico');
+
+    setCodigoErro('');
+    setPalavrasChave('');
+
     setEditando(null);
   }
 
@@ -89,46 +104,60 @@ export default function GerenciarFluxos() {
       nome: nome.trim(),
       descricao: descricao.trim(),
       categoria,
+
+      // NOVOS CAMPOS
+      codigo_erro: codigoErro.trim() || null,
+      palavras_chave: palavrasChave.trim() || null,
+
       atualizado_por: user.id,
       updated_at: new Date().toISOString()
     };
 
-    let resultado;
+    try {
+      let resultado;
 
-    if (editando) {
-      resultado = await supabase
-        .from('aux_fluxos')
-        .update(dados)
-        .eq('id', editando);
-    } else {
-      resultado = await supabase
-        .from('aux_fluxos')
-        .insert({
-          ...dados,
-          criado_por: user.id,
-          ativo: true,
-          publicado: false
-        });
+      if (editando) {
+        resultado = await supabase
+          .from('aux_fluxos')
+          .update(dados)
+          .eq('id', editando);
+      } else {
+        resultado = await supabase
+          .from('aux_fluxos')
+          .insert({
+            ...dados,
+            criado_por: user.id,
+            ativo: true,
+            publicado: false
+          });
+      }
+
+      if (resultado.error) {
+        throw resultado.error;
+      }
+
+      alert(editando ? 'Fluxo atualizado!' : 'Fluxo criado!');
+
+      limparFormulario();
+      await carregarFluxos();
+
+    } catch (error) {
+      alert('Erro ao salvar: ' + error.message);
+    } finally {
+      setSalvando(false);
     }
-
-    setSalvando(false);
-
-    if (resultado.error) {
-      alert('Erro ao salvar: ' + resultado.error.message);
-      return;
-    }
-
-    alert(editando ? 'Fluxo atualizado!' : 'Fluxo criado!');
-
-    limparFormulario();
-    carregarFluxos();
   }
 
   function editarFluxo(fluxo) {
     setEditando(fluxo.id);
-    setNome(fluxo.nome);
+
+    setNome(fluxo.nome || '');
     setDescricao(fluxo.descricao || '');
-    setCategoria(fluxo.categoria);
+    setCategoria(fluxo.categoria || 'eletronico');
+
+    // CARREGAR NOVOS CAMPOS
+    setCodigoErro(fluxo.codigo_erro || '');
+    setPalavrasChave(fluxo.palavras_chave || '');
 
     window.scrollTo({
       top: 0,
@@ -151,15 +180,16 @@ export default function GerenciarFluxos() {
       return;
     }
 
-    carregarFluxos();
+    await carregarFluxos();
   }
 
   async function alterarPublicacao(fluxo) {
     if (!fluxo.publicado) {
-      const { data: etapas, error: etapasError } = await supabase
-        .from('aux_etapas')
-        .select('id, etapa_inicial')
-        .eq('fluxo_id', fluxo.id);
+      const { data: etapas, error: etapasError } =
+        await supabase
+          .from('aux_etapas')
+          .select('id, etapa_inicial')
+          .eq('fluxo_id', fluxo.id);
 
       if (etapasError) {
         alert(etapasError.message);
@@ -199,7 +229,7 @@ export default function GerenciarFluxos() {
 
     alert(novoStatus ? 'Fluxo publicado!' : 'Publicação removida!');
 
-    carregarFluxos();
+    await carregarFluxos();
   }
 
   async function excluirFluxo(fluxo) {
@@ -221,7 +251,11 @@ export default function GerenciarFluxos() {
 
     alert('Fluxo excluído!');
 
-    carregarFluxos();
+    if (editando === fluxo.id) {
+      limparFormulario();
+    }
+
+    await carregarFluxos();
   }
 
   if (loading) {
@@ -255,6 +289,30 @@ export default function GerenciarFluxos() {
             value={nome}
             onChange={e => setNome(e.target.value)}
           />
+
+          <label style={styles.label}>Código do erro</label>
+
+          <input
+            style={styles.input}
+            placeholder="Ex: E1025"
+            value={codigoErro}
+            onChange={e => setCodigoErro(e.target.value)}
+          />
+
+          <label style={styles.label}>Palavras-chave para pesquisa</label>
+
+          <textarea
+            style={styles.input}
+            rows={3}
+            placeholder="Ex: bomba parada, motor não liga, falha de acionamento..."
+            value={palavrasChave}
+            onChange={e => setPalavrasChave(e.target.value)}
+          />
+
+          <p style={styles.hint}>
+            Separe os termos por vírgula. Eles ajudarão os técnicos
+            a encontrar este procedimento na busca.
+          </p>
 
           <label style={styles.label}>Descrição</label>
 
@@ -333,6 +391,14 @@ export default function GerenciarFluxos() {
             </p>
 
             <p style={styles.metadata}>
+              Código: {fluxo.codigo_erro || 'Não informado'}
+            </p>
+
+            <p style={styles.metadata}>
+              Palavras-chave: {fluxo.palavras_chave || 'Não informadas'}
+            </p>
+
+            <p style={styles.metadata}>
               Categoria: {fluxo.categoria}
               {' | '}
               Status: {fluxo.ativo ? 'Ativo' : 'Inativo'}
@@ -367,7 +433,9 @@ export default function GerenciarFluxos() {
                 style={styles.secondaryButton}
                 onClick={() => alterarPublicacao(fluxo)}
               >
-                {fluxo.publicado ? 'Retirar publicação' : 'Publicar'}
+                {fluxo.publicado
+                  ? 'Retirar publicação'
+                  : 'Publicar'}
               </button>
 
               <button
@@ -433,6 +501,12 @@ const styles = {
     border: '1px solid #333',
     borderRadius: 8,
     marginBottom: 5
+  },
+
+  hint: {
+    color: '#888',
+    fontSize: 12,
+    marginTop: 4
   },
 
   actions: {
@@ -501,4 +575,3 @@ const styles = {
     color: '#fff'
   }
 };
-
